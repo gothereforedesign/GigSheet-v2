@@ -262,10 +262,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   return (
     <div className="space-y-4 pb-0">
-      {/* VIEW 1: 2-COLUMN CATEGORY GRID (3:2 Aspect Ratio Cards as before) */}
+      {/* VIEW 1: 2-COLUMN CATEGORY GRID (3:2 Aspect Ratio Cards with Fluid Typography) */}
       {showCategorySquaresGrid ? (
         <div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {availableCategories.map((catName) => {
               const palette = getCategoryPalette(catName, genreColors, section);
 
@@ -273,9 +273,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 <div
                   key={catName}
                   onClick={() => handleSetSelectedCategory(catName)}
-                  className={`group aspect-[3/2] rounded-2xl p-4 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
+                  className={`group aspect-[3/2] rounded-2xl md:rounded-3xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
                 >
-                  <h3 className={`-mt-1 text-base sm:text-lg font-black tracking-tight line-clamp-2 leading-snug ${palette.cardText}`}>
+                  <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
                     {catName}
                   </h3>
                 </div>
