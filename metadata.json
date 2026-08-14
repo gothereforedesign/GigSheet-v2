@@ -1,0 +1,8 @@
+{
+  "name": "Remix GigSheet - Sheet Music Directory \u0026 iReal Chart Viewer",
+  "description": "Offline-first sheet music manager, searchable directory, setlist planner, iReal Pro 16-cell chord grid viewer, and practice toolkit optimized for mobile, tablet, and desktop.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
