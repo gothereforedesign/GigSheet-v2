@@ -36,13 +36,17 @@ export default defineConfig(() => {
           'icon-192.png',
           'icon-256.png',
           'icon-384.png',
-          'icon-512.png'
+          'icon-512.png',
+          'screenshot-desktop.png',
+          'screenshot-mobile.png'
         ],
         manifest: {
-          id: '/',
+          id: 'com.gigsheet.app',
           name: 'GigSheet - Sheet Music & Setlists',
           short_name: 'GigSheet',
           description: 'Offline sheet music directory, chart viewer, and setlist manager.',
+          lang: 'en-US',
+          dir: 'ltr',
           theme_color: '#0c4a6e',
           background_color: '#0c4a6e',
           display: 'standalone',
@@ -51,7 +55,71 @@ export default defineConfig(() => {
           start_url: '/',
           scope: '/',
           prefer_related_applications: false,
+          related_applications: [],
           categories: ['music', 'productivity', 'utilities'],
+          launch_handler: {
+            client_mode: 'auto'
+          },
+          edge_side_panel: {
+            preferred_width: 400
+          },
+          shortcuts: [
+            {
+              name: 'Setlists',
+              short_name: 'Setlists',
+              description: 'View and manage gig setlists',
+              url: '/?tab=setlists',
+              icons: [
+                {
+                  src: '/pwa-192x192.png',
+                  sizes: '192x192',
+                  type: 'image/png'
+                }
+              ]
+            },
+            {
+              name: 'Technique & Exercises',
+              short_name: 'Technique',
+              description: 'Quick access to exercises and technique charts',
+              url: '/?tab=technique',
+              icons: [
+                {
+                  src: '/pwa-192x192.png',
+                  sizes: '192x192',
+                  type: 'image/png'
+                }
+              ]
+            },
+            {
+              name: 'All Songs',
+              short_name: 'Songs',
+              description: 'Browse complete chart library',
+              url: '/?tab=songs',
+              icons: [
+                {
+                  src: '/pwa-192x192.png',
+                  sizes: '192x192',
+                  type: 'image/png'
+                }
+              ]
+            }
+          ],
+          screenshots: [
+            {
+              src: '/screenshot-desktop.png',
+              sizes: '1280x720',
+              type: 'image/png',
+              form_factor: 'wide',
+              label: 'GigSheet Desktop Chart Viewer and Library'
+            },
+            {
+              src: '/screenshot-mobile.png',
+              sizes: '750x1334',
+              type: 'image/png',
+              form_factor: 'narrow',
+              label: 'GigSheet Mobile Stage View and Setlists'
+            }
+          ],
           icons: [
             {
               src: '/pwa-64x64.png',
@@ -128,7 +196,9 @@ export default defineConfig(() => {
           ]
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,mjs}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,mjs,json,webmanifest}'],
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,

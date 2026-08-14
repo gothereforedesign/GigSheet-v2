@@ -32,6 +32,19 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     
     <title>GigSheet - Sheet Music & Setlists</title>
+    <script>
+      if ('serviceWorker' in navigator && !window.location.host.includes('ais-dev-')) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(function(reg) {
+              console.log('PWA ServiceWorker active:', reg.scope);
+            })
+            .catch(function(err) {
+              console.log('ServiceWorker note:', err);
+            });
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
