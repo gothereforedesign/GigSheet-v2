@@ -162,15 +162,44 @@ export async function getSongBlob(id: string): Promise<Blob | ArrayBuffer | stri
   return null;
 }
 
+// Helper to convert any Blob, File, ArrayBuffer, or data URL into a clean ArrayBuffer
+// This avoids Chromium's disk-blob streaming subsystem which causes "Failed to write blobs (IOError)"
+async function serializeToBinary(blobOrBuffer: Blob | File | ArrayBuffer | string | undefined | null): Promise<ArrayBuffer | null> {
+  if (!blobOrBuffer) return null;
+  if (blobOrBuffer instanceof ArrayBuffer) {
+    return blobOrBuffer;
+  }
+  if (typeof (blobOrBuffer as Blob).arrayBuffer === 'function') {
+    return await (blobOrBuffer as Blob).arrayBuffer();
+  }
+  if (typeof blobOrBuffer === 'string') {
+    if (blobOrBuffer.startsWith('data:')) {
+      const res = await fetch(blobOrBuffer);
+      return await res.arrayBuffer();
+    }
+  }
+  return null;
+}
+
 export async function saveSong(song: Song): Promise<void> {
   const db = await getDB();
   const { fileBlob, ...metadata } = song;
   
+  // Pre-convert to ArrayBuffer before opening IndexedDB transaction
+  let binaryData: ArrayBuffer | null = null;
+  if (fileBlob) {
+    try {
+      binaryData = await serializeToBinary(fileBlob);
+    } catch (e) {
+      console.warn('Could not serialize fileBlob to ArrayBuffer:', e);
+    }
+  }
+
   try {
     const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
     tx.objectStore('songs').put(metadata as Song);
-    if (fileBlob) {
-      tx.objectStore('song_blobs').put({ id: song.id, blob: fileBlob });
+    if (binaryData) {
+      tx.objectStore('song_blobs').put({ id: song.id, blob: binaryData });
     }
     await tx.done;
   } catch (err) {
@@ -181,6 +210,7 @@ export async function saveSong(song: Song): Promise<void> {
       await tx2.done;
     } catch (e) {
       console.error('Fallback metadata save failed:', e);
+      throw e;
     }
   }
 }
@@ -195,19 +225,60 @@ export async function saveSongsBatch(
   const chunkSize = 5;
   for (let i = 0; i < songs.length; i += chunkSize) {
     const chunk = songs.slice(i, i + chunkSize);
-    const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
-    const songStore = tx.objectStore('songs');
-    const blobStore = tx.objectStore('song_blobs');
+    
+    // Step 1: Pre-convert all files in the chunk to ArrayBuffers BEFORE starting the transaction
+    // This completely prevents Chromium's "Failed to write blobs (IOError)"
+    const preparedItems = await Promise.all(
+      chunk.map(async (song) => {
+        const { fileBlob, ...metadata } = song;
+        let binaryData: ArrayBuffer | null = null;
+        if (fileBlob) {
+          try {
+            binaryData = await serializeToBinary(fileBlob);
+          } catch (e) {
+            console.warn(`Could not read binary data for song ${song.id}:`, e);
+          }
+        }
+        return { metadata: metadata as Song, id: song.id, binaryData };
+      })
+    );
 
-    for (const song of chunk) {
-      const { fileBlob, ...metadata } = song;
-      songStore.put(metadata as Song);
-      if (fileBlob) {
-        blobStore.put({ id: song.id, blob: fileBlob });
+    // Step 2: Write batch to IndexedDB
+    try {
+      const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
+      const songStore = tx.objectStore('songs');
+      const blobStore = tx.objectStore('song_blobs');
+
+      for (const item of preparedItems) {
+        songStore.put(item.metadata);
+        if (item.binaryData) {
+          blobStore.put({ id: item.id, blob: item.binaryData });
+        }
+      }
+
+      await tx.done;
+    } catch (err) {
+      console.warn('Batch blob transaction error, retrying individual items:', err);
+      // Fallback: save one by one so partial failures don't abort all charts
+      for (const item of preparedItems) {
+        try {
+          const singleTx = db.transaction(['songs', 'song_blobs'], 'readwrite');
+          singleTx.objectStore('songs').put(item.metadata);
+          if (item.binaryData) {
+            singleTx.objectStore('song_blobs').put({ id: item.id, blob: item.binaryData });
+          }
+          await singleTx.done;
+        } catch (itemErr) {
+          try {
+            const metaTx = db.transaction('songs', 'readwrite');
+            metaTx.objectStore('songs').put(item.metadata);
+            await metaTx.done;
+          } catch (metaErr) {
+            console.error(`Failed to save song ${item.id}:`, metaErr);
+          }
+        }
       }
     }
-
-    await tx.done;
 
     const processedCount = Math.min(i + chunkSize, songs.length);
     if (onProgress) {

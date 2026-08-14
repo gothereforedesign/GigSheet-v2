@@ -46,9 +46,12 @@ export default defineConfig(() => {
           theme_color: '#0c4a6e',
           background_color: '#0c4a6e',
           display: 'standalone',
+          display_override: ['standalone', 'window-controls-overlay'],
           orientation: 'any',
           start_url: '/',
           scope: '/',
+          prefer_related_applications: false,
+          categories: ['music', 'productivity', 'utilities'],
           icons: [
             {
               src: '/pwa-64x64.png',

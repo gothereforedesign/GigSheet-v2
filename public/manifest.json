@@ -81,7 +81,9 @@
   "background_color": "#0c4a6e",
   "theme_color": "#0c4a6e",
   "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
   "orientation": "any",
   "scope": "/",
-  "categories": ["music", "utilities"]
+  "prefer_related_applications": false,
+  "categories": ["music", "productivity", "utilities"]
 }

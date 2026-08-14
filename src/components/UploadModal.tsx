@@ -182,6 +182,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         const entry = fileEntries[i];
         const uniqueId = `chart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+        let binaryBuffer: ArrayBuffer | null = null;
+        try {
+          binaryBuffer = await entry.file.arrayBuffer();
+        } catch (readErr) {
+          console.warn(`Could not read array buffer for ${entry.file.name}:`, readErr);
+        }
+
         const song: Song = {
           id: uniqueId,
           title: entry.title.trim() || cleanFileName(entry.file.name),
@@ -195,7 +202,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           section: section,
           favorite: false,
           dateAdded: Date.now(),
-          fileBlob: entry.file,
+          fileBlob: binaryBuffer || entry.file,
         };
 
         newSongs.push(song);
