@@ -50,6 +50,16 @@ export async function saveSongDirectDirectBlob(song: Song, fileBlob: Blob | File
     throw new Error('Invalid or empty file blob provided.');
   }
 
+  // Pre-convert File/Blob to ArrayBuffer for immutable storage in IndexedDB
+  let binaryData: ArrayBuffer | Blob = fileBlob;
+  if (typeof (fileBlob as Blob).arrayBuffer === 'function') {
+    try {
+      binaryData = await (fileBlob as Blob).arrayBuffer();
+    } catch (e) {
+      console.warn('Could not read blob arrayBuffer, using raw fileBlob:', e);
+    }
+  }
+
   let attempt = 0;
   let lastError: any = null;
 
@@ -59,15 +69,13 @@ export async function saveSongDirectDirectBlob(song: Song, fileBlob: Blob | File
       const db = await getDB();
       const { fileBlob: _, ...metadata } = song;
 
-      // 1. Save metadata in 'songs' store with isolated transaction
-      const txMeta = db.transaction('songs', 'readwrite');
-      await txMeta.objectStore('songs').put(metadata as Song);
-      await txMeta.done;
-
-      // 2. Save raw blob/file directly in 'song_blobs' store with isolated transaction
-      const txBlob = db.transaction('song_blobs', 'readwrite');
-      await txBlob.objectStore('song_blobs').put({ id: song.id, blob: fileBlob });
-      await txBlob.done;
+      // Atomic parallel write to both metadata 'songs' and binary 'song_blobs' stores
+      const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
+      await Promise.all([
+        tx.objectStore('songs').put(metadata as Song),
+        tx.objectStore('song_blobs').put({ id: song.id, blob: binaryData }),
+        tx.done,
+      ]);
 
       return; // Success
     } catch (err) {

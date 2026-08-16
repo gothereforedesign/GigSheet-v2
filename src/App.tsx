@@ -362,6 +362,23 @@ export default function App() {
     goBackOrReset({ songToEditId: null });
   };
 
+  const handleEnqueueUploads = (
+    entries: { file: File; title?: string }[],
+    category: string,
+    targetSection: 'sheet_music' | 'technique'
+  ) => {
+    if (category) {
+      handleAddCategory(category, undefined, targetSection);
+    }
+    if (activeTab !== targetSection) {
+      setActiveTab(targetSection);
+    }
+    if (category) {
+      handleSelectCategory(category);
+    }
+    uploadQueue.enqueueEntries(entries, category, targetSection);
+  };
+
   // Initialize History baseline on mount
   useEffect(() => {
     const nav = initialNavStateRef.current;
@@ -903,7 +920,7 @@ export default function App() {
                 initialCategory={selectedCategory || undefined}
                 initialFiles={initialFilesForUpload}
                 onSaveSongs={handleSaveSongs}
-                onEnqueueEntries={uploadQueue.enqueueEntries}
+                onEnqueueEntries={handleEnqueueUploads}
                 onClose={handleCloseUploadModal}
               />
             </div>
