@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music2, GraduationCap, Plus } from 'lucide-react';
+import { Music2, GraduationCap, Plus, Database } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface BottomNavProps {
@@ -16,10 +16,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   const isSheetMusicActive = activeTab === 'sheet_music';
   const isTechniqueActive = activeTab === 'technique';
+  const isDexieActive = activeTab === 'dexie';
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg">
-      <div className="max-w-md mx-auto flex items-center justify-between h-16 px-4 gap-2">
+      <div className="max-w-md mx-auto flex items-center justify-between h-16 px-3 gap-1">
         {/* Left: Sheet Music Tab */}
         <button
           type="button"
@@ -31,6 +32,20 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <Music2 className={`w-5 h-5 ${isSheetMusicActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
           <span className="text-[10px] tracking-wider font-bold uppercase mt-1">
             Sheet Music
+          </span>
+        </button>
+
+        {/* Center-Left: Dexie Store Tab */}
+        <button
+          type="button"
+          onClick={() => onSelectTab('dexie')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 transition-all cursor-pointer active:scale-95 ${
+            isDexieActive ? 'text-sky-600 font-black' : 'text-slate-400 hover:text-slate-600 font-semibold'
+          }`}
+        >
+          <Database className={`w-5 h-5 ${isDexieActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="text-[10px] tracking-wider font-bold uppercase mt-1">
+            Dexie PDF
           </span>
         </button>
 
@@ -65,4 +80,3 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     </nav>
   );
 };
-

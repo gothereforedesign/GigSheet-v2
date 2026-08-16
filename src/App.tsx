@@ -35,6 +35,8 @@ import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
 import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
 import { BUNDLED_SAMPLE_SONGS } from './lib/sampleSongs';
+import { BatchPDFUploader } from './components/BatchPDFUploader';
+import { PDFLibrary } from './components/PDFLibrary';
 
 export default function App() {
   // Navigation Route State
@@ -590,6 +592,13 @@ export default function App() {
                 onPermanentDeleteSong={handlePermanentDeleteSong}
                 onEmptyTrash={handleEmptyTrash}
               />
+            )}
+
+            {activeTab === 'dexie' && (
+              <div className="space-y-6">
+                <BatchPDFUploader />
+                <PDFLibrary />
+              </div>
             )}
           </>
         )}

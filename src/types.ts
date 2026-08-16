@@ -78,7 +78,7 @@ export interface Setlist {
   color?: string;
 }
 
-export type ActiveTab = 'sheet_music' | 'technique' | 'trash';
+export type ActiveTab = 'sheet_music' | 'technique' | 'trash' | 'dexie';
 
 export interface ViewFilterState {
   searchQuery: string;
