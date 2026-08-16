@@ -38,7 +38,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <button
           type="button"
           onClick={onAddPdf}
-          className={`p-2.5 rounded-2xl text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 ${
+          className={`p-2.5 rounded-lg text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 ${
             isTechniqueActive
               ? 'bg-purple-900 hover:bg-purple-950'
               : 'bg-[#0c4a6e] hover:bg-[#073652]'

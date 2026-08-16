@@ -606,15 +606,15 @@ export default function App() {
         <div className={`fixed inset-0 z-50 backdrop-blur-md flex flex-col items-center justify-center text-white p-6 animate-in fade-in duration-200 ${
           section === 'technique' ? 'bg-purple-950/90' : 'bg-[#0c4a6e]/90'
         }`}>
-          <div className="p-6 bg-white/10 rounded-3xl border-2 border-dashed border-white/40 flex flex-col items-center space-y-3 max-w-sm w-full text-center shadow-2xl">
-            <div className={`w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-lg animate-bounce ${
+          <div className="p-6 bg-white/10 rounded-xl border-2 border-dashed border-white/40 flex flex-col items-center space-y-3 max-w-sm w-full text-center shadow-2xl">
+            <div className={`w-16 h-16 rounded-lg bg-white flex items-center justify-center shadow-lg animate-bounce ${
               section === 'technique' ? 'text-purple-900' : 'text-[#0c4a6e]'
             }`}>
               <Upload className="w-8 h-8 stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-base font-black uppercase tracking-wider">Drop PDF Charts Anywhere</p>
-              <p className={`text-xs font-medium mt-1 ${section === 'technique' ? 'text-purple-100' : 'text-sky-100'}`}>
+              <p className="text-base font-black uppercase tracking-wider whitespace-nowrap">Drop PDF Charts Anywhere</p>
+              <p className={`text-xs font-medium mt-1 whitespace-nowrap ${section === 'technique' ? 'text-purple-100' : 'text-sky-100'}`}>
                 Release to import all dropped music charts into directory
               </p>
             </div>
@@ -696,7 +696,7 @@ export default function App() {
 
       {isUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+          <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
               <div>

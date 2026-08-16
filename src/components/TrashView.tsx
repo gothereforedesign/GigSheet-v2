@@ -62,7 +62,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
           <button
             type="button"
             onClick={() => setShowEmptyConfirm(true)}
-            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-md text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-600" />
             <span>Empty Trash</span>
@@ -72,7 +72,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
 
       {/* Trash Songs List */}
       {trashedSongs.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-3 shadow-2xs">
+        <div className="p-12 text-center bg-white rounded-lg border border-slate-200 space-y-3 shadow-2xs">
           <Trash2 className="w-10 h-10 text-slate-300 mx-auto" />
           <p className="text-xs font-black uppercase tracking-wider text-slate-500">
             Trash Bin is Empty
@@ -86,10 +86,10 @@ export const TrashView: React.FC<TrashViewProps> = ({
           {trashedSongs.map((song) => (
             <div
               key={song.id}
-              className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3 shadow-2xs hover:border-slate-300 transition-all"
+              className="p-4 bg-white border border-slate-200 rounded-lg flex items-center justify-between gap-3 shadow-2xs hover:border-slate-300 transition-all"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-md bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
                   <FileText className="w-5 h-5 text-slate-600" />
                 </div>
                 <div className="truncate">
@@ -113,7 +113,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onRestoreSong(song.id)}
-                  className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-[#0c4a6e] border border-sky-200 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-[#0c4a6e] border border-sky-200 rounded-md text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap"
                   title="Restore to Library"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-sky-600" />
@@ -123,7 +123,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setSongToDelete(song)}
-                  className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl transition-all cursor-pointer"
+                  className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-md transition-all cursor-pointer"
                   title="Delete Permanently"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -137,9 +137,9 @@ export const TrashView: React.FC<TrashViewProps> = ({
       {/* Single Song Delete Confirmation Modal */}
       {songToDelete && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-lg max-w-sm w-full p-5 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="flex items-center gap-3 text-rose-600">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-md bg-rose-100 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-rose-600" />
               </div>
               <div>
@@ -152,7 +152,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <p className="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-200">
               Are you sure you want to permanently delete <strong className="text-slate-900">"{songToDelete.title}"</strong>? It will be removed from memory.
             </p>
 
@@ -161,7 +161,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
                 type="button"
                 onClick={() => setSongToDelete(null)}
                 disabled={isProcessing}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-md cursor-pointer whitespace-nowrap"
               >
                 Cancel
               </button>
@@ -169,7 +169,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
                 type="button"
                 onClick={handleConfirmSingleDelete}
                 disabled={isProcessing}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer shadow-md flex items-center gap-1.5"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-md flex items-center gap-1.5 whitespace-nowrap"
               >
                 {isProcessing ? 'Deleting...' : 'Delete Permanently'}
               </button>
@@ -181,9 +181,9 @@ export const TrashView: React.FC<TrashViewProps> = ({
       {/* Empty All Trash Confirmation Modal */}
       {showEmptyConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-lg max-w-sm w-full p-5 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="flex items-center gap-3 text-rose-600">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-md bg-rose-100 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-rose-600" />
               </div>
               <div>
@@ -196,7 +196,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <p className="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-200">
               Permanently delete all <strong className="text-slate-900">{trashedSongs.length}</strong> charts currently in the Trash Bin?
             </p>
 
@@ -205,7 +205,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
                 type="button"
                 onClick={() => setShowEmptyConfirm(false)}
                 disabled={isProcessing}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-md cursor-pointer whitespace-nowrap"
               >
                 Cancel
               </button>
@@ -213,7 +213,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
                 type="button"
                 onClick={handleConfirmEmptyTrash}
                 disabled={isProcessing}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer shadow-md flex items-center gap-1.5"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-md flex items-center gap-1.5 whitespace-nowrap"
               >
                 {isProcessing ? 'Emptying...' : 'Empty Trash Now'}
               </button>

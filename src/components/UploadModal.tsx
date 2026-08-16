@@ -258,7 +258,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     return (
       <div className="space-y-6 py-4">
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-sky-100 rounded-3xl mx-auto flex items-center justify-center text-sky-700 shadow-inner">
+          <div className="w-16 h-16 bg-sky-100 rounded-xl mx-auto flex items-center justify-center text-sky-700 shadow-inner">
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
           <h3 className="text-xl font-black text-slate-900">
@@ -270,7 +270,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         </div>
 
         {/* Big Progress Bar */}
-        <div className="space-y-2 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+        <div className="space-y-2 bg-slate-50 p-5 rounded-lg border border-slate-200">
           <div className="flex justify-between items-center text-sm font-black text-slate-800">
             <span>Overall Progress</span>
             <span className="text-sky-700 font-mono text-base">{percentComplete}%</span>
@@ -299,7 +299,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               return (
                 <div
                   key={entry.id}
-                  className={`p-3 rounded-xl border flex items-center gap-3 transition-all ${
+                  className={`p-3 rounded-md border flex items-center gap-3 transition-all ${
                     isCompleted
                       ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900'
                       : isCurrent
@@ -328,9 +328,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   </div>
                   <div className="text-[11px] font-black shrink-0">
                     {isCompleted ? (
-                      <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">Saved</span>
+                      <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-sm">Saved</span>
                     ) : isCurrent ? (
-                      <span className="text-sky-700 bg-sky-100 px-2 py-0.5 rounded-md">Uploading...</span>
+                      <span className="text-sky-700 bg-sky-100 px-2 py-0.5 rounded-sm">Uploading...</span>
                     ) : (
                       <span className="text-slate-400">Queued</span>
                     )}
@@ -348,7 +348,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   return (
     <div className="space-y-5 py-2">
       {/* 1. SINGLE UNIFIED CATEGORY SELECTOR */}
-      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/90 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+      <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200/90 flex items-center gap-2 flex-wrap sm:flex-nowrap">
         <div className="flex items-center gap-2 shrink-0">
           <Folder className="w-4 h-4 text-sky-600" />
           <span className="text-xs font-black uppercase tracking-wider text-slate-600">Upload To</span>
@@ -358,7 +358,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         <select
           value={section}
           onChange={(e) => setSection(e.target.value as 'sheet_music' | 'technique')}
-          className="bg-white text-slate-900 font-bold text-xs px-3 py-2.5 rounded-xl border border-slate-200 shadow-2xs focus:border-sky-500 outline-none cursor-pointer shrink-0"
+          className="bg-white text-slate-900 font-bold text-xs px-3 py-2.5 rounded-md border border-slate-200 shadow-2xs focus:border-sky-500 outline-none cursor-pointer shrink-0"
         >
           <option value="sheet_music">Sheet Music</option>
           <option value="technique">Technique</option>
@@ -377,7 +377,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   setTargetCategory(e.target.value);
                 }
               }}
-              className="w-full bg-white text-slate-900 font-bold text-xs px-3 py-2.5 rounded-xl border border-slate-200 shadow-2xs focus:border-sky-500 outline-none cursor-pointer truncate"
+              className="w-full bg-white text-slate-900 font-bold text-xs px-3 py-2.5 rounded-md border border-slate-200 shadow-2xs focus:border-sky-500 outline-none cursor-pointer truncate"
             >
               {availableCategories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -395,12 +395,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               placeholder="New category name..."
-              className="w-full bg-white text-slate-900 font-bold text-xs px-3 py-2.5 rounded-xl border border-sky-400 shadow-2xs focus:border-sky-600 outline-none"
+              className="w-full bg-white text-slate-900 font-bold text-xs px-3 py-2.5 rounded-md border border-sky-400 shadow-2xs focus:border-sky-600 outline-none"
             />
             <button
               type="button"
               onClick={() => setIsCreatingCategory(false)}
-              className="px-3 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-black rounded-xl cursor-pointer shrink-0"
+              className="px-3 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-black rounded-md cursor-pointer shrink-0"
             >
               Cancel
             </button>
@@ -410,7 +410,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       {/* ERROR ALERT */}
       {errorMsg && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-2.5">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-md flex items-center gap-2.5">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
@@ -433,7 +433,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           isDraggingOver
             ? 'border-sky-600 bg-sky-50/80 scale-[1.01]'
             : 'border-slate-300 hover:border-sky-500 bg-slate-50 hover:bg-sky-50/50'
-        } rounded-2xl p-8 transition-all text-center relative cursor-pointer group`}
+        } rounded-lg p-8 transition-all text-center relative cursor-pointer group`}
       >
         <input
           type="file"
@@ -443,14 +443,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
         <div className="flex flex-col items-center justify-center space-y-3 pointer-events-none">
-          <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 group-hover:border-sky-300 flex items-center justify-center text-[#0c4a6e] shadow-xs">
+          <div className="w-14 h-14 rounded-lg bg-white border border-slate-200 group-hover:border-sky-300 flex items-center justify-center text-[#0c4a6e] shadow-xs">
             <Upload className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-base font-black text-[#0c4a6e]">
+            <p className="text-base font-black text-[#0c4a6e] whitespace-nowrap">
               Choose up to 50 PDF Charts or Drag & Drop
             </p>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
+            <p className="text-xs text-slate-400 mt-1 font-medium whitespace-nowrap">
               Select multiple PDF sheet music files (Batch import up to 50 at once) ({fileEntries.length}/50 selected)
             </p>
           </div>
@@ -477,9 +477,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             {fileEntries.map((entry, index) => (
               <div
                 key={entry.id}
-                className="p-3 bg-white border border-slate-200 rounded-xl flex items-center gap-3 shadow-2xs"
+                className="p-3 bg-white border border-slate-200 rounded-md flex items-center gap-3 shadow-2xs"
               >
-                <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-[11px] font-black text-slate-500 shrink-0">
+                <div className="w-6 h-6 rounded-sm bg-slate-100 flex items-center justify-center text-[11px] font-black text-slate-500 shrink-0">
                   {index + 1}
                 </div>
                 <FileText className="w-5 h-5 text-rose-600 shrink-0" />
@@ -489,7 +489,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     value={entry.title}
                     onChange={(e) => handleUpdateTitle(entry.id, e.target.value)}
                     placeholder="Chart title"
-                    className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-[#0c4a6e] focus:bg-white focus:border-sky-500 outline-none"
+                    className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold text-[#0c4a6e] focus:bg-white focus:border-sky-500 outline-none"
                   />
                   <p className="text-[10px] text-slate-400 mt-0.5 truncate pl-0.5">
                     {entry.file.name} ({(entry.file.size / (1024 * 1024)).toFixed(2)} MB)
@@ -498,7 +498,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRemoveFile(entry.id)}
-                  className="p-2 text-slate-300 hover:text-rose-600 rounded-lg cursor-pointer transition-colors shrink-0"
+                  className="p-2 text-slate-300 hover:text-rose-600 rounded-sm cursor-pointer transition-colors shrink-0"
                   title="Remove"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -508,7 +508,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           </div>
 
           <div className="pt-3 flex items-center gap-3">
-            <label className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0">
+            <label className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 whitespace-nowrap">
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Add More</span>
               <input
@@ -523,7 +523,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             <button
               type="button"
               onClick={handleSaveAll}
-              className={`flex-1 py-3.5 text-white rounded-xl font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 ${
+              className={`flex-1 py-3.5 text-white rounded-md font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 whitespace-nowrap ${
                 section === 'technique'
                   ? 'bg-purple-900 hover:bg-purple-950'
                   : 'bg-[#0c4a6e] hover:bg-[#073652]'

@@ -47,7 +47,7 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
 
       {/* Drawer Container */}
       <div 
-        className={`relative w-full ${maxWidthClass} bg-white rounded-t-3xl sm:rounded-3xl p-5 pb-8 sm:p-6 shadow-2xl border-t sm:border border-slate-100 max-h-[88vh] overflow-y-auto z-10 transition-transform duration-300 animate-in slide-in-from-bottom`}
+        className={`relative w-full ${maxWidthClass} bg-white rounded-t-xl sm:rounded-xl p-5 pb-8 sm:p-6 shadow-2xl border-t sm:border border-slate-100 max-h-[88vh] overflow-y-auto z-10 transition-transform duration-300 animate-in slide-in-from-bottom`}
       >
         {/* Drawer Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">

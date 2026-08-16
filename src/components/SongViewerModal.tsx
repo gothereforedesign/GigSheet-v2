@@ -41,11 +41,6 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         const val = parseInt(songZoom, 10);
         if (!isNaN(val) && val >= 50 && val <= 300) return val;
       }
-      const globalZoom = localStorage.getItem('gigsheet_global_pdf_zoom');
-      if (globalZoom) {
-        const val = parseInt(globalZoom, 10);
-        if (!isNaN(val) && val >= 50 && val <= 300) return val;
-      }
     } catch (e) {}
     return 100;
   });
@@ -60,14 +55,6 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           return;
         }
       }
-      const globalZoom = localStorage.getItem('gigsheet_global_pdf_zoom');
-      if (globalZoom) {
-        const val = parseInt(globalZoom, 10);
-        if (!isNaN(val) && val >= 50 && val <= 300) {
-          setZoomLevel(val);
-          return;
-        }
-      }
     } catch (e) {}
     setZoomLevel(100);
   }, [initialSong.id]);
@@ -77,8 +64,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
       const next = typeof newZoom === 'function' ? newZoom(prev) : newZoom;
       const clamped = Math.min(300, Math.max(50, next));
       try {
-        localStorage.setItem(`gigsheet_pdf_zoom_${initialSong.id}`, String(clamped));
-        localStorage.setItem('gigsheet_global_pdf_zoom', String(clamped));
+        localStorage.setItem(`gigsheet_pdf_zoom_${song.id || initialSong.id}`, String(clamped));
       } catch (e) {}
       return clamped;
     });
@@ -207,19 +193,19 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         <div className="flex items-center gap-2 max-w-[80vw] sm:max-w-md md:max-w-xl min-w-0">
           <button
             onClick={onClose}
-            className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white active:scale-95 cursor-pointer transition-colors border border-slate-700/80 shrink-0 flex items-center gap-1.5 shadow-lg backdrop-blur-md pointer-events-auto"
+            className="p-2 sm:px-3 sm:py-1.5 rounded-md bg-slate-900/90 hover:bg-slate-800 text-white active:scale-95 cursor-pointer transition-colors border border-slate-700/80 shrink-0 flex items-center gap-1.5 shadow-lg backdrop-blur-md pointer-events-auto"
             title="Close Viewer (Esc)"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Close</span>
           </button>
 
-          <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 shadow-lg backdrop-blur-md pointer-events-auto">
+          <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-md bg-slate-900/90 border border-slate-700/80 shadow-lg backdrop-blur-md pointer-events-auto">
             <h3 className="text-xs sm:text-sm font-extrabold text-white truncate leading-tight">
               {song.title}
             </h3>
 
-            <span className="hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 shrink-0 shadow-2xs">
+            <span className="hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs bg-slate-800 text-slate-300 border border-slate-700 shrink-0 shadow-2xs">
               {song.genre || (isTechnique ? 'Scales' : 'Hymns')}
             </span>
           </div>
@@ -229,7 +215,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         <button
           type="button"
           onClick={handleOpenPdf}
-          className="px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg backdrop-blur-md pointer-events-auto shrink-0"
+          className="px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg backdrop-blur-md pointer-events-auto shrink-0"
           title="Open PDF chart in new tab"
         >
           <span className="text-[11px] font-black">Open PDF</span>
@@ -275,11 +261,11 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
       {/* Bottom Navigation & Performance Controls */}
       <footer className="sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 pointer-events-none bg-transparent">
         {/* Item 3: Zoom Controls */}
-        <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-700/80 p-1 rounded-xl shadow-lg backdrop-blur-md pointer-events-auto shrink-0">
+        <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-700/80 p-1 rounded-md shadow-lg backdrop-blur-md pointer-events-auto shrink-0">
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.max(50, z - 5))}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-lg cursor-pointer transition-all"
+            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
             title="Zoom Out (-5%)"
           >
             <ZoomOut className="w-4 h-4 stroke-[2.2]" />
@@ -292,7 +278,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.min(300, z + 5))}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-lg cursor-pointer transition-all"
+            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
             title="Zoom In (+5%)"
           >
             <ZoomIn className="w-4 h-4 stroke-[2.2]" />
@@ -302,7 +288,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             <button
               type="button"
               onClick={() => updateZoom(100)}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-lg cursor-pointer transition-all border-l border-slate-800 ml-0.5"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all border-l border-slate-800 ml-0.5"
               title="Reset Zoom to 100%"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -316,21 +302,21 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex - 1)}
               disabled={navigation.currentIndex <= 0}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
+              className="px-2.5 sm:px-3.5 py-1.5 rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
               title="Previous Chart (Left Arrow)"
             >
               <ChevronLeft className="w-4 h-4 stroke-[3]" />
               <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Prev</span>
             </button>
 
-            <div className="px-2.5 sm:px-3 py-1.5 bg-slate-900/90 border border-slate-700/80 text-slate-200 rounded-xl text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg backdrop-blur-md">
+            <div className="px-2.5 sm:px-3 py-1.5 bg-slate-900/90 border border-slate-700/80 text-slate-200 rounded-md text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg backdrop-blur-md">
               {navigation.currentIndex + 1} <span className="text-slate-500 font-normal">/</span> {navigation.totalCount}
             </div>
 
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex + 1)}
               disabled={navigation.currentIndex >= navigation.totalCount - 1}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
+              className="px-2.5 sm:px-3.5 py-1.5 rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
               title="Next Chart (Right Arrow)"
             >
               <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Next</span>

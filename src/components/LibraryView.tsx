@@ -273,7 +273,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 <div
                   key={catName}
                   onClick={() => handleSetSelectedCategory(catName)}
-                  className={`group aspect-[3/2] rounded-2xl md:rounded-3xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
+                  className={`group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
                 >
                   <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
                     {catName}
@@ -285,13 +285,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         </div>
       ) : (
         /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED CATEGORY - UNIFIED WHITE CONTAINER */
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs space-y-3">
+        <div className="bg-white rounded-lg border border-slate-200/90 p-3 sm:p-4 shadow-2xs space-y-3">
           {/* Top Bar Navigation (Back to Category Grid & Category Title in White Badge with Edit Category Button) */}
           <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
             <button
               type="button"
               onClick={() => handleSetSelectedCategory(null)}
-              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 px-3 py-1.5 rounded-xl cursor-pointer active:scale-95 shadow-2xs"
+              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 px-3 py-1.5 rounded-md cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
             >
               <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
               <span>Categories</span>
@@ -299,7 +299,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
             <div className="flex items-center gap-2">
               {/* White background badge for Category Title with Edit Category button */}
-              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 px-3 py-1.5 rounded-xl shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 px-3 py-1.5 rounded-md shadow-2xs">
                 <h2 className="text-xs sm:text-sm font-black text-slate-900 truncate max-w-[130px] sm:max-w-[200px]">
                   {selectedCategory === 'ALL_SECTION_CHARTS' ? 'All Charts' : selectedCategory}
                 </h2>
@@ -307,7 +307,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   <button
                     type="button"
                     onClick={onOpenGenreManager}
-                    className="p-1 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                    className="p-1 rounded-xs text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
                     title="Edit Category"
                   >
                     <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
@@ -319,7 +319,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleToggleDisplayMode(displayMode === 'list' ? 'grid' : 'list')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs border border-slate-200/90 cursor-pointer active:scale-95 shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs border border-slate-200/90 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
                 title={displayMode === 'list' ? 'Switch to Grid Preview' : 'Switch to List View'}
               >
                 {displayMode === 'list' ? (
@@ -339,8 +339,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
           {/* List or Grid of Charts */}
           {sortedSongs.length === 0 ? (
-            <div className="p-8 sm:p-10 text-center bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-3 shadow-2xs">
-              <div className={`w-10 h-10 rounded-xl mx-auto flex items-center justify-center border ${
+            <div className="p-8 sm:p-10 text-center bg-slate-50/80 rounded-lg border border-slate-200/60 space-y-3 shadow-2xs">
+              <div className={`w-10 h-10 rounded-md mx-auto flex items-center justify-center border ${
                 isTechnique ? 'bg-purple-50 border-purple-100 text-purple-900' : 'bg-sky-50 border-sky-100 text-[#0c4a6e]'
               }`}>
                 <Music className="w-5 h-5" />
@@ -356,7 +356,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleSetSelectedCategory(null)}
-                className="mt-1 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                className="mt-1 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
               >
                 Return to Categories
               </button>

@@ -91,7 +91,7 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
   };
 
   return (
-    <div className={`relative overflow-hidden rounded-lg select-none touch-pan-y ${swipeOffset < 0 ? 'bg-rose-600' : 'bg-transparent'}`}>
+    <div className={`relative overflow-hidden rounded-sm select-none touch-pan-y ${swipeOffset < 0 ? 'bg-rose-600' : 'bg-transparent'}`}>
       {/* Trash Background Indicator Revealed ONLY on Left Swipe */}
       {swipeOffset < 0 && (
         <div className="absolute inset-y-0 right-0 w-28 bg-rose-600 flex items-center justify-end px-3 sm:px-4 text-white font-black text-xs gap-1.5">
@@ -107,7 +107,7 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onClick={handleClick}
-        className={`bg-white border border-slate-200/90 rounded-lg overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] ${
+        className={`bg-white border border-slate-200/90 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] ${
           isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         } ${
           isTechnique ? 'hover:border-purple-400' : 'hover:border-sky-400'

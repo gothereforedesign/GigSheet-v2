@@ -19,7 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className={`p-1.5 text-white rounded-xl shadow-2xs transition-colors ${
+          <div className={`p-1.5 text-white rounded-md shadow-2xs transition-colors ${
             isTechnique ? 'bg-purple-900' : 'bg-[#0c4a6e]'
           }`}>
             <Music className="w-4 h-4 stroke-[2.5]" />
@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => onSelectTab(activeTab === 'trash' ? 'sheet_music' : 'trash')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold transition-all cursor-pointer active:scale-95 ${
                 activeTab === 'trash'
                   ? 'bg-rose-50 border-rose-300 text-rose-700 shadow-2xs'
                   : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900'

@@ -145,7 +145,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       </div>
 
       {errorMsg && (
-        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-xs font-bold text-rose-700">
+        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-sm text-xs font-bold text-rose-700">
           {errorMsg}
         </div>
       )}
@@ -158,12 +158,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
             value={newCategoryInput}
             onChange={(e) => setNewCategoryInput(e.target.value)}
             placeholder={`New category name...`}
-            className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
+            className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
           />
           <button
             type="submit"
             disabled={!newCategoryInput.trim() || isProcessing}
-            className={`px-3.5 py-2 text-white rounded-lg font-bold text-xs uppercase cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 ${
+            className={`px-3.5 py-2 text-white rounded-sm font-bold text-xs uppercase cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 whitespace-nowrap ${
               isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-slate-900 hover:bg-slate-800'
             }`}
           >
@@ -211,7 +211,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
             return (
               <div
                 key={cat}
-                className="bg-slate-50 border border-slate-200/80 rounded-lg overflow-hidden"
+                className="bg-slate-50 border border-slate-200/80 rounded-sm overflow-hidden"
               >
                 <div className="flex items-center justify-between p-2">
                   {isEditing ? (
@@ -345,7 +345,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className={`px-4 py-1.5 text-white rounded-lg text-xs font-bold uppercase cursor-pointer active:scale-95 ${
+          className={`px-4 py-1.5 text-white rounded-sm text-xs font-bold uppercase cursor-pointer active:scale-95 whitespace-nowrap ${
             isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-slate-900 hover:bg-slate-800'
           }`}
         >

@@ -59,7 +59,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 sm:w-96 bg-white border border-slate-200/90 shadow-2xl rounded-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-5 duration-200">
+    <div className="fixed bottom-4 right-4 z-50 w-80 sm:w-96 bg-white border border-slate-200/90 shadow-2xl rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-5 duration-200">
       {/* Header Bar */}
       <div className={`px-4 py-3 text-white flex items-center justify-between ${quotaError ? 'bg-rose-900' : 'bg-slate-900'}`}>
         <div className="flex items-center gap-2.5 min-w-0">
@@ -79,7 +79,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
           <button
             type="button"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1 hover:bg-black/20 rounded-lg text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="p-1 hover:bg-black/20 rounded-md text-slate-300 hover:text-white transition-colors cursor-pointer"
             title={isMinimized ? 'Expand' : 'Minimize'}
           >
             {isMinimized ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -87,7 +87,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
           <button
             type="button"
             onClick={onDismiss}
-            className="p-1 hover:bg-black/20 rounded-lg text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="p-1 hover:bg-black/20 rounded-md text-slate-300 hover:text-white transition-colors cursor-pointer"
             title="Close"
           >
             <X className="w-4 h-4" />
@@ -134,7 +134,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
               return (
                 <div
                   key={item.id}
-                  className="p-2.5 bg-white border border-slate-200/80 rounded-xl space-y-2 shadow-2xs"
+                  className="p-2.5 bg-white border border-slate-200/80 rounded-md space-y-2 shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <FileText className="w-4 h-4 text-rose-600 shrink-0" />
@@ -147,19 +147,19 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
 
                     <div className="shrink-0 flex items-center gap-1">
                       {isCompleted && (
-                        <span className="text-[10px] font-black bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span className="text-[10px] font-black bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-xs flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Done
                         </span>
                       )}
                       {isError && (
                         <div className="flex items-center gap-1">
-                          <span className="text-[10px] font-black bg-rose-50 text-rose-700 px-2 py-0.5 rounded-md">
+                          <span className="text-[10px] font-black bg-rose-50 text-rose-700 px-2 py-0.5 rounded-xs">
                             Error
                           </span>
                           <button
                             type="button"
                             onClick={() => onRetry(item.id)}
-                            className="p-1 hover:bg-slate-100 rounded-md text-slate-600 cursor-pointer"
+                            className="p-1 hover:bg-slate-100 rounded-xs text-slate-600 cursor-pointer"
                             title="Retry"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
@@ -168,13 +168,13 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
                       )}
                       {isActive && (
                         <div className="flex items-center gap-1">
-                          <span className="text-[10px] font-black bg-sky-50 text-sky-700 px-2 py-0.5 rounded-md animate-pulse">
+                          <span className="text-[10px] font-black bg-sky-50 text-sky-700 px-2 py-0.5 rounded-xs animate-pulse">
                             {item.status === 'saving' ? 'Saving...' : 'Queue'}
                           </span>
                           <button
                             type="button"
                             onClick={() => onCancel(item.id)}
-                            className="p-1 hover:bg-slate-100 rounded-md text-slate-400 hover:text-rose-600 cursor-pointer"
+                            className="p-1 hover:bg-slate-100 rounded-xs text-slate-400 hover:text-rose-600 cursor-pointer"
                             title="Cancel"
                           >
                             <X className="w-3.5 h-3.5" />

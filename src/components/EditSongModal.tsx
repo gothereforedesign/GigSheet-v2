@@ -54,7 +54,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, genres = DEF
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-400 outline-none"
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-400 outline-none"
             placeholder="Chart title..."
             required
           />
@@ -68,7 +68,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, genres = DEF
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-400 outline-none cursor-pointer"
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-400 outline-none cursor-pointer"
           >
             {categoryOptions.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
@@ -81,11 +81,11 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, genres = DEF
           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
             Section
           </label>
-          <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-lg">
+          <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-sm">
             <button
               type="button"
               onClick={() => setSection('sheet_music')}
-              className={`py-1.5 px-2 rounded-md text-xs font-bold uppercase cursor-pointer ${
+              className={`py-1.5 px-2 rounded-xs text-xs font-bold uppercase cursor-pointer whitespace-nowrap ${
                 section === 'sheet_music'
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-600 hover:text-slate-900'
@@ -96,7 +96,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, genres = DEF
             <button
               type="button"
               onClick={() => setSection('technique')}
-              className={`py-1.5 px-2 rounded-md text-xs font-bold uppercase cursor-pointer ${
+              className={`py-1.5 px-2 rounded-xs text-xs font-bold uppercase cursor-pointer whitespace-nowrap ${
                 section === 'technique'
                   ? 'bg-purple-900 text-white'
                   : 'text-slate-600 hover:text-slate-900'
@@ -109,7 +109,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, genres = DEF
 
         <button
           type="submit"
-          className={`w-full py-2.5 text-white rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer active:scale-98 shadow-2xs flex items-center justify-center gap-1.5 mt-4 ${
+          className={`w-full py-2.5 text-white rounded-sm font-bold text-xs uppercase tracking-wider cursor-pointer active:scale-98 shadow-2xs flex items-center justify-center gap-1.5 mt-4 whitespace-nowrap ${
             isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-slate-900 hover:bg-slate-800'
           }`}
         >
