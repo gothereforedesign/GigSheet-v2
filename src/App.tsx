@@ -568,21 +568,24 @@ export default function App() {
         ) : (
           <>
             {(activeTab === 'sheet_music' || activeTab === 'technique') && (
-              <LibraryView
-                songs={sectionSongs}
-                genres={currentCategories}
-                genreColors={currentCategoryColors}
-                filterState={filterState}
-                activeTab={activeTab}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-                onFilterChange={(f) => setFilterState((prev) => ({ ...prev, ...f }))}
-                onSelectSong={handleOpenSongViewer}
-                onToggleFavorite={handleToggleFavorite}
-                onDeleteSong={handleSoftDeleteSong}
-                onEditSong={setSongToEdit}
-                onOpenGenreManager={() => setIsCategoryManagerOpen(true)}
-              />
+              <div className="space-y-6">
+                <LibraryView
+                  songs={sectionSongs}
+                  genres={currentCategories}
+                  genreColors={currentCategoryColors}
+                  filterState={filterState}
+                  activeTab={activeTab}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                  onFilterChange={(f) => setFilterState((prev) => ({ ...prev, ...f }))}
+                  onSelectSong={handleOpenSongViewer}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDeleteSong={handleSoftDeleteSong}
+                  onEditSong={setSongToEdit}
+                  onOpenGenreManager={() => setIsCategoryManagerOpen(true)}
+                />
+                <PDFLibrary />
+              </div>
             )}
 
             {activeTab === 'trash' && (
@@ -593,13 +596,6 @@ export default function App() {
                 onEmptyTrash={handleEmptyTrash}
               />
             )}
-
-            {activeTab === 'dexie' && (
-              <div className="space-y-6">
-                <BatchPDFUploader />
-                <PDFLibrary />
-              </div>
-            )}
           </>
         )}
       </main>
@@ -608,12 +604,12 @@ export default function App() {
 
       {isUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
               <div>
-                <h2 className="text-base font-black text-slate-900">Upload PDF Charts Batch</h2>
-                <p className="text-xs text-slate-500 font-medium">Select or drop up to 50 PDF sheet music files at once</p>
+                <h2 className="text-base font-black text-slate-900">Upload PDF Charts</h2>
+                <p className="text-xs text-slate-500 font-medium">Batch store PDF sheet music, scales & exercises directly in Dexie IndexedDB</p>
               </div>
               <button
                 type="button"
@@ -632,22 +628,8 @@ export default function App() {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto flex-1">
-              <UploadModal
-                genres={currentCategories}
-                sheetMusicCategories={sheetMusicCategories}
-                techniqueCategories={techniqueCategories}
-                defaultSection={activeTab === 'technique' ? 'technique' : 'sheet_music'}
-                initialCategory={selectedCategory || undefined}
-                initialFiles={initialFilesForUpload}
-                onSaveSongs={handleSaveSongs}
-                onEnqueueEntries={uploadQueue.enqueueEntries}
-                onClose={() => {
-                  setIsUploadOpen(false);
-                  setInitialFilesForUpload(null);
-                  if (window.location.hash.includes('upload')) {
-                    window.history.replaceState(null, '', `#${activeTab}`);
-                  }
-                }}
+              <BatchPDFUploader
+                defaultCategory={section === 'technique' ? 'Technique' : 'Sheet Music'}
               />
             </div>
           </div>
