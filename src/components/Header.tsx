@@ -30,11 +30,6 @@ export const Header: React.FC<HeaderProps> = ({
             }`}>
               GigSheet
             </h1>
-            <p className={`text-[9px] uppercase tracking-widest mt-0.5 transition-colors ${
-              isTechnique ? 'text-purple-600 font-extrabold' : 'text-slate-400 font-bold'
-            }`}>
-              {isTechnique ? 'Technique Directory' : 'Sheet Music Directory'}
-            </p>
           </div>
         </div>
 

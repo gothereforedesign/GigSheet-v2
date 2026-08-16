@@ -614,9 +614,6 @@ export default function App() {
             </div>
             <div>
               <p className="text-base font-black uppercase tracking-wider whitespace-nowrap">Drop PDFs</p>
-              <p className={`text-xs font-medium mt-1 whitespace-nowrap ${section === 'technique' ? 'text-purple-100' : 'text-sky-100'}`}>
-                Release to import
-              </p>
             </div>
           </div>
         </div>
