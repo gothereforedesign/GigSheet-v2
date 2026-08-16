@@ -1,40 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { pdfjsLib } from '../lib/pdfWorker';
-import { FileText, FolderEdit, Trash2, Music } from 'lucide-react';
+import React, { useState } from 'react';
+import { FolderEdit, Trash2 } from 'lucide-react';
 import { Song } from '../types';
-import { getSongBlob } from '../lib/db';
-
-// Global in-memory thumbnail cache so rendered thumbnails persist while the app is open
-const thumbnailCache = new Map<string, string>();
-
-// Concurrency queue to prevent 50 PDFs from rendering thumbnails simultaneously
-let runningThumbnailJobs = 0;
-const MAX_CONCURRENT_THUMBNAILS = 2;
-const thumbnailQueue: (() => void)[] = [];
-
-function enqueueThumbnailTask(task: () => Promise<void>) {
-  return new Promise<void>((resolve) => {
-    const runTask = async () => {
-      runningThumbnailJobs++;
-      try {
-        await task();
-      } finally {
-        runningThumbnailJobs--;
-        if (thumbnailQueue.length > 0) {
-          const next = thumbnailQueue.shift();
-          if (next) next();
-        }
-        resolve();
-      }
-    };
-
-    if (runningThumbnailJobs < MAX_CONCURRENT_THUMBNAILS) {
-      runTask();
-    } else {
-      thumbnailQueue.push(runTask);
-    }
-  });
-}
+import { LazyPDFThumbnail } from './LazyPDFThumbnail';
 
 interface SongPreviewCardProps {
   song: Song;
@@ -51,109 +18,6 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
   onDeleteSong,
   onEditSong,
 }) => {
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(() => {
-    return thumbnailCache.get(song.id) || null;
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(!thumbnailCache.has(song.id));
-
-  useEffect(() => {
-    if (thumbnailCache.has(song.id)) {
-      setThumbnailUrl(thumbnailCache.get(song.id)!);
-      setIsLoading(false);
-      return;
-    }
-
-    let isCancelled = false;
-
-    async function loadThumbnail() {
-      try {
-        setIsLoading(true);
-
-        if (song.fileUrl && (song.type === 'image' || song.type === 'svg')) {
-          thumbnailCache.set(song.id, song.fileUrl);
-          if (!isCancelled) {
-            setThumbnailUrl(song.fileUrl);
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        const blobOrData = await getSongBlob(song.id);
-        if (isCancelled) return;
-
-        if (!blobOrData) {
-          setIsLoading(false);
-          return;
-        }
-
-        if (song.type === 'image' || (blobOrData instanceof Blob && blobOrData.type.startsWith('image/'))) {
-          const url = blobOrData instanceof Blob ? URL.createObjectURL(blobOrData) : String(blobOrData);
-          thumbnailCache.set(song.id, url);
-          if (!isCancelled) {
-            setThumbnailUrl(url);
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        if (song.type === 'pdf' || (blobOrData instanceof Blob && blobOrData.type.includes('pdf'))) {
-          let arrayBuffer: ArrayBuffer;
-          if (blobOrData instanceof ArrayBuffer) {
-            arrayBuffer = blobOrData;
-          } else if (blobOrData instanceof Blob) {
-            arrayBuffer = await blobOrData.arrayBuffer();
-          } else if (typeof blobOrData === 'string' && blobOrData.startsWith('data:')) {
-            const res = await fetch(blobOrData);
-            arrayBuffer = await res.arrayBuffer();
-          } else {
-            setIsLoading(false);
-            return;
-          }
-
-          if (isCancelled) return;
-
-          const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-          if (isCancelled) return;
-
-          const page = await pdf.getPage(1);
-          if (isCancelled) return;
-
-          const viewport = page.getViewport({ scale: 0.6 });
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.floor(viewport.width);
-          canvas.height = Math.floor(viewport.height);
-          const ctx = canvas.getContext('2d');
-
-          if (ctx) {
-            await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-            if (isCancelled) return;
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            thumbnailCache.set(song.id, dataUrl);
-            if (!isCancelled) {
-              setThumbnailUrl(dataUrl);
-              setIsLoading(false);
-            }
-            return;
-          }
-        }
-
-        setIsLoading(false);
-      } catch (err) {
-        console.warn(`Could not render thumbnail for ${song.title}:`, err);
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    enqueueThumbnailTask(loadThumbnail);
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [song.id, song.type, song.fileUrl]);
-
   // Swipe left to delete gesture handler
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -249,35 +113,18 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
           isTechnique ? 'hover:border-purple-400' : 'hover:border-sky-400'
         }`}
       >
-        {/* Thumbnail Container (compact 30% shorter aspect ratio) */}
+        {/* Lazy Thumbnail Container */}
         <div className="relative aspect-[16/11] w-full bg-slate-100/80 border-b border-slate-200/60 flex items-center justify-center overflow-hidden">
-          {thumbnailUrl ? (
-            <img
-              src={thumbnailUrl}
-              alt={song.title}
-              className="w-full h-full object-cover object-top"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center p-3 text-center text-slate-400">
-              {isLoading ? (
-                <div className={`w-6 h-6 border-2 border-t-transparent rounded-full animate-spin ${
-                  isTechnique ? 'border-purple-600' : 'border-sky-600'
-                }`} />
-              ) : (
-                <>
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-1.5 ${
-                    isTechnique ? 'bg-purple-50 text-purple-900' : 'bg-sky-50 text-[#0c4a6e]'
-                  }`}>
-                    <FileText className="w-4 h-4 stroke-[1.8]" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PDF Sheet</span>
-                </>
-              )}
-            </div>
-          )}
+          <LazyPDFThumbnail
+            songId={song.id}
+            songType={song.type}
+            fileUrl={song.fileUrl}
+            title={song.title}
+            className="w-full h-full object-cover object-top"
+          />
         </div>
 
-        {/* Bottom Info Section - 75% smaller height to maximize PDF visibility */}
+        {/* Bottom Info Section */}
         <div className="px-2.5 py-1 bg-white flex items-center justify-between gap-1.5 min-h-[28px] shrink-0">
           <div className="min-w-0 flex-1">
             <h3 className={`text-xs font-bold text-slate-900 truncate leading-tight ${
@@ -292,7 +139,6 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
             )}
           </div>
 
-          {/* Edit Button directly visible on preview card */}
           <button
             type="button"
             onClick={(e) => {

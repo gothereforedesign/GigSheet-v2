@@ -238,6 +238,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   useEffect(() => {
     let isCancelled = false;
     let localBlobUrl: string | null = null;
+    let currentDoc: any = null;
 
     const loadDocument = async () => {
       setLoading(true);
@@ -263,8 +264,14 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         });
 
         const loadedDoc = await loadingTask.promise;
-        if (isCancelled) return;
+        if (isCancelled) {
+          try {
+            (loadedDoc as any).destroy?.();
+          } catch (e) {}
+          return;
+        }
 
+        currentDoc = loadedDoc;
         setPdfDoc(loadedDoc);
         setNumPages(loadedDoc.numPages);
         if (onNumPagesChange) {
@@ -284,6 +291,11 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
 
     return () => {
       isCancelled = true;
+      if (currentDoc) {
+        try {
+          (currentDoc as any).destroy?.();
+        } catch (e) {}
+      }
       if (localBlobUrl && localBlobUrl.startsWith('blob:')) {
         try {
           URL.revokeObjectURL(localBlobUrl);

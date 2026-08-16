@@ -1,34 +1,32 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
 
-// Register service worker safely in production without disruptive auto-reloads
-if ('serviceWorker' in navigator) {
-  if (import.meta.env.PROD) {
-    registerSW({
-      immediate: true,
-      onNeedRefresh() {
-        // Controlled update without auto-reloading during user actions
-        console.log('App update available');
-      },
-      onOfflineReady() {
-        console.log('App ready for offline use');
-      },
-    });
-  } else {
-    // In development mode, unregister any stale service workers to prevent forced reloads on focus
+// Cleanly unregister all service workers and caches to prevent fetch interception or upload resets
+if (typeof window !== 'undefined') {
+  if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then((registrations) => {
       for (const registration of registrations) {
-        registration.unregister();
+        registration.unregister().catch(() => {});
       }
-    });
+    }).catch(() => {});
+  }
+
+  if (typeof caches !== 'undefined') {
+    caches.keys().then((keys) => {
+      for (const key of keys) {
+        caches.delete(key).catch(() => {});
+      }
+    }).catch(() => {});
   }
 }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );

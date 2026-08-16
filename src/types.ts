@@ -40,6 +40,7 @@ export interface Song {
   type: SongType;
   tags?: string[];
   dateAdded: number;         // Timestamp
+  dateModified?: number;      // Timestamp
   lastPlayed?: number;       // Timestamp
   favorite?: boolean;
   

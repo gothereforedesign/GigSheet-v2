@@ -11,7 +11,7 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'prompt',
-        injectRegister: 'auto',
+        injectRegister: null,
         devOptions: {
           enabled: false,
         },

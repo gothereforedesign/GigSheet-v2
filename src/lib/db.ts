@@ -77,6 +77,13 @@ export function getDB() {
  * Seed initial data if library is empty
  */
 export async function seedInitialDataIfNeeded(): Promise<void> {
+  if (typeof window !== 'undefined') {
+    const hasSeeded = localStorage.getItem('gigsheet_db_seeded');
+    if (hasSeeded === 'true') {
+      return;
+    }
+  }
+
   const db = await getDB();
   const count = await db.count('songs');
   if (count === 0 && BUNDLED_SAMPLE_SONGS.length > 0) {
@@ -86,6 +93,10 @@ export async function seedInitialDataIfNeeded(): Promise<void> {
     for (const setlist of BUNDLED_DEFAULT_SETLISTS) {
       await db.put('setlists', setlist);
     }
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('gigsheet_db_seeded', 'true');
   }
 }
 
@@ -221,13 +232,12 @@ export async function saveSongsBatch(
 ): Promise<void> {
   const db = await getDB();
   
-  // Save in chunks to ensure fast transactions without blocking the UI
-  const chunkSize = 5;
+  // Save in small chunks (2 items) to keep memory footprint minimal and prevent worker/browser crashes
+  const chunkSize = 2;
   for (let i = 0; i < songs.length; i += chunkSize) {
     const chunk = songs.slice(i, i + chunkSize);
     
-    // Step 1: Pre-convert all files in the chunk to ArrayBuffers BEFORE starting the transaction
-    // This completely prevents Chromium's "Failed to write blobs (IOError)"
+    // Step 1: Pre-convert files in this small chunk to ArrayBuffers
     const preparedItems = await Promise.all(
       chunk.map(async (song) => {
         const { fileBlob, ...metadata } = song;
@@ -243,19 +253,20 @@ export async function saveSongsBatch(
       })
     );
 
-    // Step 2: Write batch to IndexedDB
+    // Step 2: Write chunk to IndexedDB
     try {
       const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
       const songStore = tx.objectStore('songs');
       const blobStore = tx.objectStore('song_blobs');
 
+      const puts: Promise<any>[] = [];
       for (const item of preparedItems) {
-        songStore.put(item.metadata);
+        puts.push(songStore.put(item.metadata));
         if (item.binaryData) {
-          blobStore.put({ id: item.id, blob: item.binaryData });
+          puts.push(blobStore.put({ id: item.id, blob: item.binaryData }));
         }
       }
-
+      await Promise.all(puts);
       await tx.done;
     } catch (err) {
       console.warn('Batch blob transaction error, retrying individual items:', err);
@@ -263,16 +274,18 @@ export async function saveSongsBatch(
       for (const item of preparedItems) {
         try {
           const singleTx = db.transaction(['songs', 'song_blobs'], 'readwrite');
-          singleTx.objectStore('songs').put(item.metadata);
-          if (item.binaryData) {
-            singleTx.objectStore('song_blobs').put({ id: item.id, blob: item.binaryData });
-          }
-          await singleTx.done;
+          await Promise.all([
+            singleTx.objectStore('songs').put(item.metadata),
+            item.binaryData ? singleTx.objectStore('song_blobs').put({ id: item.id, blob: item.binaryData }) : Promise.resolve(),
+            singleTx.done
+          ]);
         } catch (itemErr) {
           try {
             const metaTx = db.transaction('songs', 'readwrite');
-            metaTx.objectStore('songs').put(item.metadata);
-            await metaTx.done;
+            await Promise.all([
+              metaTx.objectStore('songs').put(item.metadata),
+              metaTx.done
+            ]);
           } catch (metaErr) {
             console.error(`Failed to save song ${item.id}:`, metaErr);
           }
@@ -280,15 +293,18 @@ export async function saveSongsBatch(
       }
     }
 
-    const processedCount = Math.min(i + chunkSize, songs.length);
-    if (onProgress) {
-      onProgress(processedCount, songs.length);
+    // Step 3: Explicitly release references so browser GC can reclaim memory
+    for (let k = 0; k < preparedItems.length; k++) {
+      preparedItems[k].binaryData = null;
     }
 
-    // Yield quickly to event loop
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    if (onProgress) {
+      onProgress(Math.min(i + chunk.length, songs.length), songs.length);
+    }
+
+    // Yield control to the browser microtask loop to allow garbage collection and UI updates
+    await new Promise((resolve) => setTimeout(resolve, 40));
   }
-  console.log(`Successfully completed batch save of ${songs.length} songs.`);
 }
 
 export async function deleteSong(id: string): Promise<void> {
@@ -299,6 +315,37 @@ export async function deleteSong(id: string): Promise<void> {
     tx.objectStore('song_blobs').delete(id),
     tx.done
   ]);
+}
+
+export async function deleteSongsBatch(ids: string[]): Promise<void> {
+  if (!ids || ids.length === 0) return;
+  const db = await getDB();
+  const chunkSize = 25;
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize);
+    try {
+      const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
+      const songStore = tx.objectStore('songs');
+      const blobStore = tx.objectStore('song_blobs');
+      const deletes: Promise<any>[] = [];
+      for (const id of chunk) {
+        deletes.push(songStore.delete(id));
+        deletes.push(blobStore.delete(id));
+      }
+      await Promise.all(deletes);
+      await tx.done;
+    } catch (err) {
+      console.warn('Batch delete transaction error, deleting individually:', err);
+      for (const id of chunk) {
+        try {
+          await deleteSong(id);
+        } catch (singleErr) {
+          console.error(`Failed to delete song ${id}:`, singleErr);
+        }
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
 }
 
 export async function toggleSongFavorite(id: string): Promise<boolean> {

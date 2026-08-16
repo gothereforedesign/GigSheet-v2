@@ -8,7 +8,7 @@ import {
   Song, ActiveTab, ViewFilterState 
 } from './types';
 import { 
-  getAllSongs, saveSong, saveSongsBatch, deleteSong, toggleSongFavorite
+  getAllSongs, saveSong, saveSongsBatch, deleteSong, deleteSongsBatch, toggleSongFavorite
 } from './lib/db';
 import { 
   getStoredCategories, 
@@ -32,6 +32,8 @@ import { UploadModal } from './components/UploadModal';
 import { EditSongModal } from './components/EditSongModal';
 import { CategoryManagerModal } from './components/CategoryManagerModal';
 import { BottomDrawer } from './components/BottomDrawer';
+import { UploadProgressWidget } from './components/UploadProgressWidget';
+import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
 import { BUNDLED_SAMPLE_SONGS } from './lib/sampleSongs';
 
 export default function App() {
@@ -80,10 +82,24 @@ export default function App() {
   const dragCounterRef = useRef<number>(0);
 
   // Load IndexedDB Data on Mount
+  const loadSongs = async () => {
+    try {
+      const loadedSongs = await getAllSongs();
+      setSongs(loadedSongs);
+    } catch (err) {
+      console.error('Failed to reload songs:', err);
+    }
+  };
+
+  const uploadQueue = usePDFUploadQueue(loadSongs);
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
+        if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+          navigator.storage.persist().catch(() => {});
+        }
         const loadedSongs = await getAllSongs();
         setSongs(loadedSongs);
       } catch (err) {
@@ -103,7 +119,7 @@ export default function App() {
       e.preventDefault();
       e.stopPropagation();
       dragCounterRef.current += 1;
-      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+      if (e.dataTransfer && e.dataTransfer.types && (e.dataTransfer.types.includes('Files') || Array.from(e.dataTransfer.types).includes('Files'))) {
         setIsGlobalDragging(true);
       }
     };
@@ -111,6 +127,9 @@ export default function App() {
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
     };
 
     const handleDragLeave = (e: DragEvent) => {
@@ -141,11 +160,21 @@ export default function App() {
     window.addEventListener('dragleave', handleDragLeave);
     window.addEventListener('drop', handleDrop);
 
+    document.addEventListener('dragenter', handleDragEnter);
+    document.addEventListener('dragover', handleDragOver);
+    document.addEventListener('dragleave', handleDragLeave);
+    document.addEventListener('drop', handleDrop);
+
     return () => {
       window.removeEventListener('dragenter', handleDragEnter);
       window.removeEventListener('dragover', handleDragOver);
       window.removeEventListener('dragleave', handleDragLeave);
       window.removeEventListener('drop', handleDrop);
+
+      document.removeEventListener('dragenter', handleDragEnter);
+      document.removeEventListener('dragover', handleDragOver);
+      document.removeEventListener('dragleave', handleDragLeave);
+      document.removeEventListener('drop', handleDrop);
     };
   }, []);
 
@@ -244,11 +273,16 @@ export default function App() {
   // Permanently Empty All Trash
   const handleEmptyTrash = async () => {
     const trashed = songs.filter((s) => !!s.deletedAt);
-    for (const song of trashed) {
-      await deleteSong(song.id);
+    if (trashed.length === 0) return;
+    try {
+      await deleteSongsBatch(trashed.map((s) => s.id));
+      const updated = await getAllSongs();
+      setSongs(updated);
+    } catch (err) {
+      console.error('Error emptying trash:', err);
+      const updated = await getAllSongs();
+      setSongs(updated);
     }
-    const updated = await getAllSongs();
-    setSongs(updated);
   };
 
   const handleToggleFavorite = async (id: string) => {
@@ -563,35 +597,66 @@ export default function App() {
 
       {renderViewerModal()}
 
-      <BottomDrawer
-        isOpen={isUploadOpen}
-        onClose={() => {
-          setIsUploadOpen(false);
-          setInitialFilesForUpload(null);
-          if (window.location.hash.includes('upload')) {
-            window.history.replaceState(null, '', `#${activeTab}`);
-          }
-        }}
-        title="Upload PDF Charts"
-        closeDisabled={isSavingSongs}
-      >
-        <UploadModal
-          genres={currentCategories}
-          sheetMusicCategories={sheetMusicCategories}
-          techniqueCategories={techniqueCategories}
-          defaultSection={activeTab === 'technique' ? 'technique' : 'sheet_music'}
-          initialCategory={selectedCategory || undefined}
-          initialFiles={initialFilesForUpload}
-          onSaveSongs={handleSaveSongs}
-          onClose={() => {
-            setIsUploadOpen(false);
-            setInitialFilesForUpload(null);
-            if (window.location.hash.includes('upload')) {
-              window.history.replaceState(null, '', `#${activeTab}`);
-            }
-          }}
-        />
-      </BottomDrawer>
+      {isUploadOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div>
+                <h2 className="text-base font-black text-slate-900">Upload PDF Charts Batch</h2>
+                <p className="text-xs text-slate-500 font-medium">Select or drop up to 50 PDF sheet music files at once</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUploadOpen(false);
+                  setInitialFilesForUpload(null);
+                  if (window.location.hash.includes('upload')) {
+                    window.history.replaceState(null, '', `#${activeTab}`);
+                  }
+                }}
+                className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 flex items-center justify-center text-slate-700 font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              <UploadModal
+                genres={currentCategories}
+                sheetMusicCategories={sheetMusicCategories}
+                techniqueCategories={techniqueCategories}
+                defaultSection={activeTab === 'technique' ? 'technique' : 'sheet_music'}
+                initialCategory={selectedCategory || undefined}
+                initialFiles={initialFilesForUpload}
+                onSaveSongs={handleSaveSongs}
+                onEnqueueEntries={uploadQueue.enqueueEntries}
+                onClose={() => {
+                  setIsUploadOpen(false);
+                  setInitialFilesForUpload(null);
+                  if (window.location.hash.includes('upload')) {
+                    window.history.replaceState(null, '', `#${activeTab}`);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Google Drive-Style Upload Progress Widget */}
+      <UploadProgressWidget
+        items={uploadQueue.items}
+        isOpen={uploadQueue.isOpen}
+        isMinimized={uploadQueue.isMinimized}
+        setIsMinimized={uploadQueue.setIsMinimized}
+        quotaError={uploadQueue.quotaError}
+        onCancel={uploadQueue.cancelItem}
+        onRetry={uploadQueue.retryItem}
+        onClearCompleted={uploadQueue.clearCompleted}
+        onDismiss={uploadQueue.dismissWidget}
+      />
 
       <BottomDrawer
         isOpen={!!songToEdit}

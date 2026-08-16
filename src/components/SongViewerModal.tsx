@@ -29,7 +29,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   const [, setNumPages] = useState(1);
 
   // Derive Category Brand Styling
-  const section = song.type === 'technique' || song.section === 'technique' ? 'technique' : 'sheet_music';
+  const section = song.section === 'technique' ? 'technique' : 'sheet_music';
   const isTechnique = section === 'technique';
   const categoryColors = getStoredCategoryColors(section);
   const palette = getCategoryPalette(song.genre, categoryColors, section);
