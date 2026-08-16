@@ -35,12 +35,66 @@ import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
 import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
 import { BUNDLED_SAMPLE_SONGS } from './lib/sampleSongs';
-import { BatchPDFUploader } from './components/BatchPDFUploader';
-import { PDFLibrary } from './components/PDFLibrary';
+
+const NAV_STATE_KEY = 'gig_sheet_nav_state';
+
+interface NavState {
+  activeTab: ActiveTab;
+  selectedCategory: string | null;
+  activeSongId: string | null;
+}
+
+const getInitialNavState = (): NavState => {
+  let navState: NavState = {
+    activeTab: 'sheet_music',
+    selectedCategory: null,
+    activeSongId: null,
+  };
+
+  try {
+    const stored = localStorage.getItem(NAV_STATE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && typeof parsed === 'object') {
+        if (['sheet_music', 'technique', 'trash'].includes(parsed.activeTab)) {
+          navState.activeTab = parsed.activeTab as ActiveTab;
+        }
+        if (typeof parsed.selectedCategory === 'string' || parsed.selectedCategory === null) {
+          navState.selectedCategory = parsed.selectedCategory;
+        }
+        if (typeof parsed.activeSongId === 'string' || parsed.activeSongId === null) {
+          navState.activeSongId = parsed.activeSongId;
+        }
+      }
+    }
+
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+      const hashContent = decodeURIComponent(hash.substring(1));
+      if (hashContent.startsWith('song=')) {
+        navState.activeSongId = hashContent.replace('song=', '');
+      } else {
+        const parts = hashContent.split('/');
+        const tabPart = parts[0].toLowerCase() as ActiveTab;
+        if (['sheet_music', 'technique', 'trash'].includes(tabPart)) {
+          navState.activeTab = tabPart;
+          if (parts.length > 1 && parts[1].trim()) {
+            navState.selectedCategory = parts[1].trim();
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to parse nav state:', err);
+  }
+
+  return navState;
+};
 
 export default function App() {
-  // Navigation Route State
-  const [activeTab, setActiveTab] = useState<ActiveTab>('sheet_music');
+  // Navigation Route State (restored on refresh)
+  const initialNavStateRef = useRef<NavState>(getInitialNavState());
+  const [activeTab, setActiveTab] = useState<ActiveTab>(initialNavStateRef.current.activeTab);
   const section: 'sheet_music' | 'technique' = activeTab === 'technique' ? 'technique' : 'sheet_music';
 
   // Data State
@@ -71,8 +125,9 @@ export default function App() {
   });
 
   // Modal / Viewer Overlay State
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(initialNavStateRef.current.selectedCategory);
   const [activeSongForViewer, setActiveSongForViewer] = useState<Song | null>(null);
+  const savedSongIdRef = useRef<string | null>(initialNavStateRef.current.activeSongId);
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState<boolean>(false);
@@ -104,6 +159,14 @@ export default function App() {
         }
         const loadedSongs = await getAllSongs();
         setSongs(loadedSongs);
+
+        // Restore active song viewer if saved across refresh
+        if (savedSongIdRef.current) {
+          const matchingSong = loadedSongs.find((s) => s.id === savedSongIdRef.current);
+          if (matchingSong) {
+            setActiveSongForViewer(matchingSong);
+          }
+        }
       } catch (err) {
         console.error('Failed to load DB:', err);
         setSongs(BUNDLED_SAMPLE_SONGS);
@@ -180,30 +243,62 @@ export default function App() {
     };
   }, []);
 
-  // Sync Hash Route with Navigation
+  // Persist Navigation Route State (active tab, selected category, opened chart) across page refreshes
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.toLowerCase();
-      if (hash.startsWith('#trash')) {
-        setActiveTab('trash');
-      } else if (hash.startsWith('#technique')) {
-        setActiveTab('technique');
-      } else if (hash.startsWith('#sheet_music') || hash.startsWith('#library') || hash === '') {
-        setActiveTab('sheet_music');
+    if (isLoading) return;
+
+    const navState: NavState = {
+      activeTab,
+      selectedCategory,
+      activeSongId: activeSongForViewer ? activeSongForViewer.id : null,
+    };
+
+    try {
+      localStorage.setItem(NAV_STATE_KEY, JSON.stringify(navState));
+    } catch (e) {
+      console.warn('Failed to save nav state to localStorage:', e);
+    }
+
+    let newHash = `#${activeTab}`;
+    if (activeSongForViewer) {
+      newHash = `#song=${encodeURIComponent(activeSongForViewer.id)}`;
+    } else if (selectedCategory) {
+      newHash = `#${activeTab}/${encodeURIComponent(selectedCategory)}`;
+    }
+
+    if (window.location.hash !== newHash) {
+      window.history.replaceState(null, '', newHash);
+    }
+  }, [activeTab, selectedCategory, activeSongForViewer, isLoading]);
+
+  // Handle Browser Back/Forward navigation buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const nav = getInitialNavState();
+      setActiveTab(nav.activeTab);
+      setSelectedCategory(nav.selectedCategory);
+      if (nav.activeSongId) {
+        const found = songs.find((s) => s.id === nav.activeSongId);
+        if (found) setActiveSongForViewer(found);
+      } else {
+        setActiveSongForViewer(null);
       }
     };
 
-    handleHashChange();
-    window.addEventListener('popstate', handleHashChange);
-    return () => window.removeEventListener('popstate', handleHashChange);
-  }, []);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, [songs]);
 
   // Bottom Tab Select Handler
   const handleSelectTab = (tab: ActiveTab) => {
     setActiveTab(tab);
     setSelectedCategory(null);
+    setActiveSongForViewer(null);
     setFilterState((prev) => ({ ...prev, searchQuery: '' }));
-    window.history.replaceState(null, '', `#${tab}`);
   };
 
   // Song Batch Save
@@ -568,24 +663,21 @@ export default function App() {
         ) : (
           <>
             {(activeTab === 'sheet_music' || activeTab === 'technique') && (
-              <div className="space-y-6">
-                <LibraryView
-                  songs={sectionSongs}
-                  genres={currentCategories}
-                  genreColors={currentCategoryColors}
-                  filterState={filterState}
-                  activeTab={activeTab}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={setSelectedCategory}
-                  onFilterChange={(f) => setFilterState((prev) => ({ ...prev, ...f }))}
-                  onSelectSong={handleOpenSongViewer}
-                  onToggleFavorite={handleToggleFavorite}
-                  onDeleteSong={handleSoftDeleteSong}
-                  onEditSong={setSongToEdit}
-                  onOpenGenreManager={() => setIsCategoryManagerOpen(true)}
-                />
-                <PDFLibrary />
-              </div>
+              <LibraryView
+                songs={sectionSongs}
+                genres={currentCategories}
+                genreColors={currentCategoryColors}
+                filterState={filterState}
+                activeTab={activeTab}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+                onFilterChange={(f) => setFilterState((prev) => ({ ...prev, ...f }))}
+                onSelectSong={handleOpenSongViewer}
+                onToggleFavorite={handleToggleFavorite}
+                onDeleteSong={handleSoftDeleteSong}
+                onEditSong={setSongToEdit}
+                onOpenGenreManager={() => setIsCategoryManagerOpen(true)}
+              />
             )}
 
             {activeTab === 'trash' && (
@@ -604,12 +696,12 @@ export default function App() {
 
       {isUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+          <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
               <div>
                 <h2 className="text-base font-black text-slate-900">Upload PDF Charts</h2>
-                <p className="text-xs text-slate-500 font-medium">Batch store PDF sheet music, scales & exercises directly in Dexie IndexedDB</p>
+                <p className="text-xs text-slate-500 font-medium">Select or drop up to 50 PDF sheet music files at once</p>
               </div>
               <button
                 type="button"
@@ -628,8 +720,22 @@ export default function App() {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto flex-1">
-              <BatchPDFUploader
-                defaultCategory={section === 'technique' ? 'Technique' : 'Sheet Music'}
+              <UploadModal
+                genres={currentCategories}
+                sheetMusicCategories={sheetMusicCategories}
+                techniqueCategories={techniqueCategories}
+                defaultSection={activeTab === 'technique' ? 'technique' : 'sheet_music'}
+                initialCategory={selectedCategory || undefined}
+                initialFiles={initialFilesForUpload}
+                onSaveSongs={handleSaveSongs}
+                onEnqueueEntries={uploadQueue.enqueueEntries}
+                onClose={() => {
+                  setIsUploadOpen(false);
+                  setInitialFilesForUpload(null);
+                  if (window.location.hash.includes('upload')) {
+                    window.history.replaceState(null, '', `#${activeTab}`);
+                  }
+                }}
               />
             </div>
           </div>

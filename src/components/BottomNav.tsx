@@ -19,7 +19,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg">
-      <div className="max-w-md mx-auto flex items-center justify-between h-16 px-8 gap-2">
+      <div className="max-w-md mx-auto flex items-center justify-between h-16 px-3 gap-1">
         {/* Left: Sheet Music Tab */}
         <button
           type="button"
@@ -34,14 +34,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           </span>
         </button>
 
-        {/* Center Action: Plus Button (Dexie Batch PDF Upload) */}
+        {/* Center Action: Add PDF */}
         <button
           type="button"
           onClick={onAddPdf}
-          className="w-12 h-12 rounded-2xl bg-[#0c4a6e] hover:bg-[#073652] text-white transition-all cursor-pointer active:scale-95 shadow-lg flex items-center justify-center shrink-0 -mt-5 border-4 border-white"
-          title="Batch Upload PDF Charts"
+          className={`p-2.5 rounded-2xl text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 ${
+            isTechniqueActive
+              ? 'bg-purple-900 hover:bg-purple-950'
+              : 'bg-[#0c4a6e] hover:bg-[#073652]'
+          }`}
+          title="Add PDF Chart"
         >
-          <Plus className="w-6 h-6 stroke-[3]" />
+          <Plus className="w-5 h-5 stroke-[2.5]" />
         </button>
 
         {/* Right: Technique Tab */}
