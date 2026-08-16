@@ -448,10 +448,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           </div>
           <div>
             <p className="text-base font-black text-[#0c4a6e] whitespace-nowrap">
-              Choose up to 50 PDF Charts or Drag & Drop
+              Drop PDFs or Click to Browse
             </p>
             <p className="text-xs text-slate-400 mt-1 font-medium whitespace-nowrap">
-              Select multiple PDF sheet music files (Batch import up to 50 at once) ({fileEntries.length}/50 selected)
+              Up to 50 files ({fileEntries.length}/50 selected)
             </p>
           </div>
         </div>

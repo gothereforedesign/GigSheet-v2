@@ -613,9 +613,9 @@ export default function App() {
               <Upload className="w-8 h-8 stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-base font-black uppercase tracking-wider whitespace-nowrap">Drop PDF Charts Anywhere</p>
+              <p className="text-base font-black uppercase tracking-wider whitespace-nowrap">Drop PDFs</p>
               <p className={`text-xs font-medium mt-1 whitespace-nowrap ${section === 'technique' ? 'text-purple-100' : 'text-sky-100'}`}>
-                Release to import all dropped music charts into directory
+                Release to import
               </p>
             </div>
           </div>
@@ -700,8 +700,8 @@ export default function App() {
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
               <div>
-                <h2 className="text-base font-black text-slate-900">Upload PDF Charts</h2>
-                <p className="text-xs text-slate-500 font-medium">Select or drop up to 50 PDF sheet music files at once</p>
+                <h2 className="text-base font-black text-slate-900">Upload PDFs</h2>
+                <p className="text-xs text-slate-500 font-medium">Up to 50 files</p>
               </div>
               <button
                 type="button"
