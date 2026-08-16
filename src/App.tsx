@@ -701,7 +701,6 @@ export default function App() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
               <div>
                 <h2 className="text-base font-black text-slate-900">Upload PDFs</h2>
-                <p className="text-xs text-slate-500 font-medium">Up to 50 files</p>
               </div>
               <button
                 type="button"

@@ -450,9 +450,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             <p className="text-base font-black text-[#0c4a6e] whitespace-nowrap">
               Drop PDFs or Click to Browse
             </p>
-            <p className="text-xs text-slate-400 mt-1 font-medium whitespace-nowrap">
-              Up to 50 files ({fileEntries.length}/50 selected)
-            </p>
+            {fileEntries.length > 0 && (
+              <p className="text-xs text-slate-400 mt-1 font-medium whitespace-nowrap">
+                {fileEntries.length}/50 selected
+              </p>
+            )}
           </div>
         </div>
       </div>
