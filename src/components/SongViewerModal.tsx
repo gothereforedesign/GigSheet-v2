@@ -259,39 +259,39 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
       </main>
 
       {/* Bottom Navigation & Performance Controls */}
-      <footer className="sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 pointer-events-none bg-transparent">
+      <footer className="sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 pointer-events-none bg-transparent">
         {/* Item 3: Zoom Controls */}
         <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-700/80 p-1 rounded-md shadow-lg backdrop-blur-md pointer-events-auto shrink-0">
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.max(50, z - 5))}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
+            className="px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
             title="Zoom Out (-5%)"
           >
-            <ZoomOut className="w-4 h-4 stroke-[2.2]" />
+            <ZoomOut className="w-4 h-4 stroke-[2.5]" />
           </button>
           
-          <span className="text-[11px] font-black tracking-wider text-slate-200 px-1 min-w-[36px] text-center whitespace-nowrap">
+          <span className="text-xs font-black tracking-wider text-slate-200 px-1.5 min-w-[42px] text-center whitespace-nowrap">
             {zoomLevel}%
           </span>
 
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.min(300, z + 5))}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
+            className="px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
             title="Zoom In (+5%)"
           >
-            <ZoomIn className="w-4 h-4 stroke-[2.2]" />
+            <ZoomIn className="w-4 h-4 stroke-[2.5]" />
           </button>
 
           {zoomLevel !== 100 && (
             <button
               type="button"
               onClick={() => updateZoom(100)}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all border-l border-slate-800 ml-0.5"
+              className="px-2.5 py-1.5 h-9 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all border-l border-slate-800 ml-0.5"
               title="Reset Zoom to 100%"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -302,25 +302,25 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex - 1)}
               disabled={navigation.currentIndex <= 0}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
+              className="px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
               title="Previous Chart (Left Arrow)"
             >
-              <ChevronLeft className="w-4 h-4 stroke-[3]" />
+              <ChevronLeft className="w-5 h-5 stroke-[2.8]" />
               <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Prev</span>
             </button>
 
-            <div className="px-2.5 sm:px-3 py-1.5 bg-slate-900/90 border border-slate-700/80 text-slate-200 rounded-md text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg backdrop-blur-md">
-              {navigation.currentIndex + 1} <span className="text-slate-500 font-normal">/</span> {navigation.totalCount}
+            <div className="px-3 py-1.5 h-9 flex items-center justify-center bg-slate-900/90 border border-slate-700/80 text-slate-200 rounded-md text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg backdrop-blur-md">
+              {navigation.currentIndex + 1} <span className="text-slate-500 font-normal mx-0.5">/</span> {navigation.totalCount}
             </div>
 
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex + 1)}
               disabled={navigation.currentIndex >= navigation.totalCount - 1}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
+              className="px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
               title="Next Chart (Right Arrow)"
             >
               <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Next</span>
-              <ChevronRight className="w-4 h-4 stroke-[3]" />
+              <ChevronRight className="w-5 h-5 stroke-[2.8]" />
             </button>
           </div>
         ) : null}

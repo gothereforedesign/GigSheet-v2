@@ -371,37 +371,37 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
       {/* Floating Zoom & Page Counter Bar (Shown if external controls are not used) */}
       {!externalZoomControls && (
         <div className="absolute bottom-3 inset-x-0 z-30 flex items-center justify-center gap-2.5 px-3 max-w-lg mx-auto pointer-events-none">
-          <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl px-2.5 py-1.5 shadow-2xl flex items-center gap-1.5 pointer-events-auto">
+          <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl px-2 py-1.5 shadow-2xl flex items-center gap-1.5 pointer-events-auto">
             <button
               type="button"
               onClick={() => updateZoom((z) => Math.max(50, z - 5))}
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-xl cursor-pointer transition-all"
+              className="px-3 sm:px-4 py-1.5 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-xl cursor-pointer transition-all"
               title="Zoom Out (-5%)"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-4 h-4 stroke-[2.5]" />
             </button>
 
-            <span className="text-[11px] font-black uppercase tracking-wider text-sky-300 px-1 min-w-[38px] text-center select-none whitespace-nowrap">
+            <span className="text-xs font-black uppercase tracking-wider text-sky-300 px-1.5 min-w-[42px] text-center select-none whitespace-nowrap">
               {zoomLevel}%
             </span>
 
             <button
               type="button"
               onClick={() => updateZoom((z) => Math.min(300, z + 5))}
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-xl cursor-pointer transition-all"
+              className="px-3 sm:px-4 py-1.5 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-xl cursor-pointer transition-all"
               title="Zoom In (+5%)"
             >
-              <ZoomIn className="w-4 h-4" />
+              <ZoomIn className="w-4 h-4 stroke-[2.5]" />
             </button>
 
             {zoomLevel !== 100 && (
               <button
                 type="button"
                 onClick={() => updateZoom(100)}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-xl cursor-pointer transition-all border-l border-slate-800 ml-0.5"
+                className="px-2.5 py-1.5 h-9 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-xl cursor-pointer transition-all border-l border-slate-800 ml-0.5"
                 title="Reset Zoom (100%)"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-4 h-4" />
               </button>
             )}
           </div>
