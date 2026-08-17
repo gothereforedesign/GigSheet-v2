@@ -281,11 +281,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
                 >
                   {/* Subtle PDF count badge */}
-                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/15 text-white/95 backdrop-blur-xs border border-white/10 shadow-2xs">
+                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/20 text-white/95 backdrop-blur-xs border border-white/10 shadow-2xs">
                     <span>{count}</span>
-                    <span className="opacity-80 text-[9px] sm:text-[10px] font-sans font-medium">
-                      {count === 1 ? 'PDF' : 'PDFs'}
-                    </span>
                   </div>
 
                   <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
@@ -330,9 +327,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               </div>
 
               {/* Subtle PDF Count Badge */}
-              <div className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0">
-                <FileText className="w-3.5 h-3.5 text-slate-500" />
-                <span>{filteredSongs.length} <span className="hidden sm:inline">{filteredSongs.length === 1 ? 'PDF' : 'PDFs'}</span></span>
+              <div className="inline-flex items-center justify-center bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center" title={`${filteredSongs.length} Charts`}>
+                <span>{filteredSongs.length}</span>
               </div>
             </div>
 
