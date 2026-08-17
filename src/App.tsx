@@ -843,6 +843,7 @@ export default function App() {
           trashCount={trashedSongs.length}
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
+          onOpenCategoryManager={handleOpenCategoryManager}
         />
       )}
 
@@ -876,6 +877,8 @@ export default function App() {
                 onDeleteSong={handleSoftDeleteSong}
                 onEditSong={handleOpenEditSong}
                 onOpenGenreManager={handleOpenCategoryManager}
+                trashCount={trashedSongs.length}
+                onOpenTrash={() => handleSelectTab('trash')}
               />
             )}
 

@@ -25,6 +25,8 @@ interface LibraryViewProps {
   onDeleteSong: (id: string) => void;
   onEditSong: (song: Song) => void;
   onOpenGenreManager?: () => void;
+  trashCount?: number;
+  onOpenTrash?: () => void;
 }
 
 interface SongRowProps {
@@ -179,6 +181,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onDeleteSong,
   onEditSong,
   onOpenGenreManager,
+  trashCount,
+  onOpenTrash,
 }) => {
   const section: 'sheet_music' | 'technique' = activeTab === 'technique' ? 'technique' : 'sheet_music';
   const isTechnique = section === 'technique';
@@ -268,13 +272,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {availableCategories.map((catName) => {
               const palette = getCategoryPalette(catName, genreColors, section);
+              const count = categoryChartCounts[catName] || 0;
 
               return (
                 <div
                   key={catName}
                   onClick={() => handleSetSelectedCategory(catName)}
-                  className={`group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
+                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
                 >
+                  {/* Subtle PDF count badge */}
+                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/15 text-white/95 backdrop-blur-xs border border-white/10 shadow-2xs">
+                    <span>{count}</span>
+                    <span className="opacity-80 text-[9px] sm:text-[10px] font-sans font-medium">
+                      {count === 1 ? 'PDF' : 'PDFs'}
+                    </span>
+                  </div>
+
                   <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
                     {catName}
                   </h3>
@@ -286,28 +299,29 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       ) : (
         /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED CATEGORY - UNIFIED WHITE CONTAINER */
         <div className="bg-white rounded-lg border border-slate-200/90 p-3 sm:p-4 shadow-2xs space-y-3">
-          {/* Top Bar Navigation (Back to Category Grid & Category Title in White Badge with Edit Category Button) */}
+          {/* Top Bar Navigation (Back arrow -> Category Title & Edit -> PDF Count -> View Toggle & Trash) */}
           <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
-            <button
-              type="button"
-              onClick={() => handleSetSelectedCategory(null)}
-              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 px-3 py-1.5 rounded-md cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
-            >
-              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
-              <span>Categories</span>
-            </button>
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+              {/* Back Arrow Button */}
+              <button
+                type="button"
+                onClick={() => handleSetSelectedCategory(null)}
+                className="p-1.5 text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                title="Back to Categories"
+              >
+                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+              </button>
 
-            <div className="flex items-center gap-2">
-              {/* White background badge for Category Title with Edit Category button */}
-              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 px-3 py-1.5 rounded-md shadow-2xs">
-                <h2 className="text-xs sm:text-sm font-black text-slate-900 truncate max-w-[130px] sm:max-w-[200px]">
+              {/* Category Title Badge + Edit Category Button */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 truncate max-w-[110px] sm:max-w-[180px]">
                   {selectedCategory === 'ALL_SECTION_CHARTS' ? 'All Charts' : selectedCategory}
                 </h2>
                 {onOpenGenreManager && (
                   <button
                     type="button"
                     onClick={onOpenGenreManager}
-                    className="p-1 rounded-xs text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                    className="p-0.5 rounded-xs text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer shrink-0"
                     title="Edit Category"
                   >
                     <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
@@ -315,11 +329,19 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 )}
               </div>
 
-              {/* View Toggle: Single Toggle Button switching between List and Preview */}
+              {/* Subtle PDF Count Badge */}
+              <div className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0">
+                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                <span>{filteredSongs.length} <span className="hidden sm:inline">{filteredSongs.length === 1 ? 'PDF' : 'PDFs'}</span></span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* View Toggle Button */}
               <button
                 type="button"
                 onClick={() => handleToggleDisplayMode(displayMode === 'list' ? 'grid' : 'list')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs border border-slate-200/90 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs border border-slate-200/90 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
                 title={displayMode === 'list' ? 'Switch to Grid Preview' : 'Switch to List View'}
               >
                 {displayMode === 'list' ? (
@@ -334,6 +356,18 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   </>
                 )}
               </button>
+
+              {/* Trash Icon Button */}
+              {onOpenTrash && (
+                <button
+                  type="button"
+                  onClick={onOpenTrash}
+                  className="p-1.5 rounded-md bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200/90 hover:border-rose-200 transition-colors cursor-pointer active:scale-95 shadow-2xs"
+                  title="Open Trash"
+                >
+                  <Trash2 className="w-4 h-4 stroke-[2.2]" />
+                </button>
+              )}
             </div>
           </div>
 
