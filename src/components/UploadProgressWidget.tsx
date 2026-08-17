@@ -59,7 +59,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 sm:w-96 bg-white border border-slate-200/90 shadow-2xl rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-5 duration-200">
+    <div className="fixed bottom-[68px] right-2 sm:right-4 z-40 w-[calc(100vw-1rem)] max-w-sm sm:w-96 bg-white border border-slate-200/90 shadow-2xl rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-5 duration-200">
       {/* Header Bar */}
       <div className={`px-4 py-3 text-white flex items-center justify-between ${quotaError ? 'bg-rose-900' : 'bg-slate-900'}`}>
         <div className="flex items-center gap-2.5 min-w-0">

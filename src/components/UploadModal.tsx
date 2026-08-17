@@ -103,6 +103,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [isCreatingCategory, setIsCreatingCategory] = useState<boolean>(false);
   const [newCategoryName, setNewCategoryName] = useState<string>('');
 
+  // Initializing PDFs progress state
+  const [isInitializingFiles, setIsInitializingFiles] = useState<boolean>(false);
+  const [initProgress, setInitProgress] = useState<{ current: number; total: number } | null>(null);
+
   // Keep targetCategory valid when availableCategories change
   useEffect(() => {
     if (availableCategories.length > 0 && !availableCategories.includes(targetCategory)) {
@@ -122,7 +126,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   }, [initialFiles]);
 
-  const handleAddFiles = (filesList: FileList | File[]) => {
+  const handleAddFiles = async (filesList: FileList | File[]) => {
     const filesArray = Array.from(filesList);
     if (filesArray.length === 0) return;
 
@@ -141,12 +145,28 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMsg(null);
     }
 
-    const newEntries = createEntriesFromFiles(filesToAdd);
+    setIsInitializingFiles(true);
+    setInitProgress({ current: 0, total: filesToAdd.length });
+
+    const chunkSize = 5;
+    let created: FileEntry[] = [];
+    for (let i = 0; i < filesToAdd.length; i += chunkSize) {
+      const chunk = filesToAdd.slice(i, i + chunkSize);
+      const chunkEntries = createEntriesFromFiles(chunk);
+      created = [...created, ...chunkEntries];
+      const processedSoFar = Math.min(filesToAdd.length, i + chunk.length);
+      setInitProgress({ current: processedSoFar, total: filesToAdd.length });
+      await new Promise((r) => setTimeout(r, 15));
+    }
+
     setFileEntries((prev) => {
       const existingKeys = new Set(prev.map((e) => `${e.file.name}_${e.file.size}`));
-      const filtered = newEntries.filter((e) => !existingKeys.has(`${e.file.name}_${e.file.size}`));
+      const filtered = created.filter((e) => !existingKeys.has(`${e.file.name}_${e.file.size}`));
       return [...prev, ...filtered];
     });
+
+    setIsInitializingFiles(false);
+    setInitProgress(null);
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -454,9 +474,44 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         </div>
       </div>
 
-      {/* 3. SELECTED FILES LIST */}
+      {/* INITIALIZATION PROGRESS BAR */}
+      {isInitializingFiles && initProgress && (
+        <div className="p-4 bg-sky-50 border border-sky-200 rounded-lg space-y-2 animate-in fade-in duration-200 shadow-2xs">
+          <div className="flex items-center justify-between text-xs font-bold text-sky-900">
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 text-sky-600 animate-spin" />
+              <span>Initializing PDFs for review ({initProgress.current} / {initProgress.total})...</span>
+            </div>
+            <span className="font-mono text-sky-700 font-extrabold">
+              {Math.round((initProgress.current / Math.max(1, initProgress.total)) * 100)}%
+            </span>
+          </div>
+          <div className="w-full h-2 bg-sky-200/80 rounded-full overflow-hidden p-0.5">
+            <div
+              className="h-full bg-sky-600 transition-all duration-200 rounded-full"
+              style={{ width: `${Math.round((initProgress.current / Math.max(1, initProgress.total)) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 3. SELECTED FILES LIST & READINESS STATUS BAR */}
       {fileEntries.length > 0 && (
         <div className="space-y-3 pt-2">
+          {/* Readiness Status Banner */}
+          <div className="p-3 bg-[#0c4a6e]/5 border border-[#0c4a6e]/20 rounded-lg space-y-1.5 shadow-2xs">
+            <div className="flex items-center justify-between text-xs font-bold text-[#0c4a6e]">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>{fileEntries.length} {fileEntries.length === 1 ? 'PDF' : 'PDFs'} Initialized & Ready for Review</span>
+              </div>
+              <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">100% Prepared</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full w-full animate-in fade-in duration-300" />
+            </div>
+          </div>
+
           <div className="flex items-center justify-between text-xs font-black text-[#0c4a6e]">
             <span>
               {fileEntries.length} {fileEntries.length === 1 ? 'Chart' : 'Charts'} Selected ({totalSizeMB} MB)

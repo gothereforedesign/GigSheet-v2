@@ -198,6 +198,39 @@ export function usePDFUploadQueue(onSongsUpdated?: () => void) {
     processQueue();
   }, [items, onSongsUpdated]);
 
+  // Handle visibility change (tab background/foreground) and beforeunload warnings
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Reset processing lock if stalled and re-trigger queue processing
+        if (items.some((i) => i.status === 'queued')) {
+          processingRef.current = false;
+          // Force state update to re-run effect loop
+          setItems((prev) => [...prev]);
+        }
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const isUploading = items.some(
+        (i) => i.status === 'queued' || i.status === 'processing' || i.status === 'saving'
+      );
+      if (isUploading) {
+        e.preventDefault();
+        e.returnValue = 'PDF uploads are currently processing in the background.';
+        return e.returnValue;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [items]);
+
   return {
     items,
     isOpen,
