@@ -759,30 +759,63 @@ export default function App() {
   });
   const trashedSongs = songs.filter((s) => !!s.deletedAt);
 
-  // Filter Logic for Viewer Navigation Context
-  const getFilteredSongs = () => {
-    return sectionSongs.sort((a, b) => a.title.localeCompare(b.title));
+  // Filter Logic for Viewer Navigation Context (Restricted to active category)
+  const getFilteredSongsForViewer = (activeSong: Song) => {
+    const isTech = section === 'technique';
+    const defaultCat = isTech ? 'Scales' : 'Hymns';
+
+    // Determine target category
+    let targetCat: string | null = selectedCategory;
+    if (!targetCat) {
+      targetCat = activeSong.genre || defaultCat;
+    }
+
+    if (targetCat === 'ALL_SECTION_CHARTS') {
+      return {
+        categoryName: isTech ? 'All Technique Charts' : 'All Sheet Music Charts',
+        songsList: [...sectionSongs].sort((a, b) => a.title.localeCompare(b.title)),
+      };
+    }
+
+    // Filter sectionSongs by target category
+    const categorySongs = sectionSongs.filter((s) => {
+      const sCat = s.genre || defaultCat;
+      return sCat === targetCat;
+    });
+
+    // Ensure activeSong is present in the list
+    let songsList = categorySongs;
+    if (!songsList.some((s) => s.id === activeSong.id)) {
+      songsList = [...songsList, activeSong];
+    }
+
+    songsList.sort((a, b) => a.title.localeCompare(b.title));
+
+    return {
+      categoryName: targetCat,
+      songsList,
+    };
   };
 
   // Fullscreen Sheet Music Viewer Modal
   const renderViewerModal = () => {
     if (!activeSongForViewer) return null;
 
-    const currentList = getFilteredSongs();
-    const currentIndex = currentList.findIndex(s => s.id === activeSongForViewer.id);
-    
+    const { categoryName, songsList } = getFilteredSongsForViewer(activeSongForViewer);
+    const currentIndex = songsList.findIndex((s) => s.id === activeSongForViewer.id);
+
     let navigationContext;
     if (currentIndex !== -1) {
       navigationContext = {
         currentIndex,
-        totalCount: currentList.length,
-        listName: section === 'technique' ? 'Technique Directory' : 'Sheet Music Directory',
+        totalCount: songsList.length,
+        listName: categoryName,
         onNavigate: (newIdx: number) => {
-          const nextSong = currentList[newIdx];
+          const nextSong = songsList[newIdx];
           if (nextSong) {
             setActiveSongForViewer(nextSong);
           }
-        }
+        },
       };
     }
 

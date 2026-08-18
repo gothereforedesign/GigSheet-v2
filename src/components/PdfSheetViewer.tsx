@@ -79,7 +79,13 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
         const task = page.render(renderContext);
         renderTaskRef.current = task;
 
-        await task.promise;
+        try {
+          await task.promise;
+        } catch (taskErr: any) {
+          if (taskErr?.name !== 'RenderingCancelledException') {
+            console.warn(`Page ${pageNumber} render task warning:`, taskErr);
+          }
+        }
 
         if (!isCancelled) {
           setIsRendered(true);
@@ -88,6 +94,7 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
         // If cancelled, ignore error
         if (err?.name !== 'RenderingCancelledException' && !isCancelled) {
           console.warn(`Page ${pageNumber} render warning:`, err);
+          setIsRendered(true); // Always reveal canvas even if non-fatal warning occurred
         }
       }
     };
@@ -146,6 +153,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [useNativeViewer, setUseNativeViewer] = useState<boolean>(false);
 
   // Initialize zoom
   const getInitialZoom = (id?: string) => {
@@ -173,6 +181,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
 
   useEffect(() => {
     setZoomLevel(getInitialZoom(songId));
+    setUseNativeViewer(false);
   }, [songId]);
 
   const updateZoom = (newZoom: number | ((prev: number) => number)) => {
@@ -189,13 +198,14 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
     });
   };
 
-  // Convert input into ArrayBuffer efficiently
+  // Convert input into ArrayBuffer efficiently with slicing to prevent detaching
   const getArrayBuffer = useCallback(async (): Promise<{ buffer: ArrayBuffer; blobUrl: string }> => {
     if (!pdfData) throw new Error('No PDF data provided');
 
     if (pdfData instanceof ArrayBuffer) {
-      const blob = new Blob([pdfData], { type: 'application/pdf' });
-      return { buffer: pdfData, blobUrl: URL.createObjectURL(blob) };
+      const copy = pdfData.slice(0);
+      const blob = new Blob([copy], { type: 'application/pdf' });
+      return { buffer: copy, blobUrl: URL.createObjectURL(blob) };
     }
     if (pdfData instanceof Uint8Array) {
       const copy = new Uint8Array(pdfData.byteLength);
@@ -207,20 +217,23 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
     if (pdfData instanceof Blob) {
       const createdBlobUrl = URL.createObjectURL(pdfData);
       const buffer = await pdfData.arrayBuffer();
-      return { buffer, blobUrl: createdBlobUrl };
+      const freshBuffer = buffer.slice(0);
+      return { buffer: freshBuffer, blobUrl: createdBlobUrl };
     }
     if (typeof pdfData === 'string') {
       if (pdfData.startsWith('data:application/pdf') || pdfData.startsWith('data:')) {
         const res = await fetch(pdfData);
         const blob = await res.blob();
         const buffer = await blob.arrayBuffer();
-        return { buffer, blobUrl: URL.createObjectURL(blob) };
+        const freshBuffer = buffer.slice(0);
+        return { buffer: freshBuffer, blobUrl: URL.createObjectURL(blob) };
       }
       if (pdfData.startsWith('blob:') || pdfData.startsWith('http://') || pdfData.startsWith('https://')) {
         const response = await fetch(pdfData);
         const blob = await response.blob();
         const buffer = await blob.arrayBuffer();
-        return { buffer, blobUrl: pdfData.startsWith('blob:') ? pdfData : URL.createObjectURL(blob) };
+        const freshBuffer = buffer.slice(0);
+        return { buffer: freshBuffer, blobUrl: pdfData.startsWith('blob:') ? pdfData : URL.createObjectURL(blob) };
       }
       // Raw base64 string fallback
       const binaryStr = window.atob(pdfData.trim());
@@ -256,9 +269,10 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
 
         const version = pdfjsLib.version || '6.2.108';
         const loadingTask = pdfjsLib.getDocument({
-          data: new Uint8Array(buffer),
+          data: new Uint8Array(buffer.slice(0)),
           cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/cmaps/`,
           cMapPacked: true,
+          standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/standard_fonts/`,
           disableAutoFetch: false,
           disableStream: false,
         });
@@ -302,7 +316,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         } catch (e) {}
       }
     };
-  }, [pdfData, getArrayBuffer]);
+  }, [pdfData, getArrayBuffer, onNumPagesChange]);
 
   const pageNumbers = React.useMemo(() => {
     if (!numPages) return [];
@@ -327,7 +341,17 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
           </div>
         )}
 
-        {error && !loading && (
+        {useNativeViewer && blobUrl && (
+          <div className="w-full h-full flex-1 p-2 flex flex-col items-center">
+            <iframe
+              src={blobUrl}
+              title={title}
+              className="w-full h-full min-h-[75vh] rounded-lg border border-slate-800 shadow-2xl bg-white"
+            />
+          </div>
+        )}
+
+        {!useNativeViewer && error && !loading && (
           <div className="my-auto flex flex-col items-center justify-center p-6 bg-slate-900 rounded-2xl border border-rose-900/50 text-slate-300 text-center space-y-4 max-w-md mx-auto shadow-2xl">
             <AlertCircle className="w-10 h-10 text-rose-500" />
             <div>
@@ -340,20 +364,29 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
             </div>
 
             {blobUrl && (
-              <a
-                href={blobUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 shadow-md"
-              >
-                <span>Open in Native Viewer</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setUseNativeViewer(true)}
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md"
+                >
+                  Use Embedded Browser Viewer
+                </button>
+                <a
+                  href={blobUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 border border-slate-700"
+                >
+                  <span>Open in Tab</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
             )}
           </div>
         )}
 
-        {!loading && !error && pdfDoc && numPages > 0 && (
+        {!useNativeViewer && !loading && !error && pdfDoc && numPages > 0 && (
           <div className="flex flex-col items-center w-full space-y-3 my-2 max-w-5xl">
             {pageNumbers.map((pNum) => (
               <PdfPage
