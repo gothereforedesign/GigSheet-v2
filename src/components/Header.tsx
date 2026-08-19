@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, Trash2, FolderEdit } from 'lucide-react';
+import { Music, Trash2, FolderEdit, Database } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface HeaderProps {
@@ -7,6 +7,7 @@ interface HeaderProps {
   activeTab?: ActiveTab;
   onSelectTab?: (tab: ActiveTab) => void;
   onOpenCategoryManager?: () => void;
+  onOpenBackupModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -14,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onSelectTab,
   onOpenCategoryManager,
+  onOpenBackupModal,
 }) => {
   const isTechnique = activeTab === 'technique';
 
@@ -40,12 +42,26 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {onOpenBackupModal && (
+            <button
+              type="button"
+              onClick={onOpenBackupModal}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-slate-200/90 text-xs font-bold transition-all cursor-pointer active:scale-95 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 shadow-2xs"
+              title="Backup & Transfer Library"
+            >
+              <Database className="w-4 h-4 stroke-[2.2] text-[#0c4a6e]" />
+              <span className="hidden sm:inline uppercase text-[10px] tracking-wider">
+                Backup
+              </span>
+            </button>
+          )}
+
           {onOpenCategoryManager && (
             <button
               type="button"
               onClick={onOpenCategoryManager}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-md border border-slate-200/90 text-xs font-bold transition-all cursor-pointer active:scale-95 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 shadow-2xs"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-slate-200/90 text-xs font-bold transition-all cursor-pointer active:scale-95 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 shadow-2xs"
               title="Edit Categories"
             >
               <FolderEdit className="w-4 h-4 stroke-[2.2] text-slate-600" />

@@ -31,6 +31,7 @@ import { SongViewerModal } from './components/SongViewerModal';
 import { UploadModal } from './components/UploadModal';
 import { EditSongModal } from './components/EditSongModal';
 import { CategoryManagerModal } from './components/CategoryManagerModal';
+import { BackupModal } from './components/BackupModal';
 import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
 import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
@@ -131,6 +132,7 @@ export default function App() {
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState<boolean>(false);
+  const [isBackupOpen, setIsBackupOpen] = useState<boolean>(false);
   const [initialFilesForUpload, setInitialFilesForUpload] = useState<File[] | null>(null);
   const [songToEdit, setSongToEdit] = useState<Song | null>(null);
   const [isSavingSongs, setIsSavingSongs] = useState<boolean>(false);
@@ -146,6 +148,16 @@ export default function App() {
     } catch (err) {
       console.error('Failed to reload songs:', err);
     }
+  };
+
+  const handleOpenBackupModal = () => setIsBackupOpen(true);
+  const handleCloseBackupModal = () => setIsBackupOpen(false);
+  const handleLibraryReload = async () => {
+    await loadSongs();
+    setSheetMusicCategories(getStoredCategories('sheet_music'));
+    setSheetMusicColors(getStoredCategoryColors('sheet_music'));
+    setTechniqueCategories(getStoredCategories('technique'));
+    setTechniqueColors(getStoredCategoryColors('technique'));
   };
 
   const uploadQueue = usePDFUploadQueue(loadSongs);
@@ -881,6 +893,7 @@ export default function App() {
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
           onOpenCategoryManager={handleOpenCategoryManager}
+          onOpenBackupModal={handleOpenBackupModal}
         />
       )}
 
@@ -1014,6 +1027,13 @@ export default function App() {
           onClose={handleCloseCategoryManager}
         />
       </BottomDrawer>
+
+      {isBackupOpen && (
+        <BackupModal
+          onClose={handleCloseBackupModal}
+          onLibraryReload={handleLibraryReload}
+        />
+      )}
 
       {/* Fixed Bottom Navigation Bar */}
       <BottomNav

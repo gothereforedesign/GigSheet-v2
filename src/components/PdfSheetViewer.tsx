@@ -202,14 +202,15 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   const getArrayBuffer = useCallback(async (): Promise<{ buffer: ArrayBuffer; blobUrl: string }> => {
     if (!pdfData) throw new Error('No PDF data provided');
 
-    if (pdfData instanceof ArrayBuffer) {
-      const copy = pdfData.slice(0);
+    if (pdfData instanceof ArrayBuffer || Object.prototype.toString.call(pdfData) === '[object ArrayBuffer]') {
+      const copy = (pdfData as ArrayBuffer).slice(0);
       const blob = new Blob([copy], { type: 'application/pdf' });
       return { buffer: copy, blobUrl: URL.createObjectURL(blob) };
     }
-    if (pdfData instanceof Uint8Array) {
-      const copy = new Uint8Array(pdfData.byteLength);
-      copy.set(pdfData);
+    if (pdfData instanceof Uint8Array || ArrayBuffer.isView(pdfData) || (pdfData && (pdfData as any).buffer instanceof ArrayBuffer)) {
+      const view = pdfData as Uint8Array;
+      const copy = new Uint8Array(view.byteLength);
+      copy.set(view);
       const buffer = copy.buffer as ArrayBuffer;
       const blob = new Blob([buffer], { type: 'application/pdf' });
       return { buffer, blobUrl: URL.createObjectURL(blob) };
@@ -275,6 +276,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
           standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/standard_fonts/`,
           disableAutoFetch: false,
           disableStream: false,
+          stopAtErrors: false,
         });
 
         const loadedDoc = await loadingTask.promise;

@@ -128,14 +128,19 @@ export async function getSongById(id: string): Promise<Song | undefined> {
   }
 
   if (content && content.blob) {
-    let blob = content.blob;
-    if (blob instanceof Blob) {
-      return { ...song, fileBlob: blob };
-    } else if (blob instanceof ArrayBuffer || Object.prototype.toString.call(blob) === '[object ArrayBuffer]') {
-      const createdBlob = new Blob([blob], { type: song.type === 'pdf' ? 'application/pdf' : 'image/jpeg' });
+    let raw = content.blob;
+    if (raw instanceof Blob) {
+      return { ...song, fileBlob: raw };
+    }
+    if (raw instanceof ArrayBuffer || Object.prototype.toString.call(raw) === '[object ArrayBuffer]') {
+      const createdBlob = new Blob([raw], { type: song.type === 'pdf' ? 'application/pdf' : 'image/jpeg' });
       return { ...song, fileBlob: createdBlob };
     }
-    return { ...song, fileBlob: blob as unknown as Blob };
+    if (ArrayBuffer.isView(raw) || (raw && (raw as any).buffer instanceof ArrayBuffer)) {
+      const createdBlob = new Blob([(raw as any).buffer || raw], { type: song.type === 'pdf' ? 'application/pdf' : 'image/jpeg' });
+      return { ...song, fileBlob: createdBlob };
+    }
+    return { ...song, fileBlob: raw as unknown as Blob };
   }
 
   // If no blob in song_blobs, check if song itself has fileUrl or sample fallback
