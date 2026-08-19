@@ -231,7 +231,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                     </button>
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-1">
-                    {allSongs.map((song) => (
+                    {[...allSongs].sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })).map((song) => (
                       <button
                         key={song.id}
                         onClick={() => handleAddSongToSetlist(activeSetlist, song.id)}

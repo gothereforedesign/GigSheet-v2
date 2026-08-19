@@ -773,7 +773,9 @@ export default function App() {
     if (targetCat === 'ALL_SECTION_CHARTS') {
       return {
         categoryName: isTech ? 'All Technique Charts' : 'All Sheet Music Charts',
-        songsList: [...sectionSongs].sort((a, b) => a.title.localeCompare(b.title)),
+        songsList: [...sectionSongs].sort((a, b) =>
+          a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+        ),
       };
     }
 
@@ -789,7 +791,9 @@ export default function App() {
       songsList = [...songsList, activeSong];
     }
 
-    songsList.sort((a, b) => a.title.localeCompare(b.title));
+    songsList.sort((a, b) =>
+      a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+    );
 
     return {
       categoryName: targetCat,

@@ -238,7 +238,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   });
 
   // Sorted Songs
-  const sortedSongs = [...filteredSongs].sort((a, b) => a.title.localeCompare(b.title));
+  const sortedSongs = [...filteredSongs].sort((a, b) =>
+    a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+  );
 
   // Category Color Palette for current selected category
   const currentPalette = getCategoryPalette(selectedCategory || undefined, genreColors, section);
