@@ -104,21 +104,34 @@ export const LazyPDFThumbnail: React.FC<LazyPDFThumbnailProps> = ({
         let pdf: any = null;
         let page: any = null;
         try {
-          pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+          pdf = await pdfjsLib.getDocument({
+            data: new Uint8Array(arrayBuffer),
+            cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+            cMapPacked: true,
+            standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
+            disableAutoFetch: false,
+            disableStream: false,
+            stopAtErrors: false,
+          }).promise;
           page = await pdf.getPage(1);
 
-          const viewport = page.getViewport({ scale: 0.4 });
+          const baseViewport = page.getViewport({ scale: 1.0 });
+          // Ensure thumbnail canvas is at least 320px wide for crisp preview regardless of small intrinsic PDF point size
+          const targetWidth = 320;
+          const scale = Math.max(0.5, targetWidth / (baseViewport.width || 300));
+          const viewport = page.getViewport({ scale });
+
           const canvas = document.createElement('canvas');
           canvas.width = Math.floor(viewport.width);
           canvas.height = Math.floor(viewport.height);
-          const ctx = canvas.getContext('2d', { alpha: false });
+          const ctx = canvas.getContext('2d');
 
           if (ctx) {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
             thumbCache.set(songId, dataUrl);
             setThumbUrl(dataUrl);

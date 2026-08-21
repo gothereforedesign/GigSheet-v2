@@ -55,8 +55,9 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
           setAspectRatio(baseViewport.height / baseViewport.width);
         }
 
-        // Render resolution: Crisp 2.0x for ultra-sharp sheet music staves and notation
-        const renderScale = 2.0;
+        // Render resolution: Ensure minimum 1600px canvas width for ultra-sharp sheet music staves and notation regardless of small intrinsic PDF point size
+        const minCanvasWidth = 1600;
+        const renderScale = Math.max(2.0, minCanvasWidth / (baseViewport.width || 600));
         const viewport = page.getViewport({ scale: renderScale });
 
         const canvas = canvasRef.current;
@@ -268,12 +269,11 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         localBlobUrl = url;
         setBlobUrl(url);
 
-        const version = pdfjsLib.version || '6.2.108';
         const loadingTask = pdfjsLib.getDocument({
           data: new Uint8Array(buffer.slice(0)),
-          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/cmaps/`,
+          cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
           cMapPacked: true,
-          standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/standard_fonts/`,
+          standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
           disableAutoFetch: false,
           disableStream: false,
           stopAtErrors: false,
@@ -345,11 +345,17 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
 
         {useNativeViewer && blobUrl && (
           <div className="w-full h-full flex-1 p-2 flex flex-col items-center">
-            <iframe
-              src={blobUrl}
-              title={title}
-              className="w-full h-full min-h-[75vh] rounded-lg border border-slate-800 shadow-2xl bg-white"
-            />
+            <object
+              data={blobUrl}
+              type="application/pdf"
+              className="w-full h-full min-h-[82vh] rounded-lg border border-slate-800 shadow-2xl bg-white"
+            >
+              <iframe
+                src={blobUrl}
+                title={title}
+                className="w-full h-full min-h-[82vh] rounded-lg border border-slate-800 shadow-2xl bg-white"
+              />
+            </object>
           </div>
         )}
 

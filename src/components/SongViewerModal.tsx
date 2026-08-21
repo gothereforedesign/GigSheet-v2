@@ -187,20 +187,24 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white w-screen h-screen overflow-hidden select-none">
-      {/* Top Header Bar with Transparent Background */}
-      <header className="sticky top-0 z-40 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] pointer-events-none bg-transparent">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-md">
         {/* Item 1: Close Button + Chart Title */}
         <div className="flex items-center gap-2 max-w-[80vw] sm:max-w-md md:max-w-xl min-w-0">
           <button
-            onClick={onClose}
-            className="p-2 sm:px-3 sm:py-1.5 rounded-md bg-slate-900/90 hover:bg-slate-800 text-white active:scale-95 cursor-pointer transition-colors border border-slate-700/80 shrink-0 flex items-center gap-1.5 shadow-lg backdrop-blur-md pointer-events-auto"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="p-2 sm:px-3 sm:py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white active:scale-95 cursor-pointer transition-colors border border-slate-700/80 shrink-0 flex items-center gap-1.5 shadow-lg"
             title="Close Viewer (Esc)"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Close</span>
           </button>
 
-          <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-md bg-slate-900/90 border border-slate-700/80 shadow-lg backdrop-blur-md pointer-events-auto">
+          <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-md bg-slate-900 border border-slate-700/80 shadow-lg">
             <h3 className="text-xs sm:text-sm font-extrabold text-white truncate leading-tight">
               {song.title}
             </h3>
@@ -215,7 +219,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         <button
           type="button"
           onClick={handleOpenPdf}
-          className="px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg backdrop-blur-md pointer-events-auto shrink-0"
+          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg shrink-0"
           title="Open PDF chart in new tab"
         >
           <span className="text-[11px] font-black">Open PDF</span>
