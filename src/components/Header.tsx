@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCategoryManager,
   onOpenBackupModal,
 }) => {
-  const isTechnique = activeTab === 'technique';
+  const isTechnique = activeTab === 'technique' || activeTab === 'technique_routines';
 
   return (
     <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3">

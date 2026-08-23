@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Song } from '../types';
 import { PdfSheetViewer } from './PdfSheetViewer';
 import { 
-  X, ChevronLeft, ChevronRight, 
+  X, ChevronLeft, ChevronRight, ListPlus,
   Loader2, ExternalLink, ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
 import { getSongById } from '../lib/db';
@@ -11,6 +11,7 @@ import { getCategoryPalette, getStoredCategoryColors } from '../lib/categoryStor
 interface SongViewerModalProps {
   song: Song;
   onClose: () => void;
+  onAddToSetlist?: (song: Song) => void;
   navigation?: {
     currentIndex: number;
     totalCount: number;
@@ -22,6 +23,7 @@ interface SongViewerModalProps {
 export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   song: initialSong,
   onClose,
+  onAddToSetlist,
   navigation,
 }) => {
   const [song, setSong] = useState<Song>(initialSong);
@@ -215,16 +217,32 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           </div>
         </div>
 
-        {/* Item 2: Open PDF Button */}
-        <button
-          type="button"
-          onClick={handleOpenPdf}
-          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg shrink-0"
-          title="Open PDF chart in new tab"
-        >
-          <span className="text-[11px] font-black">Open PDF</span>
-          <ExternalLink className="w-3.5 h-3.5 stroke-[2.2]" />
-        </button>
+        {/* Item 2: Actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onAddToSetlist && (
+            <button
+              type="button"
+              onClick={() => onAddToSetlist(song)}
+              className="px-2.5 sm:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-sky-300 hover:text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg"
+              title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
+            >
+              <ListPlus className="w-3.5 h-3.5 stroke-[2.2]" />
+              <span className="hidden sm:inline text-[11px] font-black">
+                {isTechnique ? '+ Routine' : '+ Setlist'}
+              </span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleOpenPdf}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg"
+            title="Open PDF chart in new tab"
+          >
+            <span className="text-[11px] font-black">Open PDF</span>
+            <ExternalLink className="w-3.5 h-3.5 stroke-[2.2]" />
+          </button>
+        </div>
       </header>
 
       {/* Main Sheet Music Viewing Canvas */}

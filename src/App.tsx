@@ -5,10 +5,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, X, Upload, FolderEdit } from 'lucide-react';
 import { 
-  Song, ActiveTab, ViewFilterState 
+  Song, ActiveTab, ViewFilterState, Setlist 
 } from './types';
 import { 
-  getAllSongs, saveSong, saveSongsBatch, deleteSong, deleteSongsBatch, toggleSongFavorite
+  getAllSongs, saveSong, saveSongsBatch, deleteSong, deleteSongsBatch, toggleSongFavorite,
+  getAllSetlists, saveSetlist, deleteSetlist
 } from './lib/db';
 import { 
   getStoredCategories, 
@@ -26,6 +27,8 @@ import {
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { LibraryView } from './components/LibraryView';
+import { SetlistsView } from './components/SetlistsView';
+import { AddToSetlistModal } from './components/AddToSetlistModal';
 import { TrashView } from './components/TrashView';
 import { SongViewerModal } from './components/SongViewerModal';
 import { UploadModal } from './components/UploadModal';
@@ -57,7 +60,7 @@ const getInitialNavState = (): NavState => {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed && typeof parsed === 'object') {
-        if (['sheet_music', 'technique', 'trash'].includes(parsed.activeTab)) {
+        if (['sheet_music', 'sheet_music_setlists', 'technique', 'technique_routines', 'trash'].includes(parsed.activeTab)) {
           navState.activeTab = parsed.activeTab as ActiveTab;
         }
         if (typeof parsed.selectedCategory === 'string' || parsed.selectedCategory === null) {
@@ -77,7 +80,7 @@ const getInitialNavState = (): NavState => {
       } else {
         const parts = hashContent.split('/');
         const tabPart = parts[0].toLowerCase() as ActiveTab;
-        if (['sheet_music', 'technique', 'trash'].includes(tabPart)) {
+        if (['sheet_music', 'sheet_music_setlists', 'technique', 'technique_routines', 'trash'].includes(tabPart)) {
           navState.activeTab = tabPart;
           if (parts.length > 1 && parts[1].trim()) {
             navState.selectedCategory = parts[1].trim();
@@ -96,10 +99,13 @@ export default function App() {
   // Navigation Route State (restored on refresh)
   const initialNavStateRef = useRef<NavState>(getInitialNavState());
   const [activeTab, setActiveTab] = useState<ActiveTab>(initialNavStateRef.current.activeTab);
-  const section: 'sheet_music' | 'technique' = activeTab === 'technique' ? 'technique' : 'sheet_music';
+  const section: 'sheet_music' | 'technique' = (activeTab === 'technique' || activeTab === 'technique_routines') ? 'technique' : 'sheet_music';
 
   // Data State
   const [songs, setSongs] = useState<Song[]>([]);
+  const [setlists, setSetlists] = useState<Setlist[]>([]);
+  const [songForAddToSetlist, setSongForAddToSetlist] = useState<Song | null>(null);
+  const [activeSetlistContext, setActiveSetlistContext] = useState<{ setlist: Setlist; startIndex: number } | null>(null);
   
   // Categories per section
   const [sheetMusicCategories, setSheetMusicCategories] = useState<string[]>(() => getStoredCategories('sheet_music'));
@@ -150,10 +156,75 @@ export default function App() {
     }
   };
 
+  const loadSetlists = async () => {
+    try {
+      const loadedSetlists = await getAllSetlists();
+      setSetlists(loadedSetlists);
+    } catch (err) {
+      console.error('Failed to load setlists:', err);
+    }
+  };
+
+  const handleCreateSetlist = async (name: string, description?: string, targetSection?: 'sheet_music' | 'technique'): Promise<Setlist | undefined> => {
+    const newSetlist: Setlist = {
+      id: `set_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name,
+      description,
+      dateCreated: Date.now(),
+      dateModified: Date.now(),
+      items: [],
+      type: targetSection || (section === 'technique' ? 'technique' : 'sheet_music'),
+    };
+    await saveSetlist(newSetlist);
+    await loadSetlists();
+    return newSetlist;
+  };
+
+  const handleUpdateSetlist = async (updatedSetlist: Setlist) => {
+    await saveSetlist(updatedSetlist);
+    await loadSetlists();
+  };
+
+  const handleDeleteSetlist = async (id: string) => {
+    await deleteSetlist(id);
+    await loadSetlists();
+  };
+
+  const handleOpenSetlistPerformance = (setlist: Setlist, startIndex = 0) => {
+    const item = setlist.items[startIndex];
+    if (!item) return;
+    const song = songs.find((s) => s.id === item.songId);
+    if (song) {
+      setActiveSetlistContext({ setlist, startIndex });
+      setActiveSongForViewer(song);
+    }
+  };
+
+  const handleSaveSetlistsForSong = async (songId: string, updatedSetlistIds: string[]) => {
+    const targetSec = songForAddToSetlist?.section || section;
+    const relevantSetlists = setlists.filter((s) => (s.type || 'sheet_music') === targetSec);
+
+    for (const setlist of relevantSetlists) {
+      const belongs = updatedSetlistIds.includes(setlist.id);
+      const hasSong = setlist.items.some((item) => item.songId === songId);
+
+      if (belongs && !hasSong) {
+        const newItems = [...setlist.items, { songId }];
+        await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+      } else if (!belongs && hasSong) {
+        const newItems = setlist.items.filter((item) => item.songId !== songId);
+        await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+      }
+    }
+    await loadSetlists();
+    setSongForAddToSetlist(null);
+  };
+
   const handleOpenBackupModal = () => setIsBackupOpen(true);
   const handleCloseBackupModal = () => setIsBackupOpen(false);
   const handleLibraryReload = async () => {
     await loadSongs();
+    await loadSetlists();
     setSheetMusicCategories(getStoredCategories('sheet_music'));
     setSheetMusicColors(getStoredCategoryColors('sheet_music'));
     setTechniqueCategories(getStoredCategories('technique'));
@@ -171,6 +242,7 @@ export default function App() {
         }
         const loadedSongs = await getAllSongs();
         setSongs(loadedSongs);
+        await loadSetlists();
 
         // Restore active song viewer if saved across refresh
         if (savedSongIdRef.current) {
@@ -335,6 +407,7 @@ export default function App() {
   };
 
   const handleCloseSongViewer = () => {
+    setActiveSetlistContext(null);
     goBackOrReset({ activeSongId: null });
   };
 
@@ -817,28 +890,51 @@ export default function App() {
   const renderViewerModal = () => {
     if (!activeSongForViewer) return null;
 
-    const { categoryName, songsList } = getFilteredSongsForViewer(activeSongForViewer);
-    const currentIndex = songsList.findIndex((s) => s.id === activeSongForViewer.id);
-
     let navigationContext;
-    if (currentIndex !== -1) {
-      navigationContext = {
-        currentIndex,
-        totalCount: songsList.length,
-        listName: categoryName,
-        onNavigate: (newIdx: number) => {
-          const nextSong = songsList[newIdx];
-          if (nextSong) {
-            setActiveSongForViewer(nextSong);
-          }
-        },
-      };
+    if (activeSetlistContext) {
+      const { setlist } = activeSetlistContext;
+      const setlistSongs = setlist.items
+        .map((item) => songs.find((s) => s.id === item.songId))
+        .filter((s): s is Song => Boolean(s));
+
+      const currentIndex = setlistSongs.findIndex((s) => s.id === activeSongForViewer.id);
+      if (currentIndex !== -1) {
+        navigationContext = {
+          currentIndex,
+          totalCount: setlistSongs.length,
+          listName: setlist.name,
+          onNavigate: (newIdx: number) => {
+            const nextSong = setlistSongs[newIdx];
+            if (nextSong) {
+              setActiveSongForViewer(nextSong);
+            }
+          },
+        };
+      }
+    } else {
+      const { categoryName, songsList } = getFilteredSongsForViewer(activeSongForViewer);
+      const currentIndex = songsList.findIndex((s) => s.id === activeSongForViewer.id);
+
+      if (currentIndex !== -1) {
+        navigationContext = {
+          currentIndex,
+          totalCount: songsList.length,
+          listName: categoryName,
+          onNavigate: (newIdx: number) => {
+            const nextSong = songsList[newIdx];
+            if (nextSong) {
+              setActiveSongForViewer(nextSong);
+            }
+          },
+        };
+      }
     }
 
     return (
       <SongViewerModal
         song={activeSongForViewer}
         onClose={handleCloseSongViewer}
+        onAddToSetlist={(s) => setSongForAddToSetlist(s)}
         navigation={navigationContext}
       />
     );
@@ -926,9 +1022,25 @@ export default function App() {
                 onToggleFavorite={handleToggleFavorite}
                 onDeleteSong={handleSoftDeleteSong}
                 onEditSong={handleOpenEditSong}
+                onAddToSetlist={(song) => setSongForAddToSetlist(song)}
                 onOpenGenreManager={handleOpenCategoryManager}
                 trashCount={trashedSongs.length}
                 onOpenTrash={() => handleSelectTab('trash')}
+              />
+            )}
+
+            {(activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines') && (
+              <SetlistsView
+                section={section}
+                setlists={setlists}
+                allSongs={songs.filter((s) => !s.deletedAt)}
+                genreColors={currentCategoryColors}
+                onCreateSetlist={handleCreateSetlist}
+                onUpdateSetlist={handleUpdateSetlist}
+                onDeleteSetlist={handleDeleteSetlist}
+                onOpenSetlistPerformance={handleOpenSetlistPerformance}
+                onSelectSong={handleOpenSongViewer}
+                onEditSong={handleOpenEditSong}
               />
             )}
 
@@ -1032,6 +1144,16 @@ export default function App() {
         <BackupModal
           onClose={handleCloseBackupModal}
           onLibraryReload={handleLibraryReload}
+        />
+      )}
+
+      {songForAddToSetlist && (
+        <AddToSetlistModal
+          song={songForAddToSetlist}
+          setlists={setlists.filter((s) => (s.type || 'sheet_music') === (songForAddToSetlist.section || 'sheet_music'))}
+          onCreateSetlist={handleCreateSetlist}
+          onSaveSetlistsForSong={handleSaveSetlistsForSong}
+          onClose={() => setSongForAddToSetlist(null)}
         />
       )}
 

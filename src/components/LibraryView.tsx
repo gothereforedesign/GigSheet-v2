@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Song, ViewFilterState } from '../types';
 import { 
-  Music, Trash2, FolderEdit, ChevronLeft, FileText, LayoutList, LayoutGrid
+  Music, Trash2, FolderEdit, ListPlus, ChevronLeft, FileText, LayoutList, LayoutGrid
 } from 'lucide-react';
 import { 
   CategoryColorKey, 
@@ -24,6 +24,7 @@ interface LibraryViewProps {
   onToggleFavorite: (id: string) => void;
   onDeleteSong: (id: string) => void;
   onEditSong: (song: Song) => void;
+  onAddToSetlist?: (song: Song) => void;
   onOpenGenreManager?: () => void;
   trashCount?: number;
   onOpenTrash?: () => void;
@@ -35,6 +36,7 @@ interface SongRowProps {
   onSelectSong: (song: Song) => void;
   onDeleteSong: (id: string) => void;
   onEditSong: (song: Song) => void;
+  onAddToSetlist?: (song: Song) => void;
 }
 
 const SongRow: React.FC<SongRowProps> = ({
@@ -43,6 +45,7 @@ const SongRow: React.FC<SongRowProps> = ({
   onSelectSong,
   onDeleteSong,
   onEditSong,
+  onAddToSetlist,
 }) => {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -152,6 +155,19 @@ const SongRow: React.FC<SongRowProps> = ({
         </div>
 
         <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          {onAddToSetlist && (
+            <button
+              type="button"
+              onClick={() => onAddToSetlist(song)}
+              className={`p-1.5 rounded-lg text-slate-400 active:scale-95 transition-all cursor-pointer ${
+                isTechnique ? 'hover:text-purple-900 hover:bg-purple-50' : 'hover:text-[#0c4a6e] hover:bg-slate-100'
+              }`}
+              title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
+            >
+              <ListPlus className="w-4 h-4 stroke-[2]" />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => onEditSong(song)}
@@ -180,6 +196,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onSelectSong,
   onDeleteSong,
   onEditSong,
+  onAddToSetlist,
   onOpenGenreManager,
   trashCount,
   onOpenTrash,
@@ -403,6 +420,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   onSelectSong={onSelectSong}
                   onDeleteSong={onDeleteSong}
                   onEditSong={onEditSong}
+                  onAddToSetlist={onAddToSetlist}
                 />
               ))}
             </div>
@@ -416,6 +434,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   onSelectSong={onSelectSong}
                   onDeleteSong={onDeleteSong}
                   onEditSong={onEditSong}
+                  onAddToSetlist={onAddToSetlist}
                 />
               ))}
             </div>

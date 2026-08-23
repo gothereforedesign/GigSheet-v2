@@ -1,39 +1,73 @@
 import React, { useState } from 'react';
-import { Setlist, Song, SetlistItem } from '../types';
-import { Plus, ListMusic, Play, Trash2, ChevronUp, ChevronDown, Music, Calendar, Clock, Edit2, ArrowRight } from 'lucide-react';
+import { Setlist, Song } from '../types';
+import { 
+  Plus, ListMusic, Flame, Play, Trash2, ChevronUp, ChevronDown, 
+  Music, Sparkles, X, ChevronLeft, LayoutList, LayoutGrid, FolderEdit, Search
+} from 'lucide-react';
+import { 
+  CategoryColorKey, 
+  getCategoryPalette 
+} from '../lib/categoryStorage';
+import { LazyPDFThumbnail } from './LazyPDFThumbnail';
 
 interface SetlistsViewProps {
+  section?: 'sheet_music' | 'technique';
   setlists: Setlist[];
   allSongs: Song[];
-  onCreateSetlist: (name: string, description?: string) => Promise<void>;
+  genreColors?: Record<string, CategoryColorKey>;
+  onCreateSetlist: (name: string, description?: string, section?: 'sheet_music' | 'technique') => Promise<Setlist | undefined | void>;
   onUpdateSetlist: (setlist: Setlist) => Promise<void>;
   onDeleteSetlist: (id: string) => Promise<void>;
   onOpenSetlistPerformance: (setlist: Setlist, startIndex: number) => void;
+  onSelectSong?: (song: Song) => void;
+  onEditSong?: (song: Song) => void;
 }
 
 export const SetlistsView: React.FC<SetlistsViewProps> = ({
+  section = 'sheet_music',
   setlists,
   allSongs,
+  genreColors,
   onCreateSetlist,
   onUpdateSetlist,
   onDeleteSetlist,
   onOpenSetlistPerformance,
+  onSelectSong,
+  onEditSong,
 }) => {
+  const isTechnique = section === 'technique';
+  const targetSection = isTechnique ? 'technique' : 'sheet_music';
+
+  // Filter setlists matching section
+  const sectionSetlists = setlists.filter(
+    (s) => (s.type || 'sheet_music') === targetSection
+  );
+
+  // Filter songs matching section
+  const sectionSongs = allSongs.filter(
+    (s) => (s.section || 'sheet_music') === targetSection
+  );
+
   const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
+  const [isCreating, setIsCreating] = useState<boolean>(false);
   const [newSetName, setNewSetName] = useState<string>('');
   const [newSetDesc, setNewSetDesc] = useState<string>('');
-  const [isCreating, setIsCreating] = useState<boolean>(false);
   const [showAddSongPicker, setShowAddSongPicker] = useState<boolean>(false);
+  const [pickerSearchQuery, setPickerSearchQuery] = useState<string>('');
 
-  const activeSetlist = setlists.find((s) => s.id === selectedSetlistId);
+  const activeSetlist = sectionSetlists.find((s) => s.id === selectedSetlistId);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSetName) return;
-    await onCreateSetlist(newSetName, newSetDesc);
+    if (!newSetName.trim()) return;
+    const created = await onCreateSetlist(newSetName.trim(), newSetDesc.trim() || undefined, targetSection);
     setNewSetName('');
     setNewSetDesc('');
     setIsCreating(false);
+    if (created && created.id) {
+      setSelectedSetlistId(created.id);
+    }
   };
 
   const handleMoveSong = (setlist: Setlist, index: number, direction: 'up' | 'down') => {
@@ -69,232 +103,512 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
       items: newItems,
       dateModified: Date.now(),
     });
-    setShowAddSongPicker(false);
   };
 
+  // Filtered charts for picker
+  const filteredPickerSongs = sectionSongs.filter((song) => {
+    if (!pickerSearchQuery.trim()) return true;
+    const q = pickerSearchQuery.toLowerCase();
+    return (
+      song.title.toLowerCase().includes(q) ||
+      (song.artist && song.artist.toLowerCase().includes(q)) ||
+      (song.genre && song.genre.toLowerCase().includes(q))
+    );
+  }).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
+
   return (
-    <div className="space-y-4 pb-24">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-black uppercase tracking-wider text-[#0c4a6e]">
-            Setlists & Gig Planners
-          </h2>
-        </div>
-
-        <button
-          onClick={() => setIsCreating(true)}
-          className="px-3.5 py-2 bg-[#0c4a6e] hover:bg-[#073652] text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>New Setlist</span>
-        </button>
-      </div>
-
-      {/* Create Setlist Form Modal / Card */}
-      {isCreating && (
-        <form onSubmit={handleCreate} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-md space-y-3">
-          <h3 className="text-xs font-black uppercase tracking-wider text-[#0c4a6e]">
-            Create New Setlist
-          </h3>
-          <div>
-            <input
-              type="text"
-              required
-              placeholder="Setlist Name (e.g. Friday Lounge Gig)"
-              value={newSetName}
-              onChange={(e) => setNewSetName(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0c4a6e] outline-none"
-            />
-          </div>
-          <div>
-            <input
-              type="text"
-              placeholder="Description or venue (Optional)"
-              value={newSetDesc}
-              onChange={(e) => setNewSetDesc(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-[#0c4a6e] outline-none"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsCreating(false)}
-              className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[#0c4a6e] text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer active:scale-95"
-            >
-              Create Setlist
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* Main Setlists Grid or Detail View */}
+    <div className="space-y-4 pb-0">
+      {/* VIEW 1: 2-COLUMN CATEGORY GRID (Matches Sheet Music / Technique Category View) */}
       {!selectedSetlistId ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {setlists.map((setlist) => (
+        <div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            {sectionSetlists.map((setlist) => {
+              const palette = getCategoryPalette(setlist.name, genreColors, section);
+              const count = setlist.items.length;
+
+              return (
+                <div
+                  key={setlist.id}
+                  onClick={() => setSelectedSetlistId(setlist.id)}
+                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
+                >
+                  {/* Subtle PDF count badge */}
+                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/20 text-white/95 backdrop-blur-xs border border-white/10 shadow-2xs">
+                    <span>{count}</span>
+                  </div>
+
+                  <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
+                    {setlist.name}
+                  </h3>
+                </div>
+              );
+            })}
+
+            {/* "+ Create Setlist / Routine" Card in the Grid */}
             <div
-              key={setlist.id}
-              onClick={() => setSelectedSetlistId(setlist.id)}
-              className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs hover:border-sky-300 transition-all space-y-3 flex flex-col justify-between cursor-pointer active:scale-[0.98]"
+              onClick={() => setIsCreating(true)}
+              className="relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 border-2 border-dashed border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all select-none shadow-2xs hover:shadow-xs active:scale-[0.99]"
             >
-              <div className="space-y-2">
-                <div className="flex justify-end">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-1.5 text-white shadow-xs ${
+                isTechnique ? 'bg-purple-900' : 'bg-[#0c4a6e]'
+              }`}>
+                <Plus className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <span className="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-slate-800">
+                New {isTechnique ? 'Routine' : 'Setlist'}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED SETLIST / ROUTINE - UNIFIED WHITE CONTAINER */
+        activeSetlist && (
+          <div className="bg-white rounded-lg border border-slate-200/90 p-3 sm:p-4 shadow-2xs space-y-3">
+            {/* Top Bar Navigation */}
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+                {/* Back Arrow Button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedSetlistId(null)}
+                  className="p-1.5 text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                  title={`Back to ${isTechnique ? 'Routines' : 'Setlists'}`}
+                >
+                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                </button>
+
+                {/* Category / Setlist Title Badge + Delete Button */}
+                <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                  <h2 className="text-xs sm:text-sm font-black text-slate-900 truncate max-w-[120px] sm:max-w-[200px]">
+                    {activeSetlist.name}
+                  </h2>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteSetlist(setlist.id);
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Delete ${isTechnique ? 'routine' : 'setlist'} "${activeSetlist.name}"?`)) {
+                        onDeleteSetlist(activeSetlist.id);
+                        setSelectedSetlistId(null);
+                      }
                     }}
-                    className="p-1 text-slate-300 hover:text-rose-600 active:scale-95 cursor-pointer"
-                    title="Delete Setlist"
+                    className="p-0.5 rounded-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer shrink-0"
+                    title={`Delete ${isTechnique ? 'Routine' : 'Setlist'}`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5 stroke-[2]" />
                   </button>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[#0c4a6e]">
-                    {setlist.name}
-                  </h3>
-                  {setlist.description && (
-                    <p className="text-xs font-medium text-slate-500 line-clamp-2">
-                      {setlist.description}
-                    </p>
-                  )}
+                {/* Subtle PDF Count Badge */}
+                <div className="inline-flex items-center justify-center bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center" title={`${activeSetlist.items.length} Charts`}>
+                  <span>{activeSetlist.items.length}</span>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* Active Selected Setlist Detail Editor */
-        activeSetlist && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
-              <div>
-                <button
-                  onClick={() => setSelectedSetlistId(null)}
-                  className="text-[10px] font-black uppercase tracking-wider text-sky-600 hover:underline mb-1 block cursor-pointer"
-                >
-                  ← Back to Setlists
-                </button>
-                <h3 className="text-base font-black uppercase tracking-wider text-[#0c4a6e]">
-                  {activeSetlist.name}
-                </h3>
-                <p className="text-xs font-medium text-slate-500">
-                  {activeSetlist.description || 'No description provided.'}
-                </p>
-              </div>
 
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                {/* Start Performance / Routine Button */}
+                <button
+                  type="button"
+                  onClick={() => onOpenSetlistPerformance(activeSetlist, 0)}
+                  disabled={activeSetlist.items.length === 0}
+                  className={`px-3 py-1.5 disabled:opacity-40 text-white rounded-md text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs ${
+                    isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-[#0c4a6e] hover:bg-[#073652]'
+                  }`}
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span className="hidden sm:inline">{isTechnique ? 'Start Routine' : 'Start Performance'}</span>
+                  <span className="sm:hidden">Start</span>
+                </button>
+
+                {/* Add Chart Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowAddSongPicker(true)}
+                  className="px-2.5 py-1.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs border border-slate-200/90 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap flex items-center gap-1"
+                  title="Add Chart to Setlist"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span className="hidden sm:inline text-[11px] uppercase tracking-wider">Add Chart</span>
+                </button>
+
+                {/* View Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setDisplayMode(displayMode === 'list' ? 'grid' : 'list')}
+                  className="p-1.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs border border-slate-200/90 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
+                  title={displayMode === 'list' ? 'Switch to Grid Preview' : 'Switch to List View'}
+                >
+                  {displayMode === 'list' ? (
+                    <LayoutGrid className="w-4 h-4 stroke-[2.2]" />
+                  ) : (
+                    <LayoutList className="w-4 h-4 stroke-[2.2]" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Description if present */}
+            {activeSetlist.description && (
+              <p className="text-xs font-medium text-slate-500 px-0.5">
+                {activeSetlist.description}
+              </p>
+            )}
+
+            {/* Items inside Setlist */}
+            {activeSetlist.items.length === 0 ? (
+              <div className="p-8 sm:p-10 text-center bg-slate-50/80 rounded-lg border border-slate-200/60 space-y-3 shadow-2xs">
+                <div className={`w-10 h-10 rounded-md mx-auto flex items-center justify-center border ${
+                  isTechnique ? 'bg-purple-50 border-purple-100 text-purple-900' : 'bg-sky-50 border-sky-100 text-[#0c4a6e]'
+                }`}>
+                  <Music className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">
+                    No charts in this {isTechnique ? 'routine' : 'setlist'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Tap "+ Add Chart" above to select charts from your library.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddSongPicker(true)}
+                  className={`mt-1 px-3.5 py-1.5 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 ${
+                    isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-[#0c4a6e] hover:bg-[#073652]'
+                  }`}
+                >
+                  + Add Chart
+                </button>
+              </div>
+            ) : displayMode === 'grid' ? (
+              /* GRID PREVIEW MODE */
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-3.5 pt-1">
+                {activeSetlist.items.map((item, idx) => {
+                  const song = allSongs.find((s) => s.id === item.songId);
+                  if (!song) return null;
+
+                  return (
+                    <div
+                      key={`${item.songId}_${idx}`}
+                      onClick={() => onOpenSetlistPerformance(activeSetlist, idx)}
+                      className={`relative bg-white border border-slate-200/90 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] transition-all ${
+                        isTechnique ? 'hover:border-purple-400' : 'hover:border-sky-400'
+                      }`}
+                    >
+                      {/* Order Overlay Badge */}
+                      <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md text-[10px] font-black font-mono tracking-tight bg-slate-900/90 text-white shadow-xs">
+                        #{idx + 1}
+                      </div>
+
+                      {/* Controls Top-Right */}
+                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 backdrop-blur-xs p-0.5 rounded-md border border-slate-200 shadow-xs" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleMoveSong(activeSetlist, idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-0.5 text-slate-500 hover:text-slate-900 disabled:opacity-20 cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </button>
+                        <button
+                          onClick={() => handleMoveSong(activeSetlist, idx, 'down')}
+                          disabled={idx === activeSetlist.items.length - 1}
+                          className="p-0.5 text-slate-500 hover:text-slate-900 disabled:opacity-20 cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveSongFromSetlist(activeSetlist, idx)}
+                          className="p-0.5 text-slate-400 hover:text-rose-600 cursor-pointer"
+                          title="Remove from setlist"
+                        >
+                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </button>
+                      </div>
+
+                      {/* Lazy Thumbnail Container */}
+                      <div className="relative aspect-[16/11] w-full bg-slate-100/80 border-b border-slate-200/60 flex items-center justify-center overflow-hidden">
+                        <LazyPDFThumbnail
+                          songId={song.id}
+                          songType={song.type}
+                          fileUrl={song.fileUrl}
+                          title={song.title}
+                          className="w-full h-full object-cover object-top"
+                        />
+                      </div>
+
+                      {/* Bottom Info Section */}
+                      <div className="px-2.5 py-1.5 bg-white flex items-center justify-between gap-1.5 min-h-[32px] shrink-0">
+                        <div className="min-w-0 flex-1">
+                          <h3 className={`text-xs font-bold text-slate-900 truncate leading-tight ${
+                            isTechnique ? 'group-hover:text-purple-900' : 'group-hover:text-[#0c4a6e]'
+                          }`}>
+                            {song.title}
+                          </h3>
+                          {song.artist && (
+                            <p className="text-[10px] font-medium text-slate-400 truncate -mt-0.5">
+                              {song.artist}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* LIST MODE */
+              <div className="flex flex-col gap-2 pt-1">
+                {activeSetlist.items.map((item, idx) => {
+                  const song = allSongs.find((s) => s.id === item.songId);
+                  if (!song) return null;
+
+                  return (
+                    <div
+                      key={`${item.songId}_${idx}`}
+                      onClick={() => onOpenSetlistPerformance(activeSetlist, idx)}
+                      className={`bg-white border border-slate-200/90 rounded-md px-3.5 py-2.5 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs cursor-pointer group transition-all ${
+                        isTechnique ? 'hover:border-purple-400' : 'hover:border-sky-400'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Order Number Badge */}
+                        <div className={`w-6 h-6 rounded-md text-xs font-black font-mono flex items-center justify-center shrink-0 border ${
+                          isTechnique ? 'bg-purple-50 text-purple-900 border-purple-200' : 'bg-sky-50 text-[#0c4a6e] border-sky-200'
+                        }`}>
+                          {idx + 1}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <h3 className={`text-sm font-bold text-slate-900 truncate leading-tight ${
+                            isTechnique ? 'group-hover:text-purple-900' : 'group-hover:text-[#0c4a6e]'
+                          }`}>
+                            {song.title}
+                          </h3>
+                          <p className="text-[10px] font-medium text-slate-400 truncate mt-0.5">
+                            {song.artist ? `${song.artist} • ` : ''}Key: {item.transposedKey || song.key || 'C'} { (item.targetTempo || song.tempo || 0) > 0 ? `• ${item.targetTempo || song.tempo} BPM` : '' }
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right Action Controls */}
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSong(activeSetlist, idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer rounded-md hover:bg-slate-100"
+                          title="Move Up"
+                        >
+                          <ChevronUp className="w-4 h-4 stroke-[2.2]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSong(activeSetlist, idx, 'down')}
+                          disabled={idx === activeSetlist.items.length - 1}
+                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer rounded-md hover:bg-slate-100"
+                          title="Move Down"
+                        >
+                          <ChevronDown className="w-4 h-4 stroke-[2.2]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSongFromSetlist(activeSetlist, idx)}
+                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                          title="Remove from setlist"
+                        >
+                          <X className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )
+      )}
+
+      {/* CREATE NEW SETLIST / ROUTINE MODAL */}
+      {isCreating && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                {isTechnique ? (
+                  <Flame className="w-5 h-5 text-purple-900" />
+                ) : (
+                  <ListMusic className="w-5 h-5 text-[#0c4a6e]" />
+                )}
+                <h3 className={`text-sm font-black uppercase tracking-wider ${
+                  isTechnique ? 'text-purple-900' : 'text-[#0c4a6e]'
+                }`}>
+                  Create {isTechnique ? 'Practice Routine' : 'Performance Setlist'}
+                </h3>
+              </div>
               <button
-                onClick={() => onOpenSetlistPerformance(activeSetlist, 0)}
-                disabled={activeSetlist.items.length === 0}
-                className="px-4 py-2.5 bg-[#0c4a6e] hover:bg-[#073652] disabled:opacity-40 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer active:scale-95 shadow-md"
+                type="button"
+                onClick={() => setIsCreating(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
               >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Start Performance</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Setlist Song Items List */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Order ({activeSetlist.items.length} Songs)
-                </span>
-                <button
-                  onClick={() => setShowAddSongPicker(true)}
-                  className="px-3 py-1 bg-sky-50 border border-sky-200 text-sky-800 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer active:scale-95"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Song</span>
-                </button>
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                  {isTechnique ? 'Routine Name' : 'Setlist Name'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder={isTechnique ? 'e.g., Daily Warmup Series' : 'e.g., Friday Night Gig'}
+                  value={newSetName}
+                  onChange={(e) => setNewSetName(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none text-slate-800 focus:border-slate-400 focus:bg-white transition-all"
+                />
               </div>
 
-              {/* Add Song Picker Dropdown */}
-              {showAddSongPicker && (
-                <div className="p-3 bg-white border border-sky-300 rounded-2xl shadow-md space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wider text-[#0c4a6e]">
-                      Select Song from Directory
-                    </span>
-                    <button
-                      onClick={() => setShowAddSongPicker(false)}
-                      className="text-xs text-slate-400 hover:text-slate-600"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    {[...allSongs].sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })).map((song) => (
-                      <button
-                        key={song.id}
-                        onClick={() => handleAddSongToSetlist(activeSetlist, song.id)}
-                        className="w-full text-left p-2 hover:bg-slate-50 rounded-xl flex items-center justify-between text-xs font-bold text-[#0c4a6e]"
-                      >
-                        <span>{song.title} ({song.artist})</span>
-                        <span className="text-[10px] text-slate-400">{song.key} {song.tempo > 0 ? `• ${song.tempo} BPM` : ''}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                  Description / Notes (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional notes or details"
+                  value={newSetDesc}
+                  onChange={(e) => setNewSetDesc(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none text-slate-800 focus:border-slate-400 focus:bg-white transition-all"
+                />
+              </div>
 
-              {/* Items List */}
-              {activeSetlist.items.map((item, idx) => {
-                const song = allSongs.find((s) => s.id === item.songId);
-                return (
-                  <div
-                    key={`${item.songId}_${idx}`}
-                    className="p-3.5 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3 shadow-2xs hover:border-slate-300 transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-slate-100 text-[#0c4a6e] text-xs font-black flex items-center justify-center shrink-0">
-                        {idx + 1}
-                      </span>
-                      <div>
-                        <h4 className="text-xs font-black uppercase tracking-wider text-[#0c4a6e]">
-                          {song?.title || 'Unknown Song'}
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreating(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`px-5 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer active:scale-95 shadow-md ${
+                    isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-[#0c4a6e] hover:bg-[#073652]'
+                  }`}
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD CHART TO SETLIST PICKER MODAL */}
+      {showAddSongPicker && activeSetlist && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-5 space-y-3 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <Plus className={`w-5 h-5 ${isTechnique ? 'text-purple-900' : 'text-[#0c4a6e]'}`} />
+                <h3 className={`text-sm font-black uppercase tracking-wider ${
+                  isTechnique ? 'text-purple-900' : 'text-[#0c4a6e]'
+                }`}>
+                  Add Chart to "{activeSetlist.name}"
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddSongPicker(false);
+                  setPickerSearchQuery('');
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative shrink-0">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder={`Search ${isTechnique ? 'technique' : 'sheet music'} charts...`}
+                value={pickerSearchQuery}
+                onChange={(e) => setPickerSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none text-slate-800 focus:bg-white focus:border-slate-300"
+              />
+            </div>
+
+            {/* Song Selection List */}
+            <div className="overflow-y-auto space-y-1.5 flex-1 pr-1">
+              {filteredPickerSongs.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs font-medium">
+                  No matching charts found in library.
+                </div>
+              ) : (
+                filteredPickerSongs.map((song) => {
+                  const isInSetlist = activeSetlist.items.some((item) => item.songId === song.id);
+
+                  return (
+                    <div
+                      key={song.id}
+                      onClick={() => handleAddSongToSetlist(activeSetlist, song.id)}
+                      className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                        isInSetlist
+                          ? 'bg-slate-50 border-slate-200/80 opacity-70'
+                          : isTechnique
+                          ? 'bg-white border-slate-200/90 hover:border-purple-300 hover:bg-purple-50/50'
+                          : 'bg-white border-slate-200/90 hover:border-sky-300 hover:bg-sky-50/50'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-slate-900 truncate">
+                          {song.title}
                         </h4>
-                        <p className="text-[10px] font-bold text-slate-400">
-                          {song?.artist} • Key: {item.transposedKey || song?.key} { (item.targetTempo || song?.tempo || 0) > 0 ? `• ${item.targetTempo || song?.tempo} BPM` : '' }
+                        <p className="text-[10px] font-medium text-slate-400 truncate">
+                          {song.artist ? `${song.artist} • ` : ''}{song.genre || 'General'}
                         </p>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleMoveSong(activeSetlist, idx, 'up')}
-                        disabled={idx === 0}
-                        className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleMoveSong(activeSetlist, idx, 'down')}
-                        disabled={idx === activeSetlist.items.length - 1}
-                        className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveSongFromSetlist(activeSetlist, idx)}
-                        className="p-1 text-slate-300 hover:text-rose-600 cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="shrink-0 flex items-center gap-2">
+                        {isInSetlist ? (
+                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            Added
+                          </span>
+                        ) : (
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md text-white shadow-2xs ${
+                            isTechnique ? 'bg-purple-900' : 'bg-[#0c4a6e]'
+                          }`}>
+                            + Add
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 border-t border-slate-100 flex justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddSongPicker(false);
+                  setPickerSearchQuery('');
+                }}
+                className={`px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer ${
+                  isTechnique ? 'bg-purple-900' : 'bg-[#0c4a6e]'
+                }`}
+              >
+                Done
+              </button>
             </div>
           </div>
-        )
+        </div>
       )}
     </div>
   );

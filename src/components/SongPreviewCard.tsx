@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FolderEdit, Trash2 } from 'lucide-react';
+import { FolderEdit, ListPlus, Trash2 } from 'lucide-react';
 import { Song } from '../types';
 import { LazyPDFThumbnail } from './LazyPDFThumbnail';
 
@@ -9,6 +9,7 @@ interface SongPreviewCardProps {
   onSelectSong: (song: Song) => void;
   onDeleteSong: (id: string) => void;
   onEditSong: (song: Song) => void;
+  onAddToSetlist?: (song: Song) => void;
 }
 
 export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
@@ -17,6 +18,7 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
   onSelectSong,
   onDeleteSong,
   onEditSong,
+  onAddToSetlist,
 }) => {
   // Swipe left to delete gesture handler
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -139,19 +141,37 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditSong(song);
-            }}
-            className={`p-1 rounded-md text-slate-400 hover:text-slate-800 active:scale-90 cursor-pointer shrink-0 ${
-              isTechnique ? 'hover:bg-purple-50 hover:text-purple-900' : 'hover:bg-slate-100 hover:text-[#0c4a6e]'
-            }`}
-            title="Edit Chart Info"
-          >
-            <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {onAddToSetlist && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToSetlist(song);
+                }}
+                className={`p-1 rounded-md text-slate-400 hover:text-slate-800 active:scale-90 cursor-pointer ${
+                  isTechnique ? 'hover:bg-purple-50 hover:text-purple-900' : 'hover:bg-slate-100 hover:text-[#0c4a6e]'
+                }`}
+                title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
+              >
+                <ListPlus className="w-3.5 h-3.5 stroke-[2]" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditSong(song);
+              }}
+              className={`p-1 rounded-md text-slate-400 hover:text-slate-800 active:scale-90 cursor-pointer ${
+                isTechnique ? 'hover:bg-purple-50 hover:text-purple-900' : 'hover:bg-slate-100 hover:text-[#0c4a6e]'
+              }`}
+              title="Edit Chart Info"
+            >
+              <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

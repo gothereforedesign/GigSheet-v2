@@ -76,9 +76,10 @@ export interface Setlist {
   items: SetlistItem[];
   tags?: string[];
   color?: string;
+  type?: 'sheet_music' | 'technique';
 }
 
-export type ActiveTab = 'sheet_music' | 'technique' | 'trash';
+export type ActiveTab = 'sheet_music' | 'sheet_music_setlists' | 'technique' | 'technique_routines' | 'trash';
 
 export interface ViewFilterState {
   searchQuery: string;
