@@ -135,20 +135,20 @@ const SongRow: React.FC<SongRowProps> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onClick={handleClick}
-        className={`bg-white border border-slate-200/90 rounded-md px-4 py-3 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs cursor-pointer group ${
+        className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-md px-4 py-3 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs cursor-pointer group ${
           isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         } ${
-          isTechnique ? 'hover:border-purple-400' : 'hover:border-sky-400'
+          isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
         }`}
       >
         <div className="min-w-0 flex-1">
-          <h3 className={`text-sm font-bold text-slate-900 truncate transition-colors leading-tight ${
-            isTechnique ? 'group-hover:text-purple-900' : 'group-hover:text-[#0c4a6e]'
+          <h3 className={`text-sm font-bold text-slate-900 dark:text-slate-100 truncate transition-colors leading-tight ${
+            isTechnique ? 'group-hover:text-purple-900 dark:group-hover:text-purple-300' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
           }`}>
             {song.title}
           </h3>
           {song.artist && (
-            <p className="text-[11px] font-medium text-slate-400 truncate mt-0.5">
+            <p className="text-[11px] font-medium text-slate-400 dark:text-slate-400 truncate mt-0.5">
               {song.artist}
             </p>
           )}
@@ -159,8 +159,8 @@ const SongRow: React.FC<SongRowProps> = ({
             <button
               type="button"
               onClick={() => onAddToSetlist(song)}
-              className={`p-1.5 rounded-lg text-slate-400 active:scale-95 transition-all cursor-pointer ${
-                isTechnique ? 'hover:text-purple-900 hover:bg-purple-50' : 'hover:text-[#0c4a6e] hover:bg-slate-100'
+              className={`p-1.5 rounded-lg text-slate-400 dark:text-slate-500 active:scale-95 transition-all cursor-pointer ${
+                isTechnique ? 'hover:text-purple-900 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60' : 'hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
               title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
             >
@@ -171,8 +171,8 @@ const SongRow: React.FC<SongRowProps> = ({
           <button
             type="button"
             onClick={() => onEditSong(song)}
-            className={`p-1.5 rounded-lg text-slate-400 active:scale-95 transition-all cursor-pointer ${
-              isTechnique ? 'hover:text-purple-900 hover:bg-purple-50' : 'hover:text-[#0c4a6e] hover:bg-slate-100'
+            className={`p-1.5 rounded-lg text-slate-400 dark:text-slate-500 active:scale-95 transition-all cursor-pointer ${
+              isTechnique ? 'hover:text-purple-900 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60' : 'hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
             title="Edit Chart Info"
           >
@@ -313,31 +313,31 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
         </div>
       ) : (
-        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED CATEGORY - UNIFIED WHITE CONTAINER */
-        <div className="bg-white rounded-lg border border-slate-200/90 p-3 sm:p-4 shadow-2xs space-y-3">
+        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED CATEGORY - UNIFIED CONTAINER */
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/90 dark:border-slate-800 p-3 sm:p-4 shadow-2xs space-y-3">
           {/* Top Bar Navigation (Back arrow -> Category Title & Edit -> PDF Count -> View Toggle & Trash) */}
-          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
               {/* Back Arrow Button */}
               <button
                 type="button"
                 onClick={() => handleSetSelectedCategory(null)}
-                className="p-1.5 text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                className="p-1.5 text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
                 title="Back to Categories"
               >
                 <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
               </button>
 
               {/* Category Title Badge + Edit Category Button */}
-              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
-                <h2 className="text-xs sm:text-sm font-black text-slate-900 truncate max-w-[110px] sm:max-w-[180px]">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate max-w-[110px] sm:max-w-[180px]">
                   {selectedCategory === 'ALL_SECTION_CHARTS' ? 'All Charts' : selectedCategory}
                 </h2>
                 {onOpenGenreManager && (
                   <button
                     type="button"
                     onClick={onOpenGenreManager}
-                    className="p-0.5 rounded-xs text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer shrink-0"
+                    className="p-0.5 rounded-xs text-slate-400 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shrink-0"
                     title="Edit Category"
                   >
                     <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
@@ -346,7 +346,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               </div>
 
               {/* Subtle PDF Count Badge */}
-              <div className="inline-flex items-center justify-center bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center" title={`${filteredSongs.length} Charts`}>
+              <div className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center" title={`${filteredSongs.length} Charts`}>
                 <span>{filteredSongs.length}</span>
               </div>
             </div>
@@ -356,7 +356,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleToggleDisplayMode(displayMode === 'list' ? 'grid' : 'list')}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs border border-slate-200/90 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
                 title={displayMode === 'list' ? 'Switch to Grid Preview' : 'Switch to List View'}
               >
                 {displayMode === 'list' ? (
@@ -377,7 +377,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenTrash}
-                  className="p-1.5 rounded-md bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200/90 hover:border-rose-200 transition-colors cursor-pointer active:scale-95 shadow-2xs"
+                  className="p-1.5 rounded-md bg-slate-50 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 border border-slate-200/90 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 transition-colors cursor-pointer active:scale-95 shadow-2xs"
                   title="Open Trash"
                 >
                   <Trash2 className="w-4 h-4 stroke-[2.2]" />

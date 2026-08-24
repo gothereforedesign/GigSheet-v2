@@ -117,8 +117,7 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
       ref={containerRef}
       className="bg-white rounded-lg shadow-xl border border-slate-800 overflow-hidden relative transition-all duration-150 flex justify-center"
       style={{
-        width: `${zoomScale}%`,
-        maxWidth: zoomScale <= 100 ? '1024px' : 'none',
+        width: '100%',
         minHeight: !isRendered ? '320px' : undefined,
         aspectRatio: !isRendered ? `1 / ${aspectRatio}` : undefined,
       }}
@@ -322,12 +321,12 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-center horizontally on top when zoomed in
+  // Auto-center horizontally when zoomed in or when zoom level changes
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const autoCenterTop = () => {
+    const autoCenter = () => {
       if (!container) return;
       const maxScrollLeft = container.scrollWidth - container.clientWidth;
       if (maxScrollLeft > 0) {
@@ -337,13 +336,17 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
       }
     };
 
-    autoCenterTop();
-    const rafId = requestAnimationFrame(autoCenterTop);
-    const timeoutId = setTimeout(autoCenterTop, 80);
+    autoCenter();
+    const rafId1 = requestAnimationFrame(autoCenter);
+    const rafId2 = requestAnimationFrame(() => requestAnimationFrame(autoCenter));
+    const t1 = setTimeout(autoCenter, 60);
+    const t2 = setTimeout(autoCenter, 180);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafId1);
+      cancelAnimationFrame(rafId2);
+      clearTimeout(t1);
+      clearTimeout(t2);
     };
   }, [effectiveZoom, pdfDoc, numPages]);
 
@@ -355,7 +358,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   return (
     <div className="w-full h-full bg-slate-950 relative flex flex-col items-center overflow-hidden select-none">
       {/* Main Scrollable Canvas Area */}
-      <div ref={scrollContainerRef} className="w-full h-full overflow-auto pt-2 pb-24 px-2 flex flex-col items-center scroll-smooth">
+      <div ref={scrollContainerRef} className="w-full h-full overflow-auto pt-2 pb-24 px-2">
         {loading && (
           <div className="my-auto flex flex-col items-center justify-center p-8 bg-slate-900/80 rounded-2xl border border-slate-800 text-white text-center space-y-3 max-w-sm mx-auto shadow-2xl">
             <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
@@ -422,7 +425,13 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         )}
 
         {!useNativeViewer && !loading && !error && pdfDoc && numPages > 0 && (
-          <div className="flex flex-col items-center min-w-full w-max mx-auto space-y-3 my-2 px-2">
+          <div
+            className="flex flex-col items-center mx-auto space-y-3 my-2 px-1 transition-all duration-150"
+            style={{
+              width: `${effectiveZoom}%`,
+              maxWidth: effectiveZoom <= 100 ? '100%' : 'none',
+            }}
+          >
             {pageNumbers.map((pNum) => (
               <PdfPage
                 key={pNum}

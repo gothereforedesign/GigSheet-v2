@@ -96,6 +96,35 @@ const getInitialNavState = (): NavState => {
 };
 
 export default function App() {
+  // Theme state
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('gig_sheet_theme');
+      if (stored) return stored === 'dark';
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('gig_sheet_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('gig_sheet_theme', 'light');
+      }
+    } catch (err) {
+      console.warn('Failed to persist theme state:', err);
+    }
+  }, [isDarkMode]);
+
+  const handleToggleDarkMode = () => {
+    setIsDarkMode((prev) => !prev);
+  };
+
   // Navigation Route State (restored on refresh)
   const initialNavStateRef = useRef<NavState>(getInitialNavState());
   const [activeTab, setActiveTab] = useState<ActiveTab>(initialNavStateRef.current.activeTab);
@@ -942,10 +971,46 @@ export default function App() {
 
   const activeCategoryPalette = selectedCategory ? getCategoryPalette(selectedCategory, currentCategoryColors, section) : null;
 
+  const getTabBgClass = () => {
+    if (activeCategoryPalette) {
+      return `${activeCategoryPalette.cardBg} text-white`;
+    }
+
+    if (isDarkMode) {
+      switch (activeTab) {
+        case 'sheet_music':
+          return 'bg-slate-950 text-slate-100';
+        case 'sheet_music_setlists':
+          return 'bg-[#071d2c] text-slate-100';
+        case 'technique':
+          return 'bg-[#130d1d] text-slate-100';
+        case 'technique_routines':
+          return 'bg-[#1d0e2c] text-slate-100';
+        case 'trash':
+          return 'bg-[#1c0d11] text-slate-100';
+        default:
+          return 'bg-slate-950 text-slate-100';
+      }
+    } else {
+      switch (activeTab) {
+        case 'sheet_music':
+          return 'bg-slate-50 text-slate-900';
+        case 'sheet_music_setlists':
+          return 'bg-[#f0f7fc] text-slate-900';
+        case 'technique':
+          return 'bg-[#fbf7fd] text-slate-900';
+        case 'technique_routines':
+          return 'bg-[#f5ecfc] text-slate-900';
+        case 'trash':
+          return 'bg-rose-50/50 text-slate-900';
+        default:
+          return 'bg-slate-50 text-slate-900';
+      }
+    }
+  };
+
   return (
-    <div className={`min-h-screen font-sans selection:bg-sky-200 ${
-      activeCategoryPalette ? `${activeCategoryPalette.cardBg} text-white` : 'bg-slate-50 text-slate-900'
-    }`}>
+    <div className={`min-h-screen font-sans selection:bg-sky-200 transition-colors duration-200 ${getTabBgClass()}`}>
       {/* Fullscreen Global Drag & Drop Target Overlay */}
       {isGlobalDragging && (
         <div className={`fixed inset-0 z-50 backdrop-blur-md flex flex-col items-center justify-center text-white p-6 animate-in fade-in duration-200 ${
@@ -987,6 +1052,8 @@ export default function App() {
         <Header
           trashCount={trashedSongs.length}
           activeTab={activeTab}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={handleToggleDarkMode}
           onSelectTab={handleSelectTab}
           onOpenCategoryManager={handleOpenCategoryManager}
           onOpenBackupModal={handleOpenBackupModal}
@@ -1041,6 +1108,7 @@ export default function App() {
                 onOpenSetlistPerformance={handleOpenSetlistPerformance}
                 onSelectSong={handleOpenSongViewer}
                 onEditSong={handleOpenEditSong}
+                onOpenGenreManager={handleOpenCategoryManager}
               />
             )}
 

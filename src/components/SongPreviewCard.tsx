@@ -109,14 +109,14 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onClick={handleClick}
-        className={`bg-white border border-slate-200/90 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] ${
+        className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] ${
           isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         } ${
-          isTechnique ? 'hover:border-purple-400' : 'hover:border-sky-400'
+          isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
         }`}
       >
         {/* Lazy Thumbnail Container */}
-        <div className="relative aspect-[16/11] w-full bg-slate-100/80 border-b border-slate-200/60 flex items-center justify-center overflow-hidden">
+        <div className="relative aspect-[16/11] w-full bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-center overflow-hidden">
           <LazyPDFThumbnail
             songId={song.id}
             songType={song.type}
@@ -127,15 +127,15 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
         </div>
 
         {/* Bottom Info Section */}
-        <div className="px-2.5 py-1 bg-white flex items-center justify-between gap-1.5 min-h-[28px] shrink-0">
+        <div className="px-2.5 py-1 bg-white dark:bg-slate-900 flex items-center justify-between gap-1.5 min-h-[28px] shrink-0">
           <div className="min-w-0 flex-1">
-            <h3 className={`text-xs font-bold text-slate-900 truncate leading-tight ${
-              isTechnique ? 'group-hover:text-purple-900' : 'group-hover:text-[#0c4a6e]'
+            <h3 className={`text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-tight ${
+              isTechnique ? 'group-hover:text-purple-900 dark:group-hover:text-purple-300' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
             }`}>
               {song.title}
             </h3>
             {song.artist && (
-              <p className="text-[10px] font-medium text-slate-400 truncate -mt-0.5">
+              <p className="text-[10px] font-medium text-slate-400 dark:text-slate-400 truncate -mt-0.5">
                 {song.artist}
               </p>
             )}
@@ -149,8 +149,8 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
                   e.stopPropagation();
                   onAddToSetlist(song);
                 }}
-                className={`p-1 rounded-md text-slate-400 hover:text-slate-800 active:scale-90 cursor-pointer ${
-                  isTechnique ? 'hover:bg-purple-50 hover:text-purple-900' : 'hover:bg-slate-100 hover:text-[#0c4a6e]'
+                className={`p-1 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 active:scale-90 cursor-pointer ${
+                  isTechnique ? 'hover:bg-purple-50 dark:hover:bg-purple-950/60 hover:text-purple-900 dark:hover:text-purple-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0c4a6e] dark:hover:text-sky-300'
                 }`}
                 title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
               >
@@ -164,8 +164,8 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
                 e.stopPropagation();
                 onEditSong(song);
               }}
-              className={`p-1 rounded-md text-slate-400 hover:text-slate-800 active:scale-90 cursor-pointer ${
-                isTechnique ? 'hover:bg-purple-50 hover:text-purple-900' : 'hover:bg-slate-100 hover:text-[#0c4a6e]'
+              className={`p-1 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 active:scale-90 cursor-pointer ${
+                isTechnique ? 'hover:bg-purple-50 dark:hover:bg-purple-950/60 hover:text-purple-900 dark:hover:text-purple-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0c4a6e] dark:hover:text-sky-300'
               }`}
               title="Edit Chart Info"
             >
