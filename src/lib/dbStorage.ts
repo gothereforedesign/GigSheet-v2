@@ -50,15 +50,8 @@ export async function saveSongDirectDirectBlob(song: Song, fileBlob: Blob | File
     throw new Error('Invalid or empty file blob provided.');
   }
 
-  // Pre-convert File/Blob to ArrayBuffer for immutable storage in IndexedDB
-  let binaryData: ArrayBuffer | Blob = fileBlob;
-  if (typeof (fileBlob as Blob).arrayBuffer === 'function') {
-    try {
-      binaryData = await (fileBlob as Blob).arrayBuffer();
-    } catch (e) {
-      console.warn('Could not read blob arrayBuffer, using raw fileBlob:', e);
-    }
-  }
+  // Store raw File or Blob directly in IndexedDB for zero-copy, instant async storage
+  const binaryData: Blob | File = fileBlob;
 
   let attempt = 0;
   let lastError: any = null;

@@ -40,21 +40,13 @@ export function usePDFUploadQueue(onSongsUpdated?: () => void) {
   const cancelledRef = useRef<Set<string>>(new Set());
 
   // Enqueue entries with optional custom titles & Storage Quota Guard
-  const enqueueEntries = useCallback(async (
+  const enqueueEntries = useCallback((
     entries: UploadEntryInput[],
     category: string,
     section: 'sheet_music' | 'technique'
   ) => {
     setQuotaError(null);
     const totalBatchSize = entries.reduce((acc, e) => acc + e.file.size, 0);
-
-    // Quota Guard Check
-    const quotaCheck = await checkStorageQuota(totalBatchSize);
-    if (!quotaCheck.allowed) {
-      setQuotaError(quotaCheck.message || 'Storage quota exceeded.');
-      setIsOpen(true);
-      return;
-    }
 
     const newItems: UploadQueueItem[] = entries.map((entry) => ({
       id: `queue_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -67,9 +59,17 @@ export function usePDFUploadQueue(onSongsUpdated?: () => void) {
       section,
     }));
 
+    // Show upload widget immediately with zero delay
     setItems((prev) => [...prev, ...newItems]);
     setIsOpen(true);
     setIsMinimized(false);
+
+    // Background quota check so UI shows progress immediately
+    checkStorageQuota(totalBatchSize).then((quotaCheck) => {
+      if (!quotaCheck.allowed) {
+        setQuotaError(quotaCheck.message || 'Storage quota exceeded.');
+      }
+    });
   }, []);
 
   const cancelItem = useCallback((id: string) => {
@@ -202,11 +202,20 @@ export function usePDFUploadQueue(onSongsUpdated?: () => void) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Reset processing lock if stalled and re-trigger queue processing
-        if (items.some((i) => i.status === 'queued')) {
+        const hasPending = items.some(
+          (i) => i.status === 'queued' || i.status === 'processing' || i.status === 'saving'
+        );
+        if (hasPending) {
+          // Force reset processing lock so background worker resumes instantly
           processingRef.current = false;
-          // Force state update to re-run effect loop
-          setItems((prev) => [...prev]);
+          // Re-queue any item stuck in processing/saving during suspend
+          setItems((prev) =>
+            prev.map((i) =>
+              i.status === 'processing' || i.status === 'saving'
+                ? { ...i, status: 'queued', progress: 0 }
+                : i
+            )
+          );
         }
       }
     };

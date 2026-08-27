@@ -26,6 +26,7 @@ interface LibraryViewProps {
   onEditSong: (song: Song) => void;
   onAddToSetlist?: (song: Song) => void;
   onOpenGenreManager?: () => void;
+  onAddChart?: () => void;
   trashCount?: number;
   onOpenTrash?: () => void;
 }
@@ -198,6 +199,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onEditSong,
   onAddToSetlist,
   onOpenGenreManager,
+  onAddChart,
   trashCount,
   onOpenTrash,
 }) => {
@@ -399,15 +401,17 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   No charts in this category
                 </p>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Tap "Add PDF" below to import a chart.
+                  Tap "+ Add Chart" below to import PDFs into this category.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => handleSetSelectedCategory(null)}
-                className="mt-1 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+                onClick={onAddChart || (() => handleSetSelectedCategory(null))}
+                className={`mt-1 px-4 py-2 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
+                  isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-[#0c4a6e] hover:bg-[#073652]'
+                }`}
               >
-                Return to Categories
+                + Add Chart
               </button>
             </div>
           ) : displayMode === 'grid' ? (

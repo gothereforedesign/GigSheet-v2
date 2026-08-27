@@ -19,7 +19,7 @@ interface SetlistsViewProps {
   onUpdateSetlist: (setlist: Setlist) => Promise<void>;
   onDeleteSetlist: (id: string) => Promise<void>;
   onOpenSetlistPerformance?: (setlist: Setlist, startIndex: number) => void;
-  onSelectSong?: (song: Song) => void;
+  onSelectSong?: (song: Song, contextSetlist?: Setlist, index?: number) => void;
   onEditSong?: (song: Song) => void;
   onOpenGenreManager?: () => void;
 }
@@ -279,7 +279,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   return (
                     <div
                       key={`${item.songId}_${idx}`}
-                      onClick={() => onSelectSong?.(song)}
+                      onClick={() => onSelectSong?.(song, activeSetlist, idx)}
                       className={`relative bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] transition-all ${
                         isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
                       }`}
@@ -369,7 +369,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   return (
                     <div
                       key={`${item.songId}_${idx}`}
-                      onClick={() => onSelectSong?.(song)}
+                      onClick={() => onSelectSong?.(song, activeSetlist, idx)}
                       className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-md px-3.5 py-2.5 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs cursor-pointer group transition-all ${
                         isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
                       }`}

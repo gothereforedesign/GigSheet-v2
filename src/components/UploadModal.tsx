@@ -65,12 +65,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   onClose,
   initialFiles,
 }) => {
-  const [fileEntries, setFileEntries] = useState<FileEntry[]>(() => {
-    if (initialFiles && initialFiles.length > 0) {
-      return createEntriesFromFiles(initialFiles);
-    }
-    return [];
-  });
+  const [fileEntries, setFileEntries] = useState<FileEntry[]>([]);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveProgress, setSaveProgress] = useState<{ processed: number; total: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -114,15 +109,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   }, [availableCategories, section]);
 
-  // Append new files if initialFiles prop changes while already mounted
+  // Process initialFiles when provided
   useEffect(() => {
     if (initialFiles && initialFiles.length > 0) {
-      const newEntries = createEntriesFromFiles(initialFiles);
-      setFileEntries((prev) => {
-        const existingKeys = new Set(prev.map((e) => `${e.file.name}_${e.file.size}`));
-        const filtered = newEntries.filter((e) => !existingKeys.has(`${e.file.name}_${e.file.size}`));
-        return [...prev, ...filtered];
-      });
+      handleAddFiles(initialFiles);
     }
   }, [initialFiles]);
 

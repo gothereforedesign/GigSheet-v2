@@ -1091,6 +1091,7 @@ export default function App() {
                 onEditSong={handleOpenEditSong}
                 onAddToSetlist={(song) => setSongForAddToSetlist(song)}
                 onOpenGenreManager={handleOpenCategoryManager}
+                onAddChart={() => handleOpenUploadModal()}
                 trashCount={trashedSongs.length}
                 onOpenTrash={() => handleSelectTab('trash')}
               />

@@ -201,13 +201,16 @@ export async function saveSong(song: Song): Promise<void> {
   const db = await getDB();
   const { fileBlob, ...metadata } = song;
   
-  // Pre-convert to ArrayBuffer before opening IndexedDB transaction
-  let binaryData: ArrayBuffer | null = null;
+  let binaryData: Blob | ArrayBuffer | null = null;
   if (fileBlob) {
-    try {
-      binaryData = await serializeToBinary(fileBlob);
-    } catch (e) {
-      console.warn('Could not serialize fileBlob to ArrayBuffer:', e);
+    if (fileBlob instanceof Blob || fileBlob instanceof File) {
+      binaryData = fileBlob;
+    } else {
+      try {
+        binaryData = await serializeToBinary(fileBlob);
+      } catch (e) {
+        console.warn('Could not serialize fileBlob:', e);
+      }
     }
   }
 
@@ -237,26 +240,20 @@ export async function saveSongsBatch(
 ): Promise<void> {
   const db = await getDB();
   
-  // Save in small chunks (2 items) to keep memory footprint minimal and prevent worker/browser crashes
-  const chunkSize = 2;
+  const chunkSize = 5;
   for (let i = 0; i < songs.length; i += chunkSize) {
     const chunk = songs.slice(i, i + chunkSize);
     
-    // Step 1: Pre-convert files in this small chunk to ArrayBuffers
-    const preparedItems = await Promise.all(
-      chunk.map(async (song) => {
-        const { fileBlob, ...metadata } = song;
-        let binaryData: ArrayBuffer | null = null;
-        if (fileBlob) {
-          try {
-            binaryData = await serializeToBinary(fileBlob);
-          } catch (e) {
-            console.warn(`Could not read binary data for song ${song.id}:`, e);
-          }
+    const preparedItems = chunk.map((song) => {
+      const { fileBlob, ...metadata } = song;
+      let binaryData: Blob | ArrayBuffer | null = null;
+      if (fileBlob) {
+        if (fileBlob instanceof Blob || fileBlob instanceof File) {
+          binaryData = fileBlob;
         }
-        return { metadata: metadata as Song, id: song.id, binaryData };
-      })
-    );
+      }
+      return { metadata: metadata as Song, id: song.id, binaryData };
+    });
 
     // Step 2: Write chunk to IndexedDB
     try {
