@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Song } from '../types';
 import { PdfSheetViewer } from './PdfSheetViewer';
 import { 
   X, ChevronLeft, ChevronRight, ListPlus,
-  Loader2, ExternalLink, ZoomIn, ZoomOut, RotateCcw
+  Loader2, ExternalLink, ZoomIn, ZoomOut, RotateCcw,
+  Upload, Music, FileText, Clock, Hash
 } from 'lucide-react';
-import { getSongById } from '../lib/db';
+import { getSongById, saveSong } from '../lib/db';
+import { saveSongDirectDirectBlob } from '../lib/dbStorage';
 import { getCategoryPalette, getStoredCategoryColors } from '../lib/categoryStorage';
 
 interface SongViewerModalProps {
   song: Song;
   onClose: () => void;
   onAddToSetlist?: (song: Song) => void;
+  onSaveSong?: (song: Song) => void;
   navigation?: {
     currentIndex: number;
     totalCount: number;
@@ -24,17 +27,49 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   song: initialSong,
   onClose,
   onAddToSetlist,
+  onSaveSong,
   navigation,
 }) => {
   const [song, setSong] = useState<Song>(initialSong);
   const [isLoading, setIsLoading] = useState(true);
   const [, setNumPages] = useState(1);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Derive Category Brand Styling
   const section = song.section === 'technique' ? 'technique' : 'sheet_music';
   const isTechnique = section === 'technique';
   const categoryColors = getStoredCategoryColors(section);
   const palette = getCategoryPalette(song.genre, categoryColors, section);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      const updatedSong: Song = {
+        ...song,
+        type: 'pdf',
+        fileName: file.name,
+        fileBlob: file,
+        dateModified: Date.now(),
+      };
+
+      await saveSongDirectDirectBlob(updatedSong, file);
+      const reloaded = await getSongById(song.id);
+      if (reloaded) {
+        setSong(reloaded);
+        if (onSaveSong) onSaveSong(reloaded);
+      } else {
+        setSong(updatedSong);
+        if (onSaveSong) onSaveSong(updatedSong);
+      }
+    } catch (err) {
+      console.error('Failed to attach PDF to song:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
     try {
@@ -72,16 +107,21 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
     });
   };
 
-  // Sync initial song props when switching songs
-  useEffect(() => {
-    setSong(initialSong);
-  }, [initialSong]);
-
-  // Fetch full song data on mount or when navigation changes initialSong
+  // Synchronously sync initial song props and fetch full PDF blob from DB
   useEffect(() => {
     let isMounted = true;
-    const fetchFullSong = async () => {
+    
+    // Check if initialSong already has blob/fileUrl/svgData attached
+    const hasContent = Boolean(initialSong.fileBlob || initialSong.fileUrl || initialSong.svgData);
+    setSong(initialSong);
+
+    if (!hasContent) {
       setIsLoading(true);
+    } else {
+      setIsLoading(false);
+    }
+
+    const fetchFullSong = async () => {
       try {
         const fullSong = await getSongById(initialSong.id);
         if (fullSong && isMounted) {
@@ -90,15 +130,18 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
       } catch (err) {
         console.error('Failed to load full song content:', err);
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
+
     fetchFullSong();
 
     return () => {
       isMounted = false;
     };
-  }, [initialSong.id]);
+  }, [initialSong.id, initialSong.fileBlob, initialSong.fileUrl, initialSong.svgData]);
 
   // Keyboard navigation listener (Left/Right arrow keys & Escape)
   useEffect(() => {
@@ -212,7 +255,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             </h3>
 
             <span className="hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs bg-slate-800 text-slate-300 border border-slate-700 shrink-0 shadow-2xs">
-              {song.genre || (isTechnique ? 'Scales' : 'Hymns')}
+              {navigation?.listName || song.genre || (isTechnique ? 'Scales' : 'Hymns')}
             </span>
           </div>
         </div>
@@ -247,6 +290,13 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
       {/* Main Sheet Music Viewing Canvas */}
       <main className="flex-1 w-full relative overflow-hidden flex flex-col bg-slate-950">
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileUpload} 
+          accept="application/pdf" 
+          className="hidden" 
+        />
         <div className="w-full h-full flex-1 relative overflow-hidden">
           {(song.fileBlob || song.fileUrl) ? (
             <PdfSheetViewer
@@ -265,11 +315,61 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               />
             </div>
           ) : !isLoading ? (
-            <div className="w-full h-full flex flex-col items-center justify-center p-8 text-slate-400 text-xs text-center gap-2">
-              <p className="font-bold text-slate-200 text-sm">No PDF File Content Found</p>
-              <p className="text-slate-400 max-w-sm">
-                This chart record does not have a PDF file attached.
-              </p>
+            <div className="w-full h-full overflow-y-auto p-4 sm:p-8 flex items-center justify-center">
+              <div className="max-w-xl w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md text-white flex flex-col items-center text-center gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-inner">
+                  <Music className="w-8 h-8 stroke-[1.8]" />
+                </div>
+
+                <div className="space-y-1 max-w-md">
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">{song.title}</h3>
+                  <p className="text-slate-400 font-medium text-sm">{song.artist || 'Unknown Composer'}</p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full py-2">
+                  <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Key</span>
+                    <span className="text-sm font-black text-amber-400 mt-0.5">{song.key}</span>
+                  </div>
+                  <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Tempo</span>
+                    <span className="text-sm font-black text-sky-400 mt-0.5">{song.tempo} BPM</span>
+                  </div>
+                  <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Time Sig</span>
+                    <span className="text-sm font-black text-indigo-400 mt-0.5">{song.timeSignature}</span>
+                  </div>
+                  <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Genre</span>
+                    <span className="text-sm font-black text-emerald-400 mt-0.5 truncate max-w-[80px]">{song.genre}</span>
+                  </div>
+                </div>
+
+                {song.meter && (
+                  <div className="w-full bg-slate-950/40 border border-slate-800/50 p-3 rounded-xl text-xs text-left text-slate-300">
+                    <span className="font-bold text-slate-400 uppercase text-[10px] tracking-wider block mb-0.5">Hymn Meter</span>
+                    {song.meter}
+                  </div>
+                )}
+
+                {(song.lyrics || song.userNotes) && (
+                  <div className="w-full bg-slate-950/40 border border-slate-800/50 p-3 rounded-xl text-xs text-left text-slate-300 max-h-40 overflow-y-auto">
+                    <span className="font-bold text-slate-400 uppercase text-[10px] tracking-wider block mb-1">Notes / Lyrics</span>
+                    <p className="whitespace-pre-wrap leading-relaxed text-slate-200">{song.lyrics || song.userNotes}</p>
+                  </div>
+                )}
+
+                <div className="pt-2 w-full flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4 stroke-[2.2]" />
+                    <span>Attach PDF Chart</span>
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 text-white text-xs text-center gap-2">

@@ -9,8 +9,9 @@ import {
 } from './types';
 import { 
   getAllSongs, saveSong, saveSongsBatch, deleteSong, deleteSongsBatch, toggleSongFavorite,
-  getAllSetlists, saveSetlist, deleteSetlist
+  getAllSetlists, saveSetlist, deleteSetlist, getSongById
 } from './lib/db';
+import { saveSongDirectDirectBlob } from './lib/dbStorage';
 import { 
   getStoredCategories, 
   saveStoredCategories, 
@@ -215,7 +216,77 @@ export default function App() {
   };
 
   const handleDeleteSetlist = async (id: string) => {
+    const setlist = setlists.find((s) => s.id === id);
+    if (setlist) {
+      for (const item of setlist.items) {
+        const songRecord = songs.find((s) => s.id === item.songId);
+        if (songRecord && (songRecord.isSetlistDuplicate || songRecord.setlistId === id)) {
+          await deleteSong(item.songId);
+        }
+      }
+    }
     await deleteSetlist(id);
+    await loadSongs();
+    await loadSetlists();
+  };
+
+  const handleAddSongToSetlist = async (setlist: Setlist, originalSong: Song) => {
+    // Check if setlist already has a duplicate of this song
+    const alreadyInSetlist = setlist.items.some((item) => {
+      if (item.songId === originalSong.id) return true;
+      const s = songs.find((songItem) => songItem.id === item.songId);
+      return s?.originalSongId === originalSong.id;
+    });
+    if (alreadyInSetlist) return;
+
+    const fullSong = (await getSongById(originalSong.id)) || originalSong;
+    const duplicateId = `song_setlist_${setlist.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const duplicatedSong: Song = {
+      ...fullSong,
+      id: duplicateId,
+      originalSongId: originalSong.id,
+      setlistId: setlist.id,
+      isSetlistDuplicate: true,
+      section: setlist.type || originalSong.section || 'sheet_music',
+      dateAdded: Date.now(),
+      dateModified: Date.now(),
+    };
+
+    if (fullSong.fileBlob) {
+      await saveSongDirectDirectBlob(duplicatedSong, fullSong.fileBlob as Blob);
+    } else {
+      await saveSong(duplicatedSong);
+    }
+
+    const updatedItems = [...setlist.items, { songId: duplicateId }];
+    await saveSetlist({
+      ...setlist,
+      items: updatedItems,
+      dateModified: Date.now(),
+    });
+
+    await loadSongs();
+    await loadSetlists();
+  };
+
+  const handleRemoveSongFromSetlist = async (setlist: Setlist, index: number) => {
+    const itemToRemove = setlist.items[index];
+    const newItems = setlist.items.filter((_, i) => i !== index);
+
+    await saveSetlist({
+      ...setlist,
+      items: newItems,
+      dateModified: Date.now(),
+    });
+
+    if (itemToRemove) {
+      const songRecord = songs.find((s) => s.id === itemToRemove.songId);
+      if (songRecord && (songRecord.isSetlistDuplicate || songRecord.setlistId === setlist.id)) {
+        await deleteSong(itemToRemove.songId);
+      }
+    }
+
+    await loadSongs();
     await loadSetlists();
   };
 
@@ -230,21 +301,62 @@ export default function App() {
   };
 
   const handleSaveSetlistsForSong = async (songId: string, updatedSetlistIds: string[]) => {
-    const targetSec = songForAddToSetlist?.section || section;
+    const songToDuplicate = songs.find((s) => s.id === songId);
+    if (!songToDuplicate) return;
+
+    const targetSec = songToDuplicate.section || section;
     const relevantSetlists = setlists.filter((s) => (s.type || 'sheet_music') === targetSec);
+
+    const fullSong = (await getSongById(songToDuplicate.id)) || songToDuplicate;
 
     for (const setlist of relevantSetlists) {
       const belongs = updatedSetlistIds.includes(setlist.id);
-      const hasSong = setlist.items.some((item) => item.songId === songId);
+      const existingItemIndex = setlist.items.findIndex((item) => {
+        if (item.songId === songId) return true;
+        const s = songs.find((songItem) => songItem.id === item.songId);
+        return s?.originalSongId === songId;
+      });
 
-      if (belongs && !hasSong) {
-        const newItems = [...setlist.items, { songId }];
-        await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
-      } else if (!belongs && hasSong) {
-        const newItems = setlist.items.filter((item) => item.songId !== songId);
-        await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+      if (belongs) {
+        if (existingItemIndex === -1) {
+          const duplicateId = `song_setlist_${setlist.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          const duplicatedSong: Song = {
+            ...fullSong,
+            id: duplicateId,
+            originalSongId: songToDuplicate.id,
+            setlistId: setlist.id,
+            isSetlistDuplicate: true,
+            section: setlist.type || songToDuplicate.section || 'sheet_music',
+            dateAdded: Date.now(),
+            dateModified: Date.now(),
+          };
+
+          if (fullSong.fileBlob) {
+            await saveSongDirectDirectBlob(duplicatedSong, fullSong.fileBlob as Blob);
+          } else {
+            await saveSong(duplicatedSong);
+          }
+
+          const newItems = [...setlist.items, { songId: duplicateId }];
+          await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+        }
+      } else {
+        if (existingItemIndex !== -1) {
+          const itemToRemove = setlist.items[existingItemIndex];
+          const newItems = setlist.items.filter((_, i) => i !== existingItemIndex);
+          await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+
+          if (itemToRemove) {
+            const songRecord = songs.find((s) => s.id === itemToRemove.songId);
+            if (songRecord && (songRecord.isSetlistDuplicate || songRecord.setlistId === setlist.id)) {
+              await deleteSong(itemToRemove.songId);
+            }
+          }
+        }
       }
     }
+
+    await loadSongs();
     await loadSetlists();
     setSongForAddToSetlist(null);
   };
@@ -269,9 +381,60 @@ export default function App() {
         if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
           navigator.storage.persist().catch(() => {});
         }
-        const loadedSongs = await getAllSongs();
+        let loadedSongs = await getAllSongs();
         setSongs(loadedSongs);
-        await loadSetlists();
+        let loadedSetlists = await getAllSetlists();
+        setSetlists(loadedSetlists);
+
+        // Auto-migrate any setlists referencing original songs to duplicated song copies
+        let migrationPerformed = false;
+        for (const setlist of loadedSetlists) {
+          let setlistChanged = false;
+          const newItems = [...setlist.items];
+
+          for (let i = 0; i < newItems.length; i++) {
+            const item = newItems[i];
+            const targetSong = loadedSongs.find((s) => s.id === item.songId);
+            if (targetSong && !targetSong.isSetlistDuplicate && !targetSong.setlistId) {
+              const duplicateId = `song_setlist_${setlist.id}_${targetSong.id}`;
+              let existingDuplicate = loadedSongs.find((s) => s.id === duplicateId);
+
+              if (!existingDuplicate) {
+                const fullSong = (await getSongById(targetSong.id)) || targetSong;
+                existingDuplicate = {
+                  ...fullSong,
+                  id: duplicateId,
+                  originalSongId: targetSong.id,
+                  setlistId: setlist.id,
+                  isSetlistDuplicate: true,
+                  section: setlist.type || targetSong.section || 'sheet_music',
+                  dateAdded: Date.now(),
+                  dateModified: Date.now(),
+                };
+                if (fullSong.fileBlob) {
+                  await saveSongDirectDirectBlob(existingDuplicate, fullSong.fileBlob as Blob);
+                } else {
+                  await saveSong(existingDuplicate);
+                }
+              }
+
+              newItems[i] = { ...item, songId: duplicateId };
+              setlistChanged = true;
+              migrationPerformed = true;
+            }
+          }
+
+          if (setlistChanged) {
+            await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+          }
+        }
+
+        if (migrationPerformed) {
+          loadedSongs = await getAllSongs();
+          setSongs(loadedSongs);
+          loadedSetlists = await getAllSetlists();
+          setSetlists(loadedSetlists);
+        }
 
         // Restore active song viewer if saved across refresh
         if (savedSongIdRef.current) {
@@ -430,7 +593,12 @@ export default function App() {
     }
   };
 
-  const handleOpenSongViewer = (song: Song) => {
+  const handleOpenSongViewer = (song: Song, contextSetlist?: Setlist, index?: number) => {
+    if (contextSetlist) {
+      setActiveSetlistContext({ setlist: contextSetlist, startIndex: index ?? 0 });
+    } else {
+      setActiveSetlistContext(null);
+    }
     setActiveSongForViewer(song);
     pushNavState({ activeSongId: song.id });
   };
@@ -866,7 +1034,8 @@ export default function App() {
   // Active vs Trashed songs
   const activeSongs = songs.filter((s) => !s.deletedAt);
   const sectionSongs = activeSongs.filter((s) => {
-    if (activeTab === 'technique') {
+    if (s.isSetlistDuplicate || s.setlistId) return false;
+    if (activeTab === 'technique' || activeTab === 'technique_routines') {
       return s.section === 'technique';
     }
     return s.section !== 'technique';
@@ -921,13 +1090,18 @@ export default function App() {
 
     let navigationContext;
     if (activeSetlistContext) {
-      const { setlist } = activeSetlistContext;
+      const { setlist, startIndex } = activeSetlistContext;
       const setlistSongs = setlist.items
         .map((item) => songs.find((s) => s.id === item.songId))
         .filter((s): s is Song => Boolean(s));
 
-      const currentIndex = setlistSongs.findIndex((s) => s.id === activeSongForViewer.id);
-      if (currentIndex !== -1) {
+      if (setlistSongs.length > 0) {
+        let currentIndex = startIndex;
+        if (currentIndex < 0 || currentIndex >= setlistSongs.length || setlistSongs[currentIndex]?.id !== activeSongForViewer.id) {
+          const found = setlistSongs.findIndex((s) => s.id === activeSongForViewer.id);
+          currentIndex = found !== -1 ? found : 0;
+        }
+
         navigationContext = {
           currentIndex,
           totalCount: setlistSongs.length,
@@ -935,6 +1109,7 @@ export default function App() {
           onNavigate: (newIdx: number) => {
             const nextSong = setlistSongs[newIdx];
             if (nextSong) {
+              setActiveSetlistContext({ setlist, startIndex: newIdx });
               setActiveSongForViewer(nextSong);
             }
           },
@@ -964,6 +1139,7 @@ export default function App() {
         song={activeSongForViewer}
         onClose={handleCloseSongViewer}
         onAddToSetlist={(s) => setSongForAddToSetlist(s)}
+        onSaveSong={handleUpdateSong}
         navigation={navigationContext}
       />
     );
@@ -1106,6 +1282,8 @@ export default function App() {
                 onCreateSetlist={handleCreateSetlist}
                 onUpdateSetlist={handleUpdateSetlist}
                 onDeleteSetlist={handleDeleteSetlist}
+                onAddSongToSetlist={handleAddSongToSetlist}
+                onRemoveSongFromSetlist={handleRemoveSongFromSetlist}
                 onOpenSetlistPerformance={handleOpenSetlistPerformance}
                 onSelectSong={handleOpenSongViewer}
                 onEditSong={handleOpenEditSong}

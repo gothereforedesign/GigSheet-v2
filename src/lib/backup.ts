@@ -1,5 +1,11 @@
-import { getDB, saveSongsBatch, saveSetlist } from './db';
+import { getAllSongs, getAllSetlists, getSongById, saveSongsBatch, saveSetlist } from './db';
 import { Song, Setlist } from '../types';
+import {
+  getStoredCategories,
+  saveStoredCategories,
+  getStoredCategoryColors,
+  saveStoredCategoryColors,
+} from './categoryStorage';
 
 export interface LibraryBackup {
   version: number;
@@ -17,50 +23,57 @@ export interface LibraryBackup {
   };
 }
 
+async function songContentToDataUri(s: Song): Promise<string | undefined> {
+  const fullSong = await getSongById(s.id);
+  const blobData = fullSong?.fileBlob || (fullSong as any)?.pdfDataUri || fullSong?.fileUrl;
+
+  if (!blobData) return undefined;
+
+  if (typeof blobData === 'string') {
+    if (blobData.startsWith('data:')) {
+      return blobData;
+    }
+    if (blobData.length > 100) {
+      const mime = s.type === 'pdf' ? 'application/pdf' : 'image/jpeg';
+      return `data:${mime};base64,${blobData}`;
+    }
+    return blobData;
+  }
+
+  let buf: ArrayBuffer;
+  if (blobData instanceof ArrayBuffer) {
+    buf = blobData;
+  } else if (blobData instanceof Blob) {
+    buf = await blobData.arrayBuffer();
+  } else {
+    return undefined;
+  }
+
+  if (buf.byteLength === 0) return undefined;
+
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  const len = bytes.byteLength;
+  const chunkSize = 0x8000;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+  }
+  const mime = s.type === 'pdf' ? 'application/pdf' : 'image/jpeg';
+  return `data:${mime};base64,${btoa(binary)}`;
+}
+
 export async function exportLibraryData(onProgress?: (msg: string) => void): Promise<Blob> {
   if (onProgress) onProgress('Fetching songs and setlists...');
-  const db = await getDB();
-  const allSongs = await db.getAll('songs');
-  const allSetlists = await db.getAll('setlists');
-  const allBlobs = await db.getAll('song_blobs');
-
-  const blobMap = new Map<string, ArrayBuffer | Blob>();
-  for (const b of allBlobs) {
-    if (b && b.id && b.blob) {
-      blobMap.set(b.id, b.blob);
-    }
-  }
+  const allSongs = await getAllSongs();
+  const allSetlists = await getAllSetlists();
 
   const exportedSongs: { metadata: Song; pdfDataUri?: string }[] = [];
 
   for (let i = 0; i < allSongs.length; i++) {
     const s = allSongs[i];
-    if (onProgress) onProgress(`Packing chart ${i + 1} of ${allSongs.length}...`);
-    let dataUri: string | undefined = undefined;
-    const blobData = blobMap.get(s.id);
-    if (blobData) {
-      let buf: ArrayBuffer;
-      if (blobData instanceof ArrayBuffer) {
-        buf = blobData;
-      } else if (blobData instanceof Blob) {
-        buf = await blobData.arrayBuffer();
-      } else {
-        buf = new ArrayBuffer(0);
-      }
-
-      if (buf.byteLength > 0) {
-        const bytes = new Uint8Array(buf);
-        let binary = '';
-        const chunkSize = 0x8000;
-        for (let j = 0; j < bytes.length; j += chunkSize) {
-          binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(j, j + chunkSize)));
-        }
-        const mime = s.type === 'pdf' ? 'application/pdf' : 'image/jpeg';
-        dataUri = `data:${mime};base64,${btoa(binary)}`;
-      }
-    } else if (s.fileUrl) {
-      dataUri = s.fileUrl;
-    }
+    if (onProgress) onProgress(`Packing chart ${i + 1} of ${allSongs.length}: ${s.title}...`);
+    const dataUri = await songContentToDataUri(s);
 
     exportedSongs.push({
       metadata: s,
@@ -68,25 +81,20 @@ export async function exportLibraryData(onProgress?: (msg: string) => void): Pro
     });
   }
 
-  const sheetMusicCats = localStorage.getItem('gigsheet_categories_sheet_music');
-  const techniqueCats = localStorage.getItem('gigsheet_categories_technique');
-  const sheetMusicCols = localStorage.getItem('gigsheet_colors_sheet_music');
-  const techniqueCols = localStorage.getItem('gigsheet_colors_technique');
-
   const backupObj: LibraryBackup = {
     version: 1,
     exportDate: new Date().toISOString(),
     songs: exportedSongs,
     setlists: allSetlists,
     categories: {
-      sheetMusic: sheetMusicCats ? JSON.parse(sheetMusicCats) : undefined,
-      technique: techniqueCats ? JSON.parse(techniqueCats) : undefined,
-      sheetMusicColors: sheetMusicCols ? JSON.parse(sheetMusicCols) : undefined,
-      techniqueColors: techniqueCols ? JSON.parse(techniqueCols) : undefined,
+      sheetMusic: getStoredCategories('sheet_music'),
+      technique: getStoredCategories('technique'),
+      sheetMusicColors: getStoredCategoryColors('sheet_music'),
+      techniqueColors: getStoredCategoryColors('technique'),
     },
   };
 
-  const jsonString = JSON.stringify(backupObj);
+  const jsonString = JSON.stringify(backupObj, null, 2);
   return new Blob([jsonString], { type: 'application/json' });
 }
 
@@ -101,18 +109,22 @@ export async function importLibraryData(
     throw new Error('Invalid backup file format: missing songs array.');
   }
 
+  try {
+    localStorage.setItem('gigsheet_db_seeded', 'true');
+  } catch (e) {}
+
   if (backup.categories) {
     if (backup.categories.sheetMusic) {
-      localStorage.setItem('gigsheet_categories_sheet_music', JSON.stringify(backup.categories.sheetMusic));
+      saveStoredCategories('sheet_music', backup.categories.sheetMusic);
     }
     if (backup.categories.technique) {
-      localStorage.setItem('gigsheet_categories_technique', JSON.stringify(backup.categories.technique));
+      saveStoredCategories('technique', backup.categories.technique);
     }
     if (backup.categories.sheetMusicColors) {
-      localStorage.setItem('gigsheet_colors_sheet_music', JSON.stringify(backup.categories.sheetMusicColors));
+      saveStoredCategoryColors('sheet_music', backup.categories.sheetMusicColors as any);
     }
     if (backup.categories.techniqueColors) {
-      localStorage.setItem('gigsheet_colors_technique', JSON.stringify(backup.categories.techniqueColors));
+      saveStoredCategoryColors('technique', backup.categories.techniqueColors as any);
     }
   }
 

@@ -127,6 +127,10 @@ export async function getSongById(id: string): Promise<Song | undefined> {
     return undefined;
   }
 
+  const sample = BUNDLED_SAMPLE_SONGS.find(
+    s => s.id === id || s.title.toLowerCase().trim() === song.title.toLowerCase().trim()
+  );
+
   if (content && content.blob) {
     let raw = content.blob;
     if (raw instanceof Blob) {
@@ -140,15 +144,49 @@ export async function getSongById(id: string): Promise<Song | undefined> {
       const createdBlob = new Blob([(raw as any).buffer || raw], { type: song.type === 'pdf' ? 'application/pdf' : 'image/jpeg' });
       return { ...song, fileBlob: createdBlob };
     }
+    if (typeof raw === 'string') {
+      const strRaw = raw as string;
+      if (sample && (strRaw.includes('<0/Type') || strRaw.length < 100)) {
+        return { ...song, fileUrl: sample.fileUrl, fileBlob: sample.fileBlob };
+      }
+      return { ...song, fileBlob: raw as any };
+    }
     return { ...song, fileBlob: raw as unknown as Blob };
   }
 
-  // If no blob in song_blobs, check if song itself has fileUrl or sample fallback
+  // Check if fileBlob or pdfDataUri is attached directly on the song object in 'songs' store
+  const anySong = song as any;
+  if (anySong.fileBlob) {
+    const raw = anySong.fileBlob;
+    if (raw instanceof Blob) {
+      return song;
+    }
+    if (raw instanceof ArrayBuffer || Object.prototype.toString.call(raw) === '[object ArrayBuffer]') {
+      const createdBlob = new Blob([raw], { type: song.type === 'pdf' ? 'application/pdf' : 'image/jpeg' });
+      return { ...song, fileBlob: createdBlob };
+    }
+    if (typeof raw === 'string' && sample && (raw.includes('<0/Type') || raw.length < 100)) {
+      return { ...song, fileUrl: sample.fileUrl, fileBlob: sample.fileBlob };
+    }
+    return { ...song, fileBlob: raw };
+  }
+
+  if (anySong.pdfDataUri) {
+    if (typeof anySong.pdfDataUri === 'string' && sample && (anySong.pdfDataUri.includes('<0/Type') || anySong.pdfDataUri.length < 100)) {
+      return { ...song, fileUrl: sample.fileUrl, fileBlob: sample.fileBlob };
+    }
+    return { ...song, fileBlob: anySong.pdfDataUri };
+  }
+
+  // If song has a fileUrl (data URI or blob URL or http URL)
   if (song.fileUrl) {
+    if (typeof song.fileUrl === 'string' && sample && (song.fileUrl.includes('<0/Type') || song.fileUrl.length < 100)) {
+      return { ...song, fileUrl: sample.fileUrl, fileBlob: sample.fileBlob };
+    }
     return song;
   }
 
-  const sample = BUNDLED_SAMPLE_SONGS.find(s => s.id === id);
+  // Fallback to sample song matching ID or title
   if (sample) {
     return { ...song, fileUrl: sample.fileUrl, fileBlob: sample.fileBlob };
   }
@@ -165,13 +203,17 @@ export async function getSongBlob(id: string): Promise<Blob | ArrayBuffer | stri
       return blob;
     } else if (blob instanceof ArrayBuffer || Object.prototype.toString.call(blob) === '[object ArrayBuffer]') {
       return blob as ArrayBuffer;
+    } else if (typeof blob === 'string') {
+      return blob;
     }
   }
   const song = await db.get('songs', id);
   if (song && song.fileUrl) {
     return song.fileUrl;
   }
-  const sample = BUNDLED_SAMPLE_SONGS.find(s => s.id === id);
+  const sample = BUNDLED_SAMPLE_SONGS.find(
+    s => s.id === id || (song && s.title.toLowerCase().trim() === song.title.toLowerCase().trim())
+  );
   if (sample) {
     return sample.fileBlob || sample.fileUrl || null;
   }
@@ -190,8 +232,37 @@ async function serializeToBinary(blobOrBuffer: Blob | File | ArrayBuffer | strin
   }
   if (typeof blobOrBuffer === 'string') {
     if (blobOrBuffer.startsWith('data:')) {
-      const res = await fetch(blobOrBuffer);
-      return await res.arrayBuffer();
+      const commaIdx = blobOrBuffer.indexOf(',');
+      if (commaIdx !== -1) {
+        try {
+          const base64Str = blobOrBuffer.substring(commaIdx + 1).trim();
+          const binaryStr = window.atob(base64Str);
+          const len = binaryStr.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          return bytes.buffer as ArrayBuffer;
+        } catch (e) {
+          console.warn('Direct base64 decode failed, trying fetch fallback:', e);
+        }
+      }
+      try {
+        const res = await fetch(blobOrBuffer);
+        return await res.arrayBuffer();
+      } catch (e) {
+        console.warn('Fetch data URI failed:', e);
+      }
+    }
+    if (blobOrBuffer.length > 100) {
+      try {
+        const binaryStr = window.atob(blobOrBuffer.trim());
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        return bytes.buffer as ArrayBuffer;
+      } catch (e) {}
     }
   }
   return null;
@@ -202,14 +273,17 @@ export async function saveSong(song: Song): Promise<void> {
   const { fileBlob, ...metadata } = song;
   
   let binaryData: Blob | ArrayBuffer | null = null;
-  if (fileBlob) {
-    if (fileBlob instanceof Blob || fileBlob instanceof File) {
-      binaryData = fileBlob;
-    } else {
+  const candidate = fileBlob || (song as any).pdfDataUri || song.fileUrl;
+  if (candidate) {
+    if (candidate instanceof Blob || candidate instanceof File) {
+      binaryData = candidate;
+    } else if (candidate instanceof ArrayBuffer || Object.prototype.toString.call(candidate) === '[object ArrayBuffer]') {
+      binaryData = candidate;
+    } else if (typeof candidate === 'string') {
       try {
-        binaryData = await serializeToBinary(fileBlob);
+        binaryData = await serializeToBinary(candidate);
       } catch (e) {
-        console.warn('Could not serialize fileBlob:', e);
+        console.warn('Could not serialize candidate fileBlob:', e);
       }
     }
   }
@@ -244,16 +318,27 @@ export async function saveSongsBatch(
   for (let i = 0; i < songs.length; i += chunkSize) {
     const chunk = songs.slice(i, i + chunkSize);
     
-    const preparedItems = chunk.map((song) => {
-      const { fileBlob, ...metadata } = song;
-      let binaryData: Blob | ArrayBuffer | null = null;
-      if (fileBlob) {
-        if (fileBlob instanceof Blob || fileBlob instanceof File) {
-          binaryData = fileBlob;
+    const preparedItems = await Promise.all(
+      chunk.map(async (song) => {
+        const { fileBlob, ...metadata } = song;
+        let binaryData: Blob | ArrayBuffer | null = null;
+        const candidate = fileBlob || (song as any).pdfDataUri || song.fileUrl;
+        if (candidate) {
+          if (candidate instanceof Blob || candidate instanceof File) {
+            binaryData = candidate;
+          } else if (candidate instanceof ArrayBuffer || Object.prototype.toString.call(candidate) === '[object ArrayBuffer]') {
+            binaryData = candidate;
+          } else if (typeof candidate === 'string') {
+            try {
+              binaryData = await serializeToBinary(candidate);
+            } catch (e) {
+              console.warn('Batch serialization failed:', e);
+            }
+          }
         }
-      }
-      return { metadata: metadata as Song, id: song.id, binaryData };
-    });
+        return { metadata: metadata as Song, id: song.id, binaryData };
+      })
+    );
 
     // Step 2: Write chunk to IndexedDB
     try {

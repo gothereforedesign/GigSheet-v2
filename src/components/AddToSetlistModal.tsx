@@ -28,7 +28,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
   // Initial selected setlist IDs containing this song
   const [selectedSetlistIds, setSelectedSetlistIds] = useState<string[]>(() => {
     return sectionSetlists
-      .filter((s) => s.items.some((item) => item.songId === song.id))
+      .filter((s) => s.items.some((item) => item.songId === song.id || item.songId.includes(`_${song.id}`)))
       .map((s) => s.id);
   });
 

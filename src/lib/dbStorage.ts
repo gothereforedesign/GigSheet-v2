@@ -62,13 +62,11 @@ export async function saveSongDirectDirectBlob(song: Song, fileBlob: Blob | File
       const db = await getDB();
       const { fileBlob: _, ...metadata } = song;
 
-      // Atomic parallel write to both metadata 'songs' and binary 'song_blobs' stores
+      // Write to both metadata 'songs' and binary 'song_blobs' stores cleanly
       const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
-      await Promise.all([
-        tx.objectStore('songs').put(metadata as Song),
-        tx.objectStore('song_blobs').put({ id: song.id, blob: binaryData }),
-        tx.done,
-      ]);
+      tx.objectStore('songs').put(metadata as Song);
+      tx.objectStore('song_blobs').put({ id: song.id, blob: binaryData });
+      await tx.done;
 
       return; // Success
     } catch (err) {

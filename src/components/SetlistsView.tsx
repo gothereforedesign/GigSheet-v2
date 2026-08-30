@@ -18,6 +18,8 @@ interface SetlistsViewProps {
   onCreateSetlist: (name: string, description?: string, section?: 'sheet_music' | 'technique') => Promise<Setlist | undefined | void>;
   onUpdateSetlist: (setlist: Setlist) => Promise<void>;
   onDeleteSetlist: (id: string) => Promise<void>;
+  onAddSongToSetlist?: (setlist: Setlist, song: Song) => Promise<void>;
+  onRemoveSongFromSetlist?: (setlist: Setlist, index: number) => Promise<void>;
   onOpenSetlistPerformance?: (setlist: Setlist, startIndex: number) => void;
   onSelectSong?: (song: Song, contextSetlist?: Setlist, index?: number) => void;
   onEditSong?: (song: Song) => void;
@@ -32,6 +34,8 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
   onCreateSetlist,
   onUpdateSetlist,
   onDeleteSetlist,
+  onAddSongToSetlist,
+  onRemoveSongFromSetlist,
   onOpenSetlistPerformance,
   onSelectSong,
   onEditSong,
@@ -45,9 +49,9 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
     (s) => (s.type || 'sheet_music') === targetSection
   );
 
-  // Filter songs matching section
+  // Filter songs matching section (exclude setlist duplicates for picker)
   const sectionSongs = allSongs.filter(
-    (s) => (s.section || 'sheet_music') === targetSection
+    (s) => (s.section || 'sheet_music') === targetSection && !s.isSetlistDuplicate && !s.setlistId
   );
 
   const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
@@ -89,22 +93,22 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
   };
 
   const handleRemoveSongFromSetlist = (setlist: Setlist, index: number) => {
-    const newItems = setlist.items.filter((_, i) => i !== index);
-    onUpdateSetlist({
-      ...setlist,
-      items: newItems,
-      dateModified: Date.now(),
-    });
+    if (onRemoveSongFromSetlist) {
+      onRemoveSongFromSetlist(setlist, index);
+    } else {
+      const newItems = setlist.items.filter((_, i) => i !== index);
+      onUpdateSetlist({
+        ...setlist,
+        items: newItems,
+        dateModified: Date.now(),
+      });
+    }
   };
 
-  const handleAddSongToSetlist = (setlist: Setlist, songId: string) => {
-    if (setlist.items.some((item) => item.songId === songId)) return;
-    const newItems = [...setlist.items, { songId }];
-    onUpdateSetlist({
-      ...setlist,
-      items: newItems,
-      dateModified: Date.now(),
-    });
+  const handleAddSongToSetlist = (setlist: Setlist, song: Song) => {
+    if (onAddSongToSetlist) {
+      onAddSongToSetlist(setlist, song);
+    }
   };
 
   // Filtered charts for picker
@@ -566,18 +570,22 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 </div>
               ) : (
                 filteredPickerSongs.map((song) => {
-                  const isInSetlist = activeSetlist.items.some((item) => item.songId === song.id);
+                  const isInSetlist = activeSetlist.items.some((item) => {
+                    if (item.songId === song.id) return true;
+                    const s = allSongs.find((sItem) => sItem.id === item.songId);
+                    return s?.originalSongId === song.id;
+                  });
 
                   return (
                     <div
                       key={song.id}
-                      onClick={() => handleAddSongToSetlist(activeSetlist, song.id)}
-                      className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                      onClick={() => !isInSetlist && handleAddSongToSetlist(activeSetlist, song)}
+                      className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-all ${
                         isInSetlist
-                          ? 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/80 opacity-70'
-                          : isTechnique
-                          ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-950/40'
-                          : 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-600 hover:bg-sky-50/50 dark:hover:bg-sky-950/40'
+                          ? 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/80 opacity-70 cursor-default'
+                          : 'cursor-pointer ' + (isTechnique
+                            ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-950/40'
+                            : 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-600 hover:bg-sky-50/50 dark:hover:bg-sky-950/40')
                       }`}
                     >
                       <div className="min-w-0 flex-1">

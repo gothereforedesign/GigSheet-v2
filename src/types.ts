@@ -58,6 +58,11 @@ export interface Song {
 
   // Soft delete flag for trash bin
   deletedAt?: number;
+
+  // Setlist / Practice Routine Duplication Context
+  originalSongId?: string;
+  setlistId?: string;
+  isSetlistDuplicate?: boolean;
 }
 
 export interface SetlistItem {
