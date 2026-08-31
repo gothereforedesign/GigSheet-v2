@@ -130,6 +130,7 @@ export default function App() {
   const initialNavStateRef = useRef<NavState>(getInitialNavState());
   const [activeTab, setActiveTab] = useState<ActiveTab>(initialNavStateRef.current.activeTab);
   const section: 'sheet_music' | 'technique' = (activeTab === 'technique' || activeTab === 'technique_routines') ? 'technique' : 'sheet_music';
+  const isSetlistTab = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
 
   // Data State
   const [songs, setSongs] = useState<Song[]>([]);
@@ -154,7 +155,6 @@ export default function App() {
   const [filterState, setFilterState] = useState<ViewFilterState>({
     searchQuery: '',
     genreFilter: '',
-    keyFilter: '',
     typeFilter: '',
     favoriteOnly: false,
     sortBy: 'title',
@@ -928,6 +928,28 @@ export default function App() {
     }
   };
 
+  const handleReorderSetlists = async (reorderedNames: string[]) => {
+    const targetSection = section;
+    const targetList = setlists.filter((s) => (s.type || 'sheet_music') === targetSection);
+    const now = Date.now();
+    
+    const reordered: Setlist[] = [];
+    reorderedNames.forEach((name, idx) => {
+      const s = targetList.find((item) => item.name === name);
+      if (s) {
+        reordered.push({
+          ...s,
+          dateCreated: now - (reorderedNames.length - idx) * 1000,
+        });
+      }
+    });
+
+    for (const s of reordered) {
+      await saveSetlist(s);
+    }
+    await loadSetlists();
+  };
+
   const handleUpdateCategoryColor = (category: string, color: CategoryColorKey) => {
     const updatedColors = { ...currentCategoryColors, [category]: color };
     if (section === 'technique') {
@@ -1158,10 +1180,6 @@ export default function App() {
   const activeCategoryPalette = selectedCategory ? getCategoryPalette(selectedCategory, currentCategoryColors, section) : null;
 
   const getTabBgClass = () => {
-    if (activeCategoryPalette) {
-      return `${activeCategoryPalette.cardBg} text-white`;
-    }
-
     if (isDarkMode) {
       switch (activeTab) {
         case 'sheet_music':
@@ -1269,6 +1287,7 @@ export default function App() {
                 filterState={filterState}
                 activeTab={activeTab}
                 selectedCategory={selectedCategory}
+                isDarkMode={isDarkMode}
                 onSelectCategory={handleSelectCategory}
                 onFilterChange={(f) => setFilterState((prev) => ({ ...prev, ...f }))}
                 onSelectSong={handleOpenSongViewer}
@@ -1289,6 +1308,7 @@ export default function App() {
                 setlists={setlists}
                 allSongs={songs.filter((s) => !s.deletedAt)}
                 genreColors={currentCategoryColors}
+                isDarkMode={isDarkMode}
                 onCreateSetlist={handleCreateSetlist}
                 onUpdateSetlist={handleUpdateSetlist}
                 onDeleteSetlist={handleDeleteSetlist}
@@ -1381,18 +1401,60 @@ export default function App() {
       <BottomDrawer
         isOpen={isCategoryManagerOpen}
         onClose={handleCloseCategoryManager}
-        title={`Edit ${section === 'technique' ? 'Technique' : 'Sheet Music'} Categories`}
+        title={
+          isSetlistTab
+            ? (section === 'technique' ? 'Edit Practice Routines' : 'Edit Performance Setlists')
+            : `Edit ${section === 'technique' ? 'Technique' : 'Sheet Music'} Categories`
+        }
       >
         <CategoryManagerModal
           section={section}
-          categories={currentCategories}
-          categoryColors={currentCategoryColors}
+          isSetlistMode={isSetlistTab}
+          categories={
+            isSetlistTab
+              ? setlists.filter((s) => (s.type || 'sheet_music') === section).map((s) => s.name)
+              : currentCategories
+          }
+          setlists={isSetlistTab ? setlists.filter((s) => (s.type || 'sheet_music') === section) : undefined}
+          categoryColors={isSetlistTab ? undefined : currentCategoryColors}
           songs={songs}
-          onAddCategory={handleAddCategory}
-          onRenameCategory={handleRenameCategory}
-          onReorderCategories={handleReorderCategories}
-          onUpdateCategoryColor={handleUpdateCategoryColor}
-          onDeleteCategory={handleDeleteCategory}
+          onAddCategory={
+            isSetlistTab
+              ? (name) => handleCreateSetlist(name, undefined, section)
+              : handleAddCategory
+          }
+          onRenameCategory={
+            isSetlistTab
+              ? async (oldName, newName) => {
+                  const target = setlists.find(
+                    (s) => (s.type || 'sheet_music') === section && s.name === oldName
+                  );
+                  if (target) {
+                    await handleUpdateSetlist({
+                      ...target,
+                      name: newName,
+                      dateModified: Date.now(),
+                    });
+                  }
+                }
+              : handleRenameCategory
+          }
+          onReorderCategories={
+            isSetlistTab ? handleReorderSetlists : handleReorderCategories
+          }
+          onUpdateCategoryColor={isSetlistTab ? undefined : handleUpdateCategoryColor}
+          onDeleteCategory={
+            isSetlistTab
+              ? async (name) => {
+                  const target = setlists.find(
+                    (s) => (s.type || 'sheet_music') === section && s.name === name
+                  );
+                  if (target) {
+                    await handleDeleteSetlist(target.id);
+                  }
+                }
+              : handleDeleteCategory
+          }
           onClose={handleCloseCategoryManager}
         />
       </BottomDrawer>

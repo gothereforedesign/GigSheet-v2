@@ -13,6 +13,13 @@ export interface CategoryColorPalette {
   dotHex: string;
   cardBgHex: string;
   cardBorderHex: string;
+  r: number;
+  g: number;
+  b: number;
+  lightContainerBg: string;
+  lightContainerBorder: string;
+  darkContainerBg: string;
+  darkContainerBorder: string;
   badgeBg: string;
   badgeText: string;
   badgeBorder: string;
@@ -80,12 +87,27 @@ export function getCascadingCategoryPalette(
   const cardBgHex = rgbToHex(r, g, b);
   const cardBorderHex = rgbToHex(borderR, borderG, borderB);
 
+  // Subtle, elegant light container tint based on category hue (light mode)
+  const lightContainerBg = `rgba(${r}, ${g}, ${b}, 0.055)`;
+  const lightContainerBorder = `rgba(${r}, ${g}, ${b}, 0.18)`;
+
+  // Rich, deep dark container tint based on category hue (dark mode)
+  const darkContainerBg = `rgba(${Math.round(r * 0.12 + 10)}, ${Math.round(g * 0.12 + 14)}, ${Math.round(b * 0.12 + 24)}, 0.96)`;
+  const darkContainerBorder = `rgba(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)}, 0.22)`;
+
   return {
     key: `cascade_${section}_${safeIndex}`,
     label: `Shade #${safeIndex + 1}`,
     dotHex,
     cardBgHex,
     cardBorderHex,
+    r,
+    g,
+    b,
+    lightContainerBg,
+    lightContainerBorder,
+    darkContainerBg,
+    darkContainerBorder,
     badgeBg: section === 'technique' ? 'bg-purple-500/20' : 'bg-sky-500/20',
     badgeText: section === 'technique' ? 'text-purple-100' : 'text-sky-100',
     badgeBorder: section === 'technique' ? 'border-purple-400/40' : 'border-sky-400/40',

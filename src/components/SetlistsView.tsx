@@ -15,6 +15,7 @@ interface SetlistsViewProps {
   setlists: Setlist[];
   allSongs: Song[];
   genreColors?: Record<string, CategoryColorKey>;
+  isDarkMode?: boolean;
   onCreateSetlist: (name: string, description?: string, section?: 'sheet_music' | 'technique') => Promise<Setlist | undefined | void>;
   onUpdateSetlist: (setlist: Setlist) => Promise<void>;
   onDeleteSetlist: (id: string) => Promise<void>;
@@ -31,6 +32,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
   setlists,
   allSongs,
   genreColors,
+  isDarkMode = false,
   onCreateSetlist,
   onUpdateSetlist,
   onDeleteSetlist,
@@ -182,22 +184,38 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
       ) : (
         /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED SETLIST / ROUTINE - UNIFIED CONTAINER */
         activeSetlist && (
-          <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/90 dark:border-slate-800 p-3 sm:p-4 shadow-2xs space-y-3">
+          <div
+            style={{
+              backgroundColor: isDarkMode
+                ? (isTechnique ? 'rgba(24, 17, 39, 0.96)' : 'rgba(10, 29, 47, 0.96)')
+                : (isTechnique ? 'rgba(124, 58, 237, 0.055)' : 'rgba(2, 132, 199, 0.055)'),
+              borderColor: isDarkMode
+                ? (isTechnique ? 'rgba(168, 85, 247, 0.22)' : 'rgba(56, 189, 248, 0.22)')
+                : (isTechnique ? 'rgba(124, 58, 237, 0.18)' : 'rgba(2, 132, 199, 0.18)'),
+            }}
+            className="rounded-lg md:rounded-xl border p-3 sm:p-4.5 shadow-2xs space-y-3 transition-colors"
+          >
             {/* Top Bar Navigation */}
-            <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800">
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
                 {/* Back Arrow Button */}
                 <button
                   type="button"
                   onClick={() => setSelectedSetlistId(null)}
-                  className="p-1.5 text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                  className="p-1.5 text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
                   title={`Back to ${isTechnique ? 'Routines' : 'Setlists'}`}
                 >
                   <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
                 </button>
 
                 {/* Category / Setlist Title Badge + Category Editor Button */}
-                <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs"
+                    style={{
+                      backgroundColor: isTechnique ? '#9333ea' : '#0284c7'
+                    }}
+                  />
                   <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate max-w-[120px] sm:max-w-[200px]">
                     {activeSetlist.name}
                   </h2>
@@ -216,8 +234,8 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 {/* Section Count Badge */}
                 <div className={`inline-flex items-center justify-center border px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center ${
                   isTechnique
-                    ? 'bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                    : 'bg-sky-50 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-200 dark:border-sky-800'
+                    ? 'bg-white/80 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                    : 'bg-white/80 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-200 dark:border-sky-800'
                 }`} title={`${activeSetlist.items.length} Charts`}>
                   <span>{activeSetlist.items.length}</span>
                 </div>
@@ -228,7 +246,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddSongPicker(true)}
-                  className="px-2.5 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap flex items-center gap-1"
+                  className="px-2.5 py-1.5 rounded-md bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap flex items-center gap-1"
                   title="Add Chart to Setlist"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -239,7 +257,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setDisplayMode(displayMode === 'list' ? 'grid' : 'list')}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
                   title={displayMode === 'list' ? 'Switch to Grid Preview' : 'Switch to List View'}
                 >
                   {displayMode === 'list' ? (

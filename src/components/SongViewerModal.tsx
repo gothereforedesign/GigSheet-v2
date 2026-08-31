@@ -4,12 +4,12 @@ import { PdfSheetViewer } from './PdfSheetViewer';
 import { 
   X, ChevronLeft, ChevronRight, ListPlus,
   Loader2, ZoomIn, ZoomOut, RotateCcw,
-  Printer, Music, Upload
+  Download, Check, Music, Upload
 } from 'lucide-react';
 import { getSongById, saveSong } from '../lib/db';
 import { saveSongDirectDirectBlob } from '../lib/dbStorage';
 import { getCategoryPalette, getStoredCategoryColors } from '../lib/categoryStorage';
-import { printSong } from '../lib/printEngine';
+import { downloadSongPdf } from '../lib/printEngine';
 
 interface SongViewerModalProps {
   song: Song;
@@ -33,8 +33,8 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 }) => {
   const [song, setSong] = useState<Song>(initialSong);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [printStatus, setPrintStatus] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [, setNumPages] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -191,17 +191,20 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
     };
   }, []);
 
-  // Open native print view directly on device
-  const handlePrintPdf = async () => {
-    if (isPrinting) return;
-    setIsPrinting(true);
+  // Direct PDF chart download
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
     try {
-      await printSong(song, (status) => setPrintStatus(status));
+      const ok = await downloadSongPdf(song);
+      if (ok) {
+        setDownloadSuccess(true);
+        setTimeout(() => setDownloadSuccess(false), 2500);
+      }
     } catch (err) {
-      console.error('Failed to execute print:', err);
+      console.error('Failed to download PDF:', err);
     } finally {
-      setIsPrinting(false);
-      setPrintStatus('');
+      setIsDownloading(false);
     }
   };
 
@@ -253,22 +256,20 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
           <button
             type="button"
-            disabled={isPrinting}
-            onClick={handlePrintPdf}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border transition-all shadow-lg ${
-              isPrinting
-                ? 'bg-sky-950 border-sky-600 text-sky-300 cursor-wait'
-                : 'bg-slate-900 hover:bg-slate-800 text-white border-slate-700/80 cursor-pointer active:scale-95'
-            }`}
-            title={printStatus || 'Print sheet music'}
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 bg-slate-900 hover:bg-slate-800 text-white cursor-pointer active:scale-95 transition-all shadow-lg hover:border-sky-500/50 disabled:opacity-60"
+            title="Download PDF chart"
           >
-            {isPrinting ? (
-              <Loader2 className="w-3.5 h-3.5 stroke-[2.2] text-sky-400 animate-spin" />
+            {isDownloading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" />
+            ) : downloadSuccess ? (
+              <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
             ) : (
-              <Printer className="w-3.5 h-3.5 stroke-[2.2] text-sky-400" />
+              <Download className="w-3.5 h-3.5 stroke-[2.2] text-sky-400" />
             )}
             <span className="text-[11px] font-black">
-              {isPrinting ? 'Printing...' : 'Print'}
+              {isDownloading ? 'Saving...' : downloadSuccess ? 'Saved' : 'Download'}
             </span>
           </button>
         </div>
@@ -312,22 +313,14 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                   <p className="text-slate-400 font-medium text-sm">{song.artist || 'Unknown Composer'}</p>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full py-2">
+                <div className="grid grid-cols-2 gap-2.5 w-full py-2">
                   <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Key</span>
-                    <span className="text-sm font-black text-sky-300 mt-0.5">{song.key}</span>
-                  </div>
-                  <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Tempo</span>
-                    <span className="text-sm font-black text-sky-400 mt-0.5">{song.tempo} BPM</span>
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Category</span>
+                    <span className="text-sm font-black text-purple-400 mt-0.5 truncate max-w-[120px]">{song.genre || 'General'}</span>
                   </div>
                   <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
                     <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Time Sig</span>
-                    <span className="text-sm font-black text-purple-300 mt-0.5">{song.timeSignature}</span>
-                  </div>
-                  <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Genre</span>
-                    <span className="text-sm font-black text-purple-400 mt-0.5 truncate max-w-[80px]">{song.genre}</span>
+                    <span className="text-sm font-black text-purple-300 mt-0.5">{song.timeSignature || '4/4'}</span>
                   </div>
                 </div>
 

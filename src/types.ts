@@ -28,10 +28,10 @@ export interface Song {
   id: string;
   title: string;
   artist: string;            // Composer or Artist
-  key: MusicKey;
-  originalKey: MusicKey;
-  tempo: number;             // BPM
-  timeSignature: TimeSignature;
+  key?: string;
+  originalKey?: string;
+  tempo?: number;             // BPM
+  timeSignature?: string;
   // Hymn / Song specific fields
   meter?: string;            // Hymn meter e.g. 'C.M.', 'L.M.', '8.7.8.7.D', '7.7.7.7'
   lyrics?: string;           // Verse and chorus text lyrics
@@ -89,9 +89,8 @@ export type ActiveTab = 'sheet_music' | 'sheet_music_setlists' | 'technique' | '
 export interface ViewFilterState {
   searchQuery: string;
   genreFilter: string;
-  keyFilter: string;
   typeFilter: string;
   favoriteOnly: boolean;
-  sortBy: 'title' | 'artist' | 'key' | 'tempo' | 'dateAdded' | 'lastPlayed';
+  sortBy: 'title' | 'artist' | 'dateAdded' | 'lastPlayed';
   sortOrder: 'asc' | 'desc';
 }

@@ -19,6 +19,7 @@ interface LibraryViewProps {
   filterState: ViewFilterState;
   activeTab?: string;
   selectedCategory?: string | null;
+  isDarkMode?: boolean;
   onSelectCategory?: (category: string | null) => void;
   onFilterChange: (filters: Partial<ViewFilterState>) => void;
   onSelectSong: (song: Song) => void;
@@ -193,6 +194,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   filterState,
   activeTab = 'sheet_music',
   selectedCategory: propSelectedCategory,
+  isDarkMode = false,
   onSelectCategory,
   onFilterChange,
   onSelectSong,
@@ -320,23 +322,33 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
         </div>
       ) : (
-        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED CATEGORY - UNIFIED CONTAINER */
-        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/90 dark:border-slate-800 p-3 sm:p-4 shadow-2xs space-y-3">
+        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED CATEGORY - UNIFIED CONTAINER WITH CATEGORY HUE TINT */
+        <div
+          style={{
+            backgroundColor: isDarkMode ? currentPalette.darkContainerBg : currentPalette.lightContainerBg,
+            borderColor: isDarkMode ? currentPalette.darkContainerBorder : currentPalette.lightContainerBorder,
+          }}
+          className="rounded-lg md:rounded-xl border p-3 sm:p-4.5 shadow-2xs space-y-3 transition-colors"
+        >
           {/* Top Bar Navigation (Back arrow -> Category Title & Edit -> PDF Count -> View Toggle & Trash) */}
-          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
               {/* Back Arrow Button */}
               <button
                 type="button"
                 onClick={() => handleSetSelectedCategory(null)}
-                className="p-1.5 text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                className="p-1.5 text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
                 title="Back to Categories"
               >
                 <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
               </button>
 
               {/* Category Title Badge + Edit Category Button */}
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+              <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                <span 
+                  className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs" 
+                  style={{ backgroundColor: currentPalette.dotHex }}
+                />
                 <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate max-w-[110px] sm:max-w-[180px]">
                   {selectedCategory === 'ALL_SECTION_CHARTS' ? 'All Charts' : selectedCategory}
                 </h2>
@@ -353,7 +365,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               </div>
 
               {/* Subtle PDF Count Badge */}
-              <div className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center" title={`${filteredSongs.length} Charts`}>
+              <div className="inline-flex items-center justify-center bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center" title={`${filteredSongs.length} Charts`}>
                 <span>{filteredSongs.length}</span>
               </div>
             </div>
@@ -363,7 +375,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleToggleDisplayMode(displayMode === 'list' ? 'grid' : 'list')}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
                 title={displayMode === 'list' ? 'Switch to Grid Preview' : 'Switch to List View'}
               >
                 {displayMode === 'list' ? (
@@ -384,7 +396,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenTrash}
-                  className="p-1.5 rounded-md bg-slate-50 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 border border-slate-200/90 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 transition-colors cursor-pointer active:scale-95 shadow-2xs"
+                  className="p-1.5 rounded-md bg-white/90 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 border border-slate-200/90 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 transition-colors cursor-pointer active:scale-95 shadow-2xs"
                   title="Open Trash"
                 >
                   <Trash2 className="w-4 h-4 stroke-[2.2]" />

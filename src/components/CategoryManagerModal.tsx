@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, Check, X, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
-import { Song } from '../types';
+import { Plus, Edit3, Trash2, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Song, Setlist } from '../types';
 import { 
   CategoryColorKey, 
   getCascadingCategoryPalette 
@@ -8,7 +8,9 @@ import {
 
 interface CategoryManagerModalProps {
   section: 'sheet_music' | 'technique';
+  isSetlistMode?: boolean;
   categories: string[];
+  setlists?: Setlist[];
   categoryColors?: Record<string, CategoryColorKey>;
   songs: Song[];
   onAddCategory: (newCategory: string, color?: CategoryColorKey) => void;
@@ -21,7 +23,9 @@ interface CategoryManagerModalProps {
 
 export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   section,
+  isSetlistMode = false,
   categories,
+  setlists = [],
   songs,
   onAddCategory,
   onRenameCategory,
@@ -30,7 +34,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   onClose,
 }) => {
   const isTechnique = section === 'technique';
-  const sectionLabel = isTechnique ? 'Technique' : 'Sheet Music';
+  const sectionLabel = isSetlistMode
+    ? (isTechnique ? 'Practice Routines' : 'Performance Setlists')
+    : (isTechnique ? 'Technique Categories' : 'Sheet Music Categories');
+  const singularLabel = isSetlistMode
+    ? (isTechnique ? 'routine' : 'setlist')
+    : 'category';
 
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
@@ -38,8 +47,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Calculate song count per category for confirmation on delete
+  // Calculate chart count per category or setlist for confirmation on delete
   const getCategoryCount = (categoryName: string) => {
+    if (isSetlistMode) {
+      const match = setlists.find((s) => s.name === categoryName);
+      return match ? match.items.length : 0;
+    }
     return songs.filter((s) => {
       if (isTechnique && s.section !== 'technique') return false;
       if (!isTechnique && s.section === 'technique') return false;
@@ -73,7 +86,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const handleSaveRename = async (oldCategory: string) => {
     const trimmed = editingText.trim();
     if (!trimmed) {
-      setErrorMsg('Category name cannot be empty.');
+      setErrorMsg(`${singularLabel} name cannot be empty.`);
       return;
     }
 
@@ -93,8 +106,8 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       await onRenameCategory(oldCategory, trimmed);
       setEditingCategory(null);
     } catch (err: any) {
-      console.error('Failed to rename category:', err);
-      setErrorMsg('Failed to update category name across charts.');
+      console.error('Failed to rename:', err);
+      setErrorMsg(`Failed to update ${singularLabel} name.`);
     } finally {
       setIsProcessing(false);
     }
@@ -121,7 +134,9 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const handleDelete = async (category: string) => {
     const count = getCategoryCount(category);
     if (count > 0) {
-      const confirmMsg = `"${category}" contains ${count} ${count === 1 ? 'chart' : 'charts'}. Deleting this category will move ${count === 1 ? 'that chart' : 'those charts'} to the Trash section. Are you sure?`;
+      const confirmMsg = isSetlistMode
+        ? `"${category}" contains ${count} ${count === 1 ? 'chart' : 'charts'}. Deleting this ${singularLabel} will remove it. Are you sure?`
+        : `"${category}" contains ${count} ${count === 1 ? 'chart' : 'charts'}. Deleting this category will move ${count === 1 ? 'that chart' : 'those charts'} to the Trash section. Are you sure?`;
       if (!window.confirm(confirmMsg)) {
         return;
       }
@@ -135,8 +150,8 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         setEditingCategory(null);
       }
     } catch (err: any) {
-      console.error('Failed to delete category:', err);
-      setErrorMsg('Failed to delete category.');
+      console.error('Failed to delete:', err);
+      setErrorMsg(`Failed to delete ${singularLabel}.`);
     } finally {
       setIsProcessing(false);
     }
@@ -147,10 +162,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       {/* Header */}
       <div className="border-b border-slate-100 dark:border-slate-800 pb-2.5">
         <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
-          Edit {sectionLabel} Categories
+          Edit {sectionLabel}
         </h2>
         <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
-          Colors cascade automatically from lightest ({isTechnique ? 'top violet' : 'top sky'}) to darkest ({isTechnique ? 'bottom plum' : 'bottom navy'}).
+          {isSetlistMode
+            ? `Manage, reorder, rename, or create new ${isTechnique ? 'practice routines' : 'performance setlists'}.`
+            : `Colors cascade automatically from lightest (${isTechnique ? 'top violet' : 'top sky'}) to darkest (${isTechnique ? 'bottom plum' : 'bottom navy'}).`}
         </p>
       </div>
 
@@ -160,14 +177,14 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         </div>
       )}
 
-      {/* Add New Category Form */}
+      {/* Add New Category/Setlist Form */}
       <form onSubmit={handleAdd} className="space-y-2">
         <div className="flex gap-2">
           <input
             type="text"
             value={newCategoryInput}
             onChange={(e) => setNewCategoryInput(e.target.value)}
-            placeholder={`New category name...`}
+            placeholder={`New ${singularLabel} name...`}
             className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-sm text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-850 focus:border-sky-500 dark:focus:border-sky-400 placeholder:text-slate-400"
           />
           <button
@@ -183,14 +200,14 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         </div>
       </form>
 
-      {/* Category List */}
+      {/* List */}
       <div className="space-y-1">
         <div className="flex items-center justify-between px-0.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-            Categories ({categories.length})
+            {isSetlistMode ? (isTechnique ? 'Routines' : 'Setlists') : 'Categories'} ({categories.length})
           </span>
           <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
-            Use arrows to reorder shades
+            Use arrows to reorder
           </span>
         </div>
 
@@ -198,6 +215,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
           {categories.map((cat, index) => {
             const isEditing = editingCategory === cat;
             const palette = getCascadingCategoryPalette(index, categories.length, section);
+            const count = getCategoryCount(cat);
 
             return (
               <div
@@ -250,6 +268,10 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                         <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                           {cat}
                         </span>
+
+                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 shrink-0">
+                          ({count})
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-0.5">
@@ -261,7 +283,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                               onClick={() => handleMoveUp(index)}
                               disabled={index === 0 || isProcessing}
                               className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 rounded cursor-pointer"
-                              title="Move Up (Lighter Shade)"
+                              title="Move Up"
                             >
                               <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
                             </button>
@@ -270,7 +292,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                               onClick={() => handleMoveDown(index)}
                               disabled={index === categories.length - 1 || isProcessing}
                               className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 rounded cursor-pointer"
-                              title="Move Down (Darker Shade)"
+                              title="Move Down"
                             >
                               <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
                             </button>
@@ -282,18 +304,18 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                           onClick={() => handleStartRename(cat)}
                           disabled={isProcessing}
                           className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded cursor-pointer ml-1"
-                          title="Rename Category"
+                          title={`Rename ${singularLabel}`}
                         >
                           <Edit3 className="w-3.5 h-3.5 stroke-[2]" />
                         </button>
 
-                        {categories.length > 1 && (
+                        {(categories.length > 1 || isSetlistMode) && (
                           <button
                             type="button"
                             onClick={() => handleDelete(cat)}
                             disabled={isProcessing}
                             className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded cursor-pointer"
-                            title="Delete category"
+                            title={`Delete ${singularLabel}`}
                           >
                             <Trash2 className="w-3.5 h-3.5 stroke-[2]" />
                           </button>
