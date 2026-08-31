@@ -918,6 +918,16 @@ export default function App() {
     }
   };
 
+  const handleReorderCategories = (reordered: string[]) => {
+    if (section === 'technique') {
+      setTechniqueCategories(reordered);
+      saveStoredCategories('technique', reordered);
+    } else {
+      setSheetMusicCategories(reordered);
+      saveStoredCategories('sheet_music', reordered);
+    }
+  };
+
   const handleUpdateCategoryColor = (category: string, color: CategoryColorKey) => {
     const updatedColors = { ...currentCategoryColors, [category]: color };
     if (section === 'technique') {
@@ -1307,16 +1317,16 @@ export default function App() {
 
       {isUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-850/80">
               <div>
-                <h2 className="text-base font-black text-slate-900">Upload PDFs</h2>
+                <h2 className="text-base font-black text-slate-900 dark:text-slate-100">Upload PDFs</h2>
               </div>
               <button
                 type="button"
                 onClick={handleCloseUploadModal}
-                className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 flex items-center justify-center text-slate-700 font-bold transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-200/80 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 font-bold transition-colors cursor-pointer"
               >
                 ✕
               </button>
@@ -1380,9 +1390,9 @@ export default function App() {
           songs={songs}
           onAddCategory={handleAddCategory}
           onRenameCategory={handleRenameCategory}
+          onReorderCategories={handleReorderCategories}
           onUpdateCategoryColor={handleUpdateCategoryColor}
           onDeleteCategory={handleDeleteCategory}
-          onResetCategories={handleResetCategories}
           onClose={handleCloseCategoryManager}
         />
       </BottomDrawer>

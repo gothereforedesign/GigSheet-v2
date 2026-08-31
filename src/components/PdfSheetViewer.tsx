@@ -9,6 +9,8 @@ interface PdfSheetViewerProps {
   zoomLevel?: number;
   externalZoomControls?: boolean;
   onNumPagesChange?: (pages: number) => void;
+  useNativeViewer?: boolean;
+  onToggleNativeViewer?: (useNative: boolean) => void;
 }
 
 // Individual progressive page renderer component with canvas cancellation
@@ -115,7 +117,7 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
   return (
     <div
       ref={containerRef}
-      className="bg-white rounded-lg shadow-xl border border-slate-800 overflow-hidden relative transition-all duration-150 flex justify-center"
+      className="pdf-page-container bg-white rounded-lg shadow-xl border border-slate-800 overflow-hidden relative transition-all duration-150 flex justify-center"
       style={{
         width: '100%',
         minHeight: !isRendered ? '320px' : undefined,
@@ -129,7 +131,7 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
       />
 
       {!isRendered && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 text-slate-300 p-4 space-y-2">
+        <div className="no-print absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 text-slate-300 p-4 space-y-2">
           <Loader2 className="w-6 h-6 animate-spin text-sky-400" />
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
             Page {pageNumber}
@@ -147,13 +149,24 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   zoomLevel: externalZoom,
   externalZoomControls = false,
   onNumPagesChange,
+  useNativeViewer: externalUseNativeViewer,
+  onToggleNativeViewer,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [useNativeViewer, setUseNativeViewer] = useState<boolean>(false);
+  const [internalNativeViewer, setInternalNativeViewer] = useState<boolean>(false);
+
+  const useNativeViewer = externalUseNativeViewer !== undefined ? externalUseNativeViewer : internalNativeViewer;
+  const setUseNativeViewer = (val: boolean) => {
+    if (onToggleNativeViewer) {
+      onToggleNativeViewer(val);
+    } else {
+      setInternalNativeViewer(val);
+    }
+  };
 
   // Initialize zoom
   const getInitialZoom = (id?: string) => {
@@ -357,97 +370,92 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
 
   return (
     <div className="w-full h-full bg-slate-950 relative flex flex-col items-center overflow-hidden select-none">
-      {/* Main Scrollable Canvas Area */}
-      <div ref={scrollContainerRef} className="w-full h-full overflow-auto pt-2 pb-24 px-2">
-        {loading && (
-          <div className="my-auto flex flex-col items-center justify-center p-8 bg-slate-900/80 rounded-2xl border border-slate-800 text-white text-center space-y-3 max-w-sm mx-auto shadow-2xl">
-            <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
-            <div>
-              <p className="text-xs font-black uppercase tracking-wider text-sky-300">
-                Opening Sheet Music PDF
-              </p>
-              <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
-                Loading high-definition vector pages...
-              </p>
-            </div>
-          </div>
-        )}
-
-        {useNativeViewer && blobUrl && (
-          <div className="w-full h-full flex-1 p-2 flex flex-col items-center">
-            <object
-              data={blobUrl}
-              type="application/pdf"
-              className="w-full h-full min-h-[82vh] rounded-lg border border-slate-800 shadow-2xl bg-white"
-            >
-              <iframe
-                src={blobUrl}
-                title={title}
-                className="w-full h-full min-h-[82vh] rounded-lg border border-slate-800 shadow-2xl bg-white"
-              />
-            </object>
-          </div>
-        )}
-
-        {!useNativeViewer && error && !loading && (
-          <div className="my-auto flex flex-col items-center justify-center p-6 bg-slate-900 rounded-2xl border border-rose-900/50 text-slate-300 text-center space-y-4 max-w-md mx-auto shadow-2xl">
-            <AlertCircle className="w-10 h-10 text-rose-500" />
-            <div>
-              <p className="text-sm font-black uppercase tracking-wider text-white">
-                PDF Render Notice
-              </p>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                {error}
-              </p>
-            </div>
-
-            {blobUrl && (
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setUseNativeViewer(true)}
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md"
-                >
-                  Use Embedded Browser Viewer
-                </button>
-                <a
-                  href={blobUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 border border-slate-700"
-                >
-                  <span>Open in Tab</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+      {/* In-App Embedded Browser PDF Viewer with native toolbar & print */}
+      {useNativeViewer && blobUrl ? (
+        <div className="w-full h-full flex-1 flex flex-col bg-slate-950 overflow-hidden relative">
+          <iframe
+            src={`${blobUrl}#toolbar=1&navpanes=1&scrollbar=1`}
+            title={title}
+            className="w-full h-full border-0 bg-white"
+          />
+        </div>
+      ) : (
+        /* Main Scrollable Canvas Area */
+        <div ref={scrollContainerRef} className="pdf-sheet-scroll-container w-full h-full overflow-auto pt-2 pb-24 px-2">
+          {loading && (
+            <div className="no-print my-auto flex flex-col items-center justify-center p-8 bg-slate-900/80 rounded-2xl border border-slate-800 text-white text-center space-y-3 max-w-sm mx-auto shadow-2xl">
+              <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-sky-300">
+                  Opening Sheet Music PDF
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                  Loading high-definition vector pages...
+                </p>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {!useNativeViewer && !loading && !error && pdfDoc && numPages > 0 && (
-          <div
-            className="flex flex-col items-center mx-auto space-y-3 my-2 px-1 transition-all duration-150"
-            style={{
-              width: `${effectiveZoom}%`,
-              maxWidth: effectiveZoom <= 100 ? '100%' : 'none',
-            }}
-          >
-            {pageNumbers.map((pNum) => (
-              <PdfPage
-                key={pNum}
-                pdfDoc={pdfDoc}
-                pageNumber={pNum}
-                zoomScale={effectiveZoom}
-                title={title}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {error && !loading && (
+            <div className="no-print my-auto flex flex-col items-center justify-center p-6 bg-slate-900 rounded-2xl border border-rose-900/50 text-slate-300 text-center space-y-4 max-w-md mx-auto shadow-2xl">
+              <AlertCircle className="w-10 h-10 text-rose-500" />
+              <div>
+                <p className="text-sm font-black uppercase tracking-wider text-white">
+                  PDF Render Notice
+                </p>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  {error}
+                </p>
+              </div>
 
-      {/* Floating Zoom & Page Counter Bar (Shown if external controls are not used) */}
-      {!externalZoomControls && (
-        <div className="absolute bottom-3 inset-x-0 z-30 flex items-center justify-center gap-2.5 px-3 max-w-lg mx-auto pointer-events-none">
+              {blobUrl && (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setUseNativeViewer(true)}
+                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md"
+                  >
+                    Use Embedded Browser Viewer
+                  </button>
+                  <a
+                    href={blobUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 border border-slate-700"
+                  >
+                    <span>Open in Tab</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!loading && !error && pdfDoc && numPages > 0 && (
+            <div
+              className="pdf-sheet-pages-wrapper flex flex-col items-center mx-auto space-y-3 my-2 px-1 transition-all duration-150"
+              style={{
+                width: `${effectiveZoom}%`,
+                maxWidth: effectiveZoom <= 100 ? '100%' : 'none',
+              }}
+            >
+              {pageNumbers.map((pNum) => (
+                <PdfPage
+                  key={pNum}
+                  pdfDoc={pdfDoc}
+                  pageNumber={pNum}
+                  zoomScale={effectiveZoom}
+                  title={title}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Floating Zoom & Page Counter Bar (Shown if external controls are not used and not in embedded mode) */}
+      {!externalZoomControls && !useNativeViewer && (
+        <div className="floating-controls no-print absolute bottom-3 inset-x-0 z-30 flex items-center justify-center gap-2.5 px-3 max-w-lg mx-auto pointer-events-none">
           <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl px-2 py-1.5 shadow-2xl flex items-center gap-1.5 pointer-events-auto">
             <button
               type="button"

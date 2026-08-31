@@ -1,52 +1,42 @@
 import React, { useState } from 'react';
-import { Tag, Plus, Edit3, Trash2, Check, X, RotateCcw, FolderEdit, Palette } from 'lucide-react';
+import { Plus, Edit3, Trash2, Check, X, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
 import { Song } from '../types';
 import { 
   CategoryColorKey, 
-  BLUE_PALETTES, 
-  PURPLE_PALETTES, 
-  getCategoryPalette 
+  getCascadingCategoryPalette 
 } from '../lib/categoryStorage';
 
 interface CategoryManagerModalProps {
   section: 'sheet_music' | 'technique';
   categories: string[];
-  categoryColors: Record<string, CategoryColorKey>;
+  categoryColors?: Record<string, CategoryColorKey>;
   songs: Song[];
   onAddCategory: (newCategory: string, color?: CategoryColorKey) => void;
   onRenameCategory: (oldCategory: string, newCategory: string) => Promise<void> | void;
-  onUpdateCategoryColor: (category: string, color: CategoryColorKey) => void;
+  onReorderCategories?: (reordered: string[]) => void;
+  onUpdateCategoryColor?: (category: string, color: CategoryColorKey) => void;
   onDeleteCategory: (categoryToDelete: string) => Promise<void> | void;
-  onResetCategories: () => void;
   onClose: () => void;
 }
 
 export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   section,
   categories,
-  categoryColors,
   songs,
   onAddCategory,
   onRenameCategory,
-  onUpdateCategoryColor,
+  onReorderCategories,
   onDeleteCategory,
-  onResetCategories,
   onClose,
 }) => {
   const isTechnique = section === 'technique';
   const sectionLabel = isTechnique ? 'Technique' : 'Sheet Music';
-  const defaultColor: CategoryColorKey = isTechnique ? 'violet' : 'sky';
 
   const [newCategoryInput, setNewCategoryInput] = useState('');
-  const [newCategoryColor, setNewCategoryColor] = useState<CategoryColorKey>(defaultColor);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
-  const [openColorPickerCategory, setOpenColorPickerCategory] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const activePalettes = isTechnique ? PURPLE_PALETTES : BLUE_PALETTES;
-  const ALL_COLOR_KEYS = Object.keys(activePalettes) as CategoryColorKey[];
 
   // Calculate song count per category for confirmation on delete
   const getCategoryCount = (categoryName: string) => {
@@ -69,7 +59,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       return;
     }
 
-    onAddCategory(trimmed, newCategoryColor);
+    onAddCategory(trimmed);
     setNewCategoryInput('');
     setErrorMsg(null);
   };
@@ -77,7 +67,6 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const handleStartRename = (category: string) => {
     setEditingCategory(category);
     setEditingText(category);
-    setOpenColorPickerCategory(null);
     setErrorMsg(null);
   };
 
@@ -111,6 +100,24 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
     }
   };
 
+  const handleMoveUp = (index: number) => {
+    if (index <= 0 || !onReorderCategories) return;
+    const reordered = [...categories];
+    const temp = reordered[index - 1];
+    reordered[index - 1] = reordered[index];
+    reordered[index] = temp;
+    onReorderCategories(reordered);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index >= categories.length - 1 || !onReorderCategories) return;
+    const reordered = [...categories];
+    const temp = reordered[index + 1];
+    reordered[index + 1] = reordered[index];
+    reordered[index] = temp;
+    onReorderCategories(reordered);
+  };
+
   const handleDelete = async (category: string) => {
     const count = getCategoryCount(category);
     if (count > 0) {
@@ -138,14 +145,17 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="border-b border-slate-100 pb-2.5">
-        <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">
+      <div className="border-b border-slate-100 dark:border-slate-800 pb-2.5">
+        <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
           Edit {sectionLabel} Categories
         </h2>
+        <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
+          Colors cascade automatically from lightest ({isTechnique ? 'top violet' : 'top sky'}) to darkest ({isTechnique ? 'bottom plum' : 'bottom navy'}).
+        </p>
       </div>
 
       {errorMsg && (
-        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-sm text-xs font-bold text-rose-700">
+        <div className="p-2.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-sm text-xs font-bold text-rose-700 dark:text-rose-300">
           {errorMsg}
         </div>
       )}
@@ -158,60 +168,41 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
             value={newCategoryInput}
             onChange={(e) => setNewCategoryInput(e.target.value)}
             placeholder={`New category name...`}
-            className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-slate-400"
+            className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-sm text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-850 focus:border-sky-500 dark:focus:border-sky-400 placeholder:text-slate-400"
           />
           <button
             type="submit"
             disabled={!newCategoryInput.trim() || isProcessing}
-            className={`px-3.5 py-2 text-white rounded-sm font-bold text-xs uppercase cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 whitespace-nowrap ${
-              isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-slate-900 hover:bg-slate-800'
+            className={`px-3.5 py-2 text-white rounded-sm font-bold text-xs uppercase cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 whitespace-nowrap disabled:opacity-40 ${
+              isTechnique ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
             }`}
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add</span>
           </button>
         </div>
-
-        {/* Color picker for new category */}
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase">Color:</span>
-          <div className="flex items-center gap-1.5">
-            {ALL_COLOR_KEYS.map((key) => {
-              const pal = activePalettes[key];
-              const isSelected = newCategoryColor === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setNewCategoryColor(key)}
-                  className={`w-4 h-4 rounded-full cursor-pointer border ${
-                    isSelected ? 'ring-2 ring-offset-1 ring-slate-900 scale-110' : ''
-                  }`}
-                  style={{ backgroundColor: pal.dotHex, borderColor: 'rgba(0,0,0,0.1)' }}
-                  title={pal.label}
-                />
-              );
-            })}
-          </div>
-        </div>
       </form>
 
       {/* Category List */}
       <div className="space-y-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-0.5">
-          Categories ({categories.length})
-        </span>
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+            Categories ({categories.length})
+          </span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
+            Use arrows to reorder shades
+          </span>
+        </div>
 
         <div className="max-h-60 overflow-y-auto space-y-1.5 no-scrollbar pr-0.5">
-          {categories.map((cat) => {
+          {categories.map((cat, index) => {
             const isEditing = editingCategory === cat;
-            const isPickerOpen = openColorPickerCategory === cat;
-            const palette = getCategoryPalette(cat, categoryColors, section);
+            const palette = getCascadingCategoryPalette(index, categories.length, section);
 
             return (
               <div
                 key={cat}
-                className="bg-slate-50 border border-slate-200/80 rounded-sm overflow-hidden"
+                className="bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 rounded-sm overflow-hidden"
               >
                 <div className="flex items-center justify-between p-2">
                   {isEditing ? (
@@ -225,13 +216,13 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                           if (e.key === 'Escape') setEditingCategory(null);
                         }}
                         autoFocus
-                        className="flex-1 px-2.5 py-1 bg-white border border-slate-400 rounded text-xs font-bold text-slate-900 outline-none"
+                        className="flex-1 px-2.5 py-1 bg-white dark:bg-slate-900 border border-sky-400 dark:border-sky-500 rounded text-xs font-bold text-slate-900 dark:text-slate-100 outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => handleSaveRename(cat)}
                         disabled={isProcessing}
-                        className="p-1 bg-emerald-600 text-white rounded cursor-pointer"
+                        className="p-1 bg-sky-600 dark:bg-sky-500 text-white rounded cursor-pointer"
                         title="Save name"
                       >
                         <Check className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -240,7 +231,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                         type="button"
                         onClick={() => setEditingCategory(null)}
                         disabled={isProcessing}
-                        className="p-1 bg-slate-200 text-slate-700 rounded cursor-pointer"
+                        className="p-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded cursor-pointer"
                         title="Cancel"
                       >
                         <X className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -249,25 +240,48 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                   ) : (
                     <>
                       <div className="flex items-center gap-2 min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => setOpenColorPickerCategory(isPickerOpen ? null : cat)}
-                          className="w-4 h-4 rounded-full shrink-0 border border-black/10 cursor-pointer"
+                        {/* Dynamic cascading dot indicator */}
+                        <div
+                          className="w-4 h-4 rounded-full shrink-0 border border-black/15 shadow-2xs"
                           style={{ backgroundColor: palette.dotHex }}
-                          title={`Change color shade for ${cat}`}
+                          title={`Position #${index + 1} (${palette.label})`}
                         />
 
-                        <span className="text-xs font-bold text-slate-800 truncate">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                           {cat}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
+                        {/* Reorder Buttons */}
+                        {onReorderCategories && categories.length > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveUp(index)}
+                              disabled={index === 0 || isProcessing}
+                              className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 rounded cursor-pointer"
+                              title="Move Up (Lighter Shade)"
+                            >
+                              <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveDown(index)}
+                              disabled={index === categories.length - 1 || isProcessing}
+                              className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 rounded cursor-pointer"
+                              title="Move Down (Darker Shade)"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                            </button>
+                          </>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => handleStartRename(cat)}
                           disabled={isProcessing}
-                          className="p-1 text-slate-400 hover:text-slate-800 rounded cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded cursor-pointer ml-1"
                           title="Rename Category"
                         >
                           <Edit3 className="w-3.5 h-3.5 stroke-[2]" />
@@ -278,7 +292,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                             type="button"
                             onClick={() => handleDelete(cat)}
                             disabled={isProcessing}
-                            className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded cursor-pointer"
                             title="Delete category"
                           >
                             <Trash2 className="w-3.5 h-3.5 stroke-[2]" />
@@ -288,37 +302,6 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                     </>
                   )}
                 </div>
-
-                {/* Color shade picker */}
-                {isPickerOpen && !isEditing && (
-                  <div className="px-2 py-1.5 bg-white border-t border-slate-200 flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">
-                      Shade:
-                    </span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {ALL_COLOR_KEYS.map((key) => {
-                        const pal = activePalettes[key];
-                        const isCurrent = (categoryColors[cat] || (isTechnique ? 'violet' : 'sky')) === key;
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => {
-                              onUpdateCategoryColor(cat, key);
-                            }}
-                            className={`w-5 h-5 rounded-full cursor-pointer border flex items-center justify-center ${
-                              isCurrent ? 'ring-2 ring-offset-1 ring-slate-900 scale-105' : ''
-                            }`}
-                            style={{ backgroundColor: pal.dotHex, borderColor: 'rgba(0,0,0,0.1)' }}
-                            title={pal.label}
-                          >
-                            {isCurrent && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -326,27 +309,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       </div>
 
       {/* Footer controls */}
-      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-        <button
-          type="button"
-          onClick={() => {
-            if (window.confirm(`Reset ${sectionLabel.toLowerCase()} category list and colors to default?`)) {
-              onResetCategories();
-              setEditingCategory(null);
-              setOpenColorPickerCategory(null);
-            }
-          }}
-          className="text-[11px] font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1 cursor-pointer"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reset Defaults</span>
-        </button>
-
+      <div className="flex items-center justify-end border-t border-slate-100 dark:border-slate-800 pt-3">
         <button
           type="button"
           onClick={onClose}
-          className={`px-4 py-1.5 text-white rounded-sm text-xs font-bold uppercase cursor-pointer active:scale-95 whitespace-nowrap ${
-            isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-slate-900 hover:bg-slate-800'
+          className={`px-5 py-2 text-white rounded-md text-xs font-black uppercase tracking-wider cursor-pointer active:scale-95 whitespace-nowrap shadow-2xs ${
+            isTechnique ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
           }`}
         >
           Done
@@ -355,3 +323,4 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
     </div>
   );
 };
+

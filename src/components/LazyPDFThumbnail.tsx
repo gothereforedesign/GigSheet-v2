@@ -157,7 +157,7 @@ export const LazyPDFThumbnail: React.FC<LazyPDFThumbnailProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-slate-100 flex items-center justify-center">
+    <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
       {thumbUrl ? (
         <img
           src={thumbUrl}
@@ -165,13 +165,13 @@ export const LazyPDFThumbnail: React.FC<LazyPDFThumbnailProps> = ({
           className={`${className} animate-in fade-in duration-300`}
         />
       ) : isLoading ? (
-        <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-slate-400">
-          <Loader2 className="w-5 h-5 animate-spin text-sky-600" />
+        <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-slate-400 dark:text-slate-500">
+          <Loader2 className="w-5 h-5 animate-spin text-sky-600 dark:text-sky-400" />
           <span className="text-[10px] font-bold uppercase tracking-wider">Loading...</span>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-slate-400">
-          <FileText className="w-6 h-6 text-slate-400" />
+        <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-slate-400 dark:text-slate-500">
+          <FileText className="w-6 h-6 text-slate-400 dark:text-slate-500" />
           <span className="text-[10px] font-bold uppercase tracking-wider">PDF Chart</span>
         </div>
       )}

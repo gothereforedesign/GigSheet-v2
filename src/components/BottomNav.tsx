@@ -53,14 +53,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           type="button"
           onClick={handleSheetClick}
           className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all cursor-pointer ${
-            isSheetMusicSection
+            isSetlistsActive
+              ? 'text-[#0c4a6e] dark:text-sky-300 font-black bg-sky-100/80 dark:bg-sky-950/90 border border-sky-400/40 shadow-2xs'
+              : isSheetMusicSection
               ? 'text-[#0c4a6e] dark:text-sky-300 font-black bg-sky-50/80 dark:bg-sky-950/80'
               : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
           }`}
         >
           <div className="flex flex-col items-center">
             {isSetlistsActive ? (
-              <ListMusic className="w-5 h-5 stroke-[2.5]" />
+              <ListMusic className="w-5 h-5 stroke-[2.5] text-[#0c4a6e] dark:text-sky-300" />
             ) : (
               <Music2 className={`w-5 h-5 ${isSheetMusicSection ? 'stroke-[2.5]' : 'stroke-2'}`} />
             )}
@@ -76,7 +78,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           onClick={onAddPdf}
           className={`p-3 rounded-2xl text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 mx-1 ${
             isTechniqueSection
-              ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600 shadow-purple-900/20'
+              ? 'bg-[#581c87] hover:bg-[#4a044e] dark:bg-purple-700 dark:hover:bg-purple-600 shadow-purple-900/20'
               : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600 shadow-sky-900/20'
           }`}
           title="Add PDF Chart"
@@ -89,14 +91,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           type="button"
           onClick={handleTechClick}
           className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all cursor-pointer ${
-            isTechniqueSection
+            isRoutinesActive
+              ? 'text-purple-900 dark:text-purple-300 font-black bg-purple-100/80 dark:bg-purple-950/90 border border-purple-400/40 shadow-2xs'
+              : isTechniqueSection
               ? 'text-purple-900 dark:text-purple-300 font-black bg-purple-50/80 dark:bg-purple-950/80'
               : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
           }`}
         >
           <div className="flex flex-col items-center">
             {isRoutinesActive ? (
-              <Flame className="w-5 h-5 stroke-[2.5]" />
+              <Flame className="w-5 h-5 stroke-[2.5] text-purple-900 dark:text-purple-300" />
             ) : (
               <GraduationCap className={`w-5 h-5 ${isTechniqueSection ? 'stroke-[2.5]' : 'stroke-2'}`} />
             )}

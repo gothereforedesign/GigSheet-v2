@@ -1,3 +1,159 @@
 @import "tailwindcss";
 
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  color-scheme: light;
+  background-color: #f8fafc;
+}
+
+html.dark {
+  color-scheme: dark;
+  background-color: #020617;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: transparent;
+  color: inherit;
+}
+
+/* ==========================================================================
+   Print Stylesheet - Option 3: Direct Print Formatting from the Active Viewer
+   Hides dark app chrome, zoom bars, and nav footers, sending full-resolution
+   vector sheet music pages directly to the printer with clean page breaks.
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 0.4in;
+    size: auto;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Hide all non-viewer UI, navigation, buttons, and app headers */
+  header,
+  footer,
+  nav,
+  .no-print,
+  .song-viewer-header,
+  .song-viewer-footer,
+  .bottom-nav,
+  .upload-widget,
+  .floating-controls,
+  button,
+  input {
+    display: none !important;
+  }
+
+  /* Make sure SongViewerModal container is completely unconstrained */
+  .song-viewer-modal {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .song-viewer-main {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .pdf-sheet-scroll-container {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .pdf-sheet-pages-wrapper {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  /* Each Sheet Music Page */
+  .pdf-page-container {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 0 1rem 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .pdf-page-container:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+    margin-bottom: 0 !important;
+  }
+
+  .pdf-page-container canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Fallback Non-PDF Song Info / Lyrics / Chords */
+  .printable-song-details {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border-radius: 8px !important;
+    padding: 1.5rem !important;
+  }
+
+  .printable-song-details * {
+    color: #111827 !important;
+    background: transparent !important;
+    border-color: #e5e7eb !important;
+  }
+}
+

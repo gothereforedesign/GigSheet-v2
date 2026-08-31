@@ -22,26 +22,56 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenBackupModal,
 }) => {
   const isTechnique = activeTab === 'technique' || activeTab === 'technique_routines';
+  const isSetlists = activeTab === 'sheet_music_setlists';
+  const isRoutines = activeTab === 'technique_routines';
+
+  const subtitle = isSetlists
+    ? 'Performance Setlists'
+    : isRoutines
+    ? 'Practice Routines'
+    : isTechnique
+    ? 'Technique Directory'
+    : activeTab === 'trash'
+    ? 'Trash Bin'
+    : 'Sheet Music Directory';
 
   return (
     <header className="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 py-3 transition-colors">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 shrink-0">
           <div className={`p-1.5 text-white rounded-md shadow-2xs transition-colors ${
-            isTechnique ? 'bg-purple-900 dark:bg-purple-700' : 'bg-[#0c4a6e] dark:bg-sky-700'
+            isRoutines
+              ? 'bg-[#581c87] dark:bg-purple-700'
+              : isSetlists
+              ? 'bg-[#0c4a6e] dark:bg-sky-700'
+              : isTechnique
+              ? 'bg-purple-900 dark:bg-purple-700'
+              : 'bg-[#0c4a6e] dark:bg-sky-700'
           }`}>
             <Music className="w-4 h-4 stroke-[2.5]" />
           </div>
           <div>
             <h1 className={`text-base sm:text-lg font-black uppercase tracking-wider leading-none transition-colors ${
-              isTechnique ? 'text-purple-900 dark:text-purple-300' : 'text-[#0c4a6e] dark:text-sky-300'
+              isRoutines
+                ? 'text-purple-900 dark:text-purple-300'
+                : isSetlists
+                ? 'text-[#0c4a6e] dark:text-sky-300'
+                : isTechnique
+                ? 'text-purple-900 dark:text-purple-300'
+                : 'text-[#0c4a6e] dark:text-sky-300'
             }`}>
               GigSheet
             </h1>
-            <p className={`text-[9px] uppercase tracking-widest mt-0.5 transition-colors ${
-              isTechnique ? 'text-purple-600 dark:text-purple-400 font-extrabold' : 'text-slate-400 dark:text-slate-400 font-bold'
+            <p className={`text-[9px] uppercase tracking-widest mt-0.5 transition-colors font-extrabold ${
+              isSetlists
+                ? 'text-[#0c4a6e] dark:text-sky-300'
+                : isRoutines
+                ? 'text-purple-600 dark:text-purple-400'
+                : isTechnique
+                ? 'text-purple-600 dark:text-purple-400'
+                : 'text-slate-400 dark:text-slate-400'
             }`}>
-              {isTechnique ? 'Technique Directory' : 'Sheet Music Directory'}
+              {subtitle}
             </p>
           </div>
         </div>
@@ -55,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDarkMode ? (
-                <Sun className="w-4 h-4 stroke-[2.2] text-amber-400" />
+                <Sun className="w-4 h-4 stroke-[2.2] text-sky-400" />
               ) : (
                 <Moon className="w-4 h-4 stroke-[2.2] text-slate-600" />
               )}

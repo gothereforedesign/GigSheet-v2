@@ -136,14 +136,27 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 <div
                   key={setlist.id}
                   onClick={() => setSelectedSetlistId(setlist.id)}
-                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
+                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${
+                    isTechnique
+                      ? 'bg-gradient-to-br from-[#581c87] to-[#3b0764] border-[#7c3aed]/50 hover:border-[#a78bfa]'
+                      : 'bg-gradient-to-br from-[#0c4a6e] to-[#0f172a] border-[#0284c7]/50 hover:border-[#38bdf8]'
+                  }`}
                 >
-                  {/* Subtle PDF count badge */}
-                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/20 text-white/95 backdrop-blur-xs border border-white/10 shadow-2xs">
+                  {/* Category Accent Badge (Sky/Blue for Setlists, Purple/Violet for Routines) */}
+                  <div className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-black tracking-tight border shadow-xs backdrop-blur-xs flex items-center gap-1 ${
+                    isTechnique
+                      ? 'bg-purple-950/80 text-purple-200 border-purple-400/40'
+                      : 'bg-sky-950/80 text-sky-200 border-sky-400/40'
+                  }`}>
+                    {isTechnique ? (
+                      <Flame className="w-2.5 h-2.5 text-purple-300 stroke-[2.5]" />
+                    ) : (
+                      <ListMusic className="w-2.5 h-2.5 text-sky-300 stroke-[2.5]" />
+                    )}
                     <span>{count}</span>
                   </div>
 
-                  <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
+                  <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 text-white">
                     {setlist.name}
                   </h3>
                 </div>
@@ -156,7 +169,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
               className="relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-900/80 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all select-none shadow-2xs hover:shadow-xs active:scale-[0.99]"
             >
               <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-1.5 text-white shadow-xs ${
-                isTechnique ? 'bg-purple-900 dark:bg-purple-700' : 'bg-[#0c4a6e] dark:bg-sky-700'
+                isTechnique ? 'bg-[#581c87] dark:bg-purple-700' : 'bg-[#0c4a6e] dark:bg-sky-700'
               }`}>
                 <Plus className="w-6 h-6 stroke-[2.5]" />
               </div>
@@ -200,8 +213,12 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   )}
                 </div>
 
-                {/* Subtle PDF Count Badge */}
-                <div className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center" title={`${activeSetlist.items.length} Charts`}>
+                {/* Section Count Badge */}
+                <div className={`inline-flex items-center justify-center border px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center ${
+                  isTechnique
+                    ? 'bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                    : 'bg-sky-50 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-200 dark:border-sky-800'
+                }`} title={`${activeSetlist.items.length} Charts`}>
                   <span>{activeSetlist.items.length}</span>
                 </div>
               </div>
@@ -249,17 +266,19 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
             {/* Items inside Setlist */}
             {activeSetlist.items.length === 0 ? (
-              <div className="p-8 sm:p-10 text-center bg-slate-50/80 rounded-lg border border-slate-200/60 space-y-3 shadow-2xs">
+              <div className="p-8 sm:p-10 text-center bg-slate-50/80 dark:bg-slate-850/80 rounded-lg border border-slate-200/60 dark:border-slate-800 space-y-3 shadow-2xs">
                 <div className={`w-10 h-10 rounded-md mx-auto flex items-center justify-center border ${
-                  isTechnique ? 'bg-purple-50 border-purple-100 text-purple-900' : 'bg-sky-50 border-sky-100 text-[#0c4a6e]'
+                  isTechnique
+                    ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-100 dark:border-purple-800 text-purple-900 dark:text-purple-300'
+                    : 'bg-sky-50 dark:bg-sky-950/60 border-sky-100 dark:border-sky-800 text-[#0c4a6e] dark:text-sky-300'
                 }`}>
                   <Music className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                     No charts in this {isTechnique ? 'routine' : 'setlist'}
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
                     Tap "+ Add Chart" above to select charts from your library.
                   </p>
                 </div>
@@ -267,7 +286,9 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   type="button"
                   onClick={() => setShowAddSongPicker(true)}
                   className={`mt-1 px-3.5 py-1.5 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 ${
-                    isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-[#0c4a6e] hover:bg-[#073652]'
+                    isTechnique
+                      ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600'
+                      : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
                   }`}
                 >
                   + Add Chart
@@ -289,7 +310,11 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                       }`}
                     >
                       {/* Order Overlay Badge */}
-                      <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md text-[10px] font-black font-mono tracking-tight bg-slate-900/90 text-white shadow-xs">
+                      <div className={`absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md text-[10px] font-black font-mono tracking-tight shadow-xs ${
+                        isTechnique
+                          ? 'bg-purple-950/90 text-purple-200 border border-purple-500/40'
+                          : 'bg-sky-950/90 text-sky-200 border border-sky-500/40'
+                      }`}>
                         #{idx + 1}
                       </div>
 
@@ -381,7 +406,9 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {/* Order Number Badge */}
                         <div className={`w-6 h-6 rounded-md text-xs font-black font-mono flex items-center justify-center shrink-0 border ${
-                          isTechnique ? 'bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800' : 'bg-sky-50 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-200 dark:border-sky-800'
+                          isTechnique
+                            ? 'bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                            : 'bg-sky-50 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-200 dark:border-sky-800'
                         }`}>
                           {idx + 1}
                         </div>
@@ -599,7 +626,11 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
                       <div className="shrink-0 flex items-center gap-2">
                         {isInSetlist ? (
-                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                            isTechnique
+                              ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/80 border-purple-200 dark:border-purple-800'
+                              : 'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/80 border-sky-200 dark:border-sky-800'
+                          }`}>
                             Added
                           </span>
                         ) : (

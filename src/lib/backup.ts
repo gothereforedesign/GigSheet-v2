@@ -11,8 +11,9 @@ export interface LibraryBackup {
   version: number;
   exportDate: string;
   songs: {
-    metadata: Song;
+    metadata: Partial<Song>;
     pdfDataUri?: string;
+    categoryColor?: string;
   }[];
   setlists: Setlist[];
   categories?: {
@@ -68,16 +69,38 @@ export async function exportLibraryData(onProgress?: (msg: string) => void): Pro
   const allSongs = await getAllSongs();
   const allSetlists = await getAllSetlists();
 
-  const exportedSongs: { metadata: Song; pdfDataUri?: string }[] = [];
+  const sheetMusicColors = getStoredCategoryColors('sheet_music');
+  const techniqueColors = getStoredCategoryColors('technique');
+
+  const exportedSongs: { metadata: Partial<Song>; pdfDataUri?: string; categoryColor?: string }[] = [];
 
   for (let i = 0; i < allSongs.length; i++) {
     const s = allSongs[i];
     if (onProgress) onProgress(`Packing chart ${i + 1} of ${allSongs.length}: ${s.title}...`);
     const dataUri = await songContentToDataUri(s);
 
+    // Explicitly omit metadata for tempo, key, time signature, artist, and original key
+    // Retain title, category/genre, section, type, meter, lyrics, tags, notes, annotations, dates, and media
+    const {
+      tempo,
+      key,
+      originalKey,
+      timeSignature,
+      artist,
+      fileBlob,
+      fileUrl,
+      ...retainedMetadata
+    } = s;
+
+    // Retain category color association
+    const categoryColor = s.section === 'technique'
+      ? techniqueColors[s.genre] || 'violet'
+      : sheetMusicColors[s.genre] || 'sky';
+
     exportedSongs.push({
-      metadata: s,
+      metadata: retainedMetadata,
       pdfDataUri: dataUri,
+      categoryColor,
     });
   }
 
@@ -128,17 +151,69 @@ export async function importLibraryData(
     }
   }
 
+  const smColors = getStoredCategoryColors('sheet_music');
+  const techColors = getStoredCategoryColors('technique');
+  let smColorsUpdated = false;
+  let techColorsUpdated = false;
+
   const songsToSave: Song[] = [];
   for (const item of backup.songs) {
-    const meta = item.metadata;
+    const meta = item.metadata || {};
     let blobOrUrl: string | Blob | undefined = undefined;
     if (item.pdfDataUri) {
       blobOrUrl = item.pdfDataUri;
     }
+
+    // Preserve category colors from item if not already mapped
+    if (item.categoryColor && meta.genre) {
+      if (meta.section === 'technique') {
+        if (!techColors[meta.genre]) {
+          techColors[meta.genre] = item.categoryColor as any;
+          techColorsUpdated = true;
+        }
+      } else {
+        if (!smColors[meta.genre]) {
+          smColors[meta.genre] = item.categoryColor as any;
+          smColorsUpdated = true;
+        }
+      }
+    }
+
     songsToSave.push({
-      ...meta,
+      id: meta.id || `song-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: meta.title || 'Untitled Chart',
+      artist: meta.artist || '',
+      key: meta.key || 'Cmaj',
+      originalKey: meta.originalKey || 'Cmaj',
+      tempo: meta.tempo || 120,
+      timeSignature: meta.timeSignature || '4/4',
+      meter: meta.meter,
+      lyrics: meta.lyrics,
+      genre: meta.genre || 'General',
+      section: meta.section || 'sheet_music',
+      type: meta.type || 'pdf',
+      tags: meta.tags || [],
+      dateAdded: meta.dateAdded || Date.now(),
+      dateModified: meta.dateModified,
+      lastPlayed: meta.lastPlayed,
+      favorite: meta.favorite,
+      fileName: meta.fileName,
+      svgData: meta.svgData,
+      annotations: meta.annotations,
+      userNotes: meta.userNotes,
+      deletedAt: meta.deletedAt,
+      originalSongId: meta.originalSongId,
+      setlistId: meta.setlistId,
+      isSetlistDuplicate: meta.isSetlistDuplicate,
       fileBlob: blobOrUrl as any,
     });
+  }
+
+  if (smColorsUpdated) {
+    saveStoredCategoryColors('sheet_music', smColors);
+  }
+  if (techColorsUpdated) {
+    saveStoredCategoryColors('technique', techColors);
   }
 
   if (songsToSave.length > 0) {

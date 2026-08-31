@@ -1,29 +1,18 @@
 /**
- * Category storage and color palette definitions for Sheet Music (6 Flat Blue shades) and Technique (6 Flat Purple shades).
+ * Category storage and dynamic cascading color palette definitions.
+ * Categories dynamically cascade from lightest shade (first on list) to darkest shade (last on list):
+ * - Sheet Music: Lightest Blue (#0284c7) -> Darkest Navy (#081c30)
+ * - Technique: Lightest Violet (#7c3aed) -> Darkest Plum (#1e0738)
  */
 
-export type BlueColorKey = 
-  | 'sky' 
-  | 'cobalt' 
-  | 'navy' 
-  | 'cyan' 
-  | 'royal' 
-  | 'indigo';
-
-export type PurpleColorKey = 
-  | 'violet' 
-  | 'deep_purple' 
-  | 'lavender' 
-  | 'plum' 
-  | 'orchid' 
-  | 'mulberry';
-
-export type CategoryColorKey = BlueColorKey | PurpleColorKey;
+export type CategoryColorKey = string;
 
 export interface CategoryColorPalette {
-  key: CategoryColorKey;
+  key: string;
   label: string;
   dotHex: string;
+  cardBgHex: string;
+  cardBorderHex: string;
   badgeBg: string;
   badgeText: string;
   badgeBorder: string;
@@ -37,204 +26,97 @@ export interface CategoryColorPalette {
   cardBgHover: string;
 }
 
-// Sheet Music Color Palettes (6 Sequential Muted Shades of Blue: Light to Dark)
-export const BLUE_PALETTES: Record<BlueColorKey, CategoryColorPalette> = {
-  sky: {
-    key: 'sky',
-    label: 'Light Slate Blue (Shade 1)',
-    dotHex: '#5a92b2',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#5a92b2]',
-    cardBorder: 'border-[#487e9e]',
-    cardHover: 'hover:bg-[#487e9e] hover:border-[#3b6d8b]',
+function toHex(n: number): string {
+  const hex = Math.max(0, Math.min(255, Math.round(n))).toString(16);
+  return hex.length === 1 ? '0' + hex : hex;
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * Computes a dynamic cascading color palette based on an item's position (index) in the category list.
+ * Index 0 (first) = Lightest hue
+ * Index total-1 (last) = Darkest hue
+ */
+export function getCascadingCategoryPalette(
+  index: number,
+  total: number,
+  section: 'sheet_music' | 'technique'
+): CategoryColorPalette {
+  const safeTotal = Math.max(1, total);
+  const safeIndex = Math.max(0, Math.min(index, safeTotal - 1));
+  const t = safeTotal === 1 ? 0.35 : safeIndex / (safeTotal - 1);
+
+  let r: number, g: number, b: number;
+  let borderR: number, borderG: number, borderB: number;
+
+  if (section === 'technique') {
+    // Purple spectrum: from Electric Violet (lightest purple) to Deep Midnight Plum (darkest purple)
+    // Start (t=0.0): rgb(124, 58, 237) -> #7c3aed
+    // End (t=1.0):   rgb(30, 7, 56)    -> #1e0738
+    r = Math.round(124 + t * (30 - 124));
+    g = Math.round(58 + t * (7 - 58));
+    b = Math.round(237 + t * (56 - 237));
+
+    borderR = Math.min(255, Math.round(r * 1.15 + 20));
+    borderG = Math.min(255, Math.round(g * 1.1 + 15));
+    borderB = Math.min(255, Math.round(b * 1.1 + 25));
+  } else {
+    // Blue spectrum: from Vibrant Sky Azure (lightest blue) to Deep Midnight Navy (darkest blue)
+    // Start (t=0.0): rgb(2, 132, 199)  -> #0284c7
+    // End (t=1.0):   rgb(8, 28, 48)    -> #081c30
+    r = Math.round(2 + t * (8 - 2));
+    g = Math.round(132 + t * (28 - 132));
+    b = Math.round(199 + t * (48 - 199));
+
+    borderR = Math.min(255, Math.round(r * 1.1 + 15));
+    borderG = Math.min(255, Math.round(g * 1.15 + 20));
+    borderB = Math.min(255, Math.round(b * 1.1 + 25));
+  }
+
+  const dotHex = rgbToHex(r, g, b);
+  const cardBgHex = rgbToHex(r, g, b);
+  const cardBorderHex = rgbToHex(borderR, borderG, borderB);
+
+  return {
+    key: `cascade_${section}_${safeIndex}`,
+    label: `Shade #${safeIndex + 1}`,
+    dotHex,
+    cardBgHex,
+    cardBorderHex,
+    badgeBg: section === 'technique' ? 'bg-purple-500/20' : 'bg-sky-500/20',
+    badgeText: section === 'technique' ? 'text-purple-100' : 'text-sky-100',
+    badgeBorder: section === 'technique' ? 'border-purple-400/40' : 'border-sky-400/40',
+    cardBg: '',
+    cardBorder: '',
+    cardHover: 'hover:brightness-110',
     cardText: 'text-white',
-    cardSubtext: 'text-sky-100',
+    cardSubtext: 'text-slate-100',
     cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#5a92b2]',
-    cardBgHover: 'hover:border-[#3b6d8b]',
-  },
-  cobalt: {
-    key: 'cobalt',
-    label: 'Muted Blue (Shade 2)',
-    dotHex: '#3b789e',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#3b789e]',
-    cardBorder: 'border-[#2f6688]',
-    cardHover: 'hover:bg-[#2f6688] hover:border-[#255573]',
-    cardText: 'text-white',
-    cardSubtext: 'text-sky-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#3b789e]',
-    cardBgHover: 'hover:border-[#255573]',
-  },
-  cyan: {
-    key: 'cyan',
-    label: 'Deep Slate Blue (Shade 3)',
-    dotHex: '#245f85',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#245f85]',
-    cardBorder: 'border-[#1b4e70]',
-    cardHover: 'hover:bg-[#1b4e70] hover:border-[#143e5a]',
-    cardText: 'text-white',
-    cardSubtext: 'text-sky-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#245f85]',
-    cardBgHover: 'hover:border-[#143e5a]',
-  },
-  navy: {
-    key: 'navy',
-    label: 'Muted Navy (Shade 4)',
-    dotHex: '#184867',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#184867]',
-    cardBorder: 'border-[#103751]',
-    cardHover: 'hover:bg-[#103751] hover:border-[#0b293d]',
-    cardText: 'text-white',
-    cardSubtext: 'text-sky-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#184867]',
-    cardBgHover: 'hover:border-[#0b293d]',
-  },
-  royal: {
-    key: 'royal',
-    label: 'Deep Navy (Shade 5)',
-    dotHex: '#0c4a6e',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#0c4a6e]',
-    cardBorder: 'border-[#073652]',
-    cardHover: 'hover:bg-[#073652] hover:border-[#042438]',
-    cardText: 'text-white',
-    cardSubtext: 'text-sky-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#0c4a6e]',
-    cardBgHover: 'hover:border-[#042438]',
-  },
-  indigo: {
-    key: 'indigo',
-    label: 'Midnight Navy (Shade 6)',
-    dotHex: '#072f48',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#072f48]',
-    cardBorder: 'border-[#041f32]',
-    cardHover: 'hover:bg-[#041f32] hover:border-[#021320]',
-    cardText: 'text-white',
-    cardSubtext: 'text-sky-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#072f48]',
-    cardBgHover: 'hover:border-[#021320]',
-  },
+    cardLeftBorder: '',
+    cardBgHover: 'hover:brightness-110',
+  };
+}
+
+// Backward compatibility static palettes if referenced
+export const BLUE_PALETTES: Record<string, CategoryColorPalette> = {
+  sky: getCascadingCategoryPalette(0, 6, 'sheet_music'),
+  cobalt: getCascadingCategoryPalette(1, 6, 'sheet_music'),
+  cyan: getCascadingCategoryPalette(2, 6, 'sheet_music'),
+  navy: getCascadingCategoryPalette(3, 6, 'sheet_music'),
+  royal: getCascadingCategoryPalette(4, 6, 'sheet_music'),
+  indigo: getCascadingCategoryPalette(5, 6, 'sheet_music'),
 };
 
-// Technique Color Palettes (6 Sequential Muted Shades of Purple: Light to Dark)
-export const PURPLE_PALETTES: Record<PurpleColorKey, CategoryColorPalette> = {
-  violet: {
-    key: 'violet',
-    label: 'Light Mauve Purple (Shade 1)',
-    dotHex: '#8b72ac',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#8b72ac]',
-    cardBorder: 'border-[#79609a]',
-    cardHover: 'hover:bg-[#79609a] hover:border-[#695088]',
-    cardText: 'text-white',
-    cardSubtext: 'text-purple-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#8b72ac]',
-    cardBgHover: 'hover:border-[#695088]',
-  },
-  lavender: {
-    key: 'lavender',
-    label: 'Muted Purple (Shade 2)',
-    dotHex: '#755799',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#755799]',
-    cardBorder: 'border-[#644787]',
-    cardHover: 'hover:bg-[#644787] hover:border-[#543875]',
-    cardText: 'text-white',
-    cardSubtext: 'text-purple-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#755799]',
-    cardBgHover: 'hover:border-[#543875]',
-  },
-  deep_purple: {
-    key: 'deep_purple',
-    label: 'Muted Deep Plum (Shade 3)',
-    dotHex: '#603e83',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#603e83]',
-    cardBorder: 'border-[#502f71]',
-    cardHover: 'hover:bg-[#502f71] hover:border-[#41225f]',
-    cardText: 'text-white',
-    cardSubtext: 'text-purple-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#603e83]',
-    cardBgHover: 'hover:border-[#41225f]',
-  },
-  plum: {
-    key: 'plum',
-    label: 'Deep Muted Purple (Shade 4)',
-    dotHex: '#4d296d',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#4d296d]',
-    cardBorder: 'border-[#3c1c5a]',
-    cardHover: 'hover:bg-[#3c1c5a] hover:border-[#2e1148]',
-    cardText: 'text-white',
-    cardSubtext: 'text-purple-100',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#4d296d]',
-    cardBgHover: 'hover:border-[#2e1148]',
-  },
-  mulberry: {
-    key: 'mulberry',
-    label: 'Velvet Plum (Shade 5)',
-    dotHex: '#3a1658',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#3a1658]',
-    cardBorder: 'border-[#2c0c46]',
-    cardHover: 'hover:bg-[#2c0c46] hover:border-[#1e0534]',
-    cardText: 'text-white',
-    cardSubtext: 'text-purple-200',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#3a1658]',
-    cardBgHover: 'hover:border-[#1e0534]',
-  },
-  orchid: {
-    key: 'orchid',
-    label: 'Midnight Purple (Shade 6)',
-    dotHex: '#280842',
-    badgeBg: 'bg-white/20',
-    badgeText: 'text-white',
-    badgeBorder: 'border-white/30',
-    cardBg: 'bg-[#280842]',
-    cardBorder: 'border-[#1b0330]',
-    cardHover: 'hover:bg-[#1b0330] hover:border-[#10001f]',
-    cardText: 'text-white',
-    cardSubtext: 'text-purple-200',
-    cardIconBg: 'bg-white/20 text-white',
-    cardLeftBorder: 'border-l-[#280842]',
-    cardBgHover: 'hover:border-[#10001f]',
-  },
+export const PURPLE_PALETTES: Record<string, CategoryColorPalette> = {
+  violet: getCascadingCategoryPalette(0, 6, 'technique'),
+  lavender: getCascadingCategoryPalette(1, 6, 'technique'),
+  deep_purple: getCascadingCategoryPalette(2, 6, 'technique'),
+  plum: getCascadingCategoryPalette(3, 6, 'technique'),
+  mulberry: getCascadingCategoryPalette(4, 6, 'technique'),
+  orchid: getCascadingCategoryPalette(5, 6, 'technique'),
 };
 
 export const ALL_CATEGORY_PALETTES: Record<string, CategoryColorPalette> = {
@@ -242,7 +124,7 @@ export const ALL_CATEGORY_PALETTES: Record<string, CategoryColorPalette> = {
   ...PURPLE_PALETTES,
 };
 
-// Default Sheet Music Categories & Colors
+// Default Sheet Music Categories
 export const DEFAULT_SHEET_MUSIC_CATEGORIES: string[] = [
   'Hymns',
   'Jazz',
@@ -254,18 +136,9 @@ export const DEFAULT_SHEET_MUSIC_CATEGORIES: string[] = [
   'General',
 ];
 
-export const DEFAULT_SHEET_MUSIC_COLORS: Record<string, CategoryColorKey> = {
-  Hymns: 'sky',
-  Jazz: 'cobalt',
-  Gospel: 'cyan',
-  'Praise & Worship': 'navy',
-  Classical: 'royal',
-  Pop: 'indigo',
-  Choral: 'sky',
-  General: 'cobalt',
-};
+export const DEFAULT_SHEET_MUSIC_COLORS: Record<string, CategoryColorKey> = {};
 
-// Default Technique Categories & Colors
+// Default Technique Categories
 export const DEFAULT_TECHNIQUE_CATEGORIES: string[] = [
   'Scales',
   'Arpeggios',
@@ -277,16 +150,7 @@ export const DEFAULT_TECHNIQUE_CATEGORIES: string[] = [
   'General Technique',
 ];
 
-export const DEFAULT_TECHNIQUE_COLORS: Record<string, CategoryColorKey> = {
-  Scales: 'violet',
-  Arpeggios: 'lavender',
-  'Chords & Voicings': 'deep_purple',
-  'Hanon & Warmups': 'plum',
-  'Sight Reading': 'mulberry',
-  'Rhythm & Grooves': 'orchid',
-  'Etudes & Exercises': 'violet',
-  'General Technique': 'lavender',
-};
+export const DEFAULT_TECHNIQUE_COLORS: Record<string, CategoryColorKey> = {};
 
 const SHEET_MUSIC_CATEGORIES_KEY = 'gigsheet_categories_sheet_music';
 const SHEET_MUSIC_COLORS_KEY = 'gigsheet_category_colors_sheet_music';
@@ -345,15 +209,33 @@ export function saveStoredCategoryColors(section: 'sheet_music' | 'technique', c
   }
 }
 
+/**
+ * Retrieves the palette for a category dynamically by finding its index in the section's category list.
+ */
 export function getCategoryPalette(
   categoryName: string | undefined,
-  colorsMap: Record<string, CategoryColorKey> = {},
+  categoriesOrMap?: string[] | Record<string, any>,
   section: 'sheet_music' | 'technique' = 'sheet_music'
 ): CategoryColorPalette {
+  let categoriesList: string[] = [];
+  if (Array.isArray(categoriesOrMap)) {
+    categoriesList = categoriesOrMap;
+  } else {
+    categoriesList = getStoredCategories(section);
+  }
+
+  if (categoriesList.length === 0) {
+    categoriesList = section === 'technique' ? DEFAULT_TECHNIQUE_CATEGORIES : DEFAULT_SHEET_MUSIC_CATEGORIES;
+  }
+
   const defaultCategory = section === 'technique' ? 'Scales' : 'Hymns';
-  const defaultPaletteKey = section === 'technique' ? 'violet' : 'sky';
-  const name = categoryName || defaultCategory;
-  const colorKey = colorsMap[name] || (section === 'technique' ? DEFAULT_TECHNIQUE_COLORS[name] : DEFAULT_SHEET_MUSIC_COLORS[name]) || defaultPaletteKey;
+  const targetName = (categoryName || defaultCategory).trim().toLowerCase();
   
-  return ALL_CATEGORY_PALETTES[colorKey] || (section === 'technique' ? PURPLE_PALETTES.violet : BLUE_PALETTES.sky);
+  let index = categoriesList.findIndex((c) => c.trim().toLowerCase() === targetName);
+  if (index === -1) {
+    index = 0;
+  }
+
+  return getCascadingCategoryPalette(index, categoriesList.length, section);
 }
+

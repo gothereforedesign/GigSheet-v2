@@ -6,6 +6,7 @@ import {
 import { 
   CategoryColorKey, 
   getCategoryPalette, 
+  getCascadingCategoryPalette,
   DEFAULT_SHEET_MUSIC_CATEGORIES, 
   DEFAULT_TECHNIQUE_CATEGORIES 
 } from '../lib/categoryStorage';
@@ -287,22 +288,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   return (
     <div className="space-y-4 pb-0">
-      {/* VIEW 1: 2-COLUMN CATEGORY GRID (3:2 Aspect Ratio Cards with Fluid Typography) */}
+      {/* VIEW 1: 2-COLUMN CATEGORY GRID (3:2 Aspect Ratio Cards with Cascading Color Progression) */}
       {showCategorySquaresGrid ? (
         <div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-            {availableCategories.map((catName) => {
-              const palette = getCategoryPalette(catName, genreColors, section);
+            {availableCategories.map((catName, index) => {
+              const palette = getCascadingCategoryPalette(index, availableCategories.length, section);
               const count = categoryChartCounts[catName] || 0;
 
               return (
                 <div
                   key={catName}
                   onClick={() => handleSetSelectedCategory(catName)}
-                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${palette.cardBg} ${palette.cardBorder} ${palette.cardHover}`}
+                  style={{
+                    backgroundColor: palette.cardBgHex,
+                    borderColor: palette.cardBorderHex,
+                  }}
+                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none hover:brightness-110 ${palette.cardText}`}
                 >
                   {/* Subtle PDF count badge */}
-                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/20 text-white/95 backdrop-blur-xs border border-white/10 shadow-2xs">
+                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/25 text-white/95 backdrop-blur-xs border border-white/15 shadow-2xs">
                     <span>{count}</span>
                   </div>
 
@@ -390,17 +395,19 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
           {/* List or Grid of Charts */}
           {sortedSongs.length === 0 ? (
-            <div className="p-8 sm:p-10 text-center bg-slate-50/80 rounded-lg border border-slate-200/60 space-y-3 shadow-2xs">
+            <div className="p-8 sm:p-10 text-center bg-slate-50/80 dark:bg-slate-850/80 rounded-lg border border-slate-200/60 dark:border-slate-800 space-y-3 shadow-2xs">
               <div className={`w-10 h-10 rounded-md mx-auto flex items-center justify-center border ${
-                isTechnique ? 'bg-purple-50 border-purple-100 text-purple-900' : 'bg-sky-50 border-sky-100 text-[#0c4a6e]'
+                isTechnique
+                  ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-100 dark:border-purple-800 text-purple-900 dark:text-purple-300'
+                  : 'bg-sky-50 dark:bg-sky-950/60 border-sky-100 dark:border-sky-800 text-[#0c4a6e] dark:text-sky-300'
               }`}>
                 <Music className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                   No charts in this category
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
                   Tap "+ Add Chart" below to import PDFs into this category.
                 </p>
               </div>
@@ -408,7 +415,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 type="button"
                 onClick={onAddChart || (() => handleSetSelectedCategory(null))}
                 className={`mt-1 px-4 py-2 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
-                  isTechnique ? 'bg-purple-900 hover:bg-purple-950' : 'bg-[#0c4a6e] hover:bg-[#073652]'
+                  isTechnique
+                    ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600'
+                    : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
                 }`}
               >
                 + Add Chart
