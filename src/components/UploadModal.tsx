@@ -570,8 +570,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               <Check className="w-4 h-4 stroke-[2.5]" />
               <span>
                 {`Upload ${fileEntries.length} ${
-                  fileEntries.length === 1 ? 'Chart' : 'Charts'
-                } to ${isCreatingCategory && newCategoryName.trim() ? newCategoryName.trim() : targetCategory}`}
+                  fileEntries.length === 1 ? 'chart' : 'charts'
+                }`}
               </span>
             </button>
           </div>
