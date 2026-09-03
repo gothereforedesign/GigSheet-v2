@@ -11,6 +11,7 @@ interface PdfSheetViewerProps {
   onNumPagesChange?: (pages: number) => void;
   useNativeViewer?: boolean;
   onToggleNativeViewer?: (useNative: boolean) => void;
+  isTechnique?: boolean;
 }
 
 // Individual progressive page renderer component with canvas cancellation
@@ -19,6 +20,7 @@ interface PdfPageProps {
   pageNumber: number;
   zoomScale: number;
   title: string;
+  isTechnique?: boolean;
 }
 
 const PdfPage: React.FC<PdfPageProps> = React.memo(({
@@ -26,6 +28,7 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
   pageNumber,
   zoomScale,
   title,
+  isTechnique = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -132,7 +135,7 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
 
       {!isRendered && (
         <div className="no-print absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 text-slate-300 p-4 space-y-2">
-          <Loader2 className="w-6 h-6 animate-spin text-sky-400" />
+          <Loader2 className={`w-6 h-6 animate-spin ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
             Page {pageNumber}
           </span>
@@ -151,6 +154,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   onNumPagesChange,
   useNativeViewer: externalUseNativeViewer,
   onToggleNativeViewer,
+  isTechnique = false,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -384,10 +388,10 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         <div ref={scrollContainerRef} className="pdf-sheet-scroll-container w-full h-full overflow-auto pt-2 pb-24 px-2">
           {loading && (
             <div className="no-print my-auto flex flex-col items-center justify-center p-8 bg-slate-900/80 rounded-2xl border border-slate-800 text-white text-center space-y-3 max-w-sm mx-auto shadow-2xl">
-              <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
+              <Loader2 className={`w-8 h-8 animate-spin ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-sky-300">
-                  Opening Sheet Music PDF
+                <p className={`text-xs font-black uppercase tracking-wider ${isTechnique ? 'text-purple-300' : 'text-sky-300'}`}>
+                  {isTechnique ? 'Opening Technique Chart PDF' : 'Opening Sheet Music PDF'}
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
                   Loading high-definition vector pages...
@@ -413,7 +417,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
                   <button
                     type="button"
                     onClick={() => setUseNativeViewer(true)}
-                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md"
+                    className={`px-4 py-2 ${isTechnique ? 'bg-purple-600 hover:bg-purple-500' : 'bg-sky-600 hover:bg-sky-500'} text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md`}
                   >
                     Use Embedded Browser Viewer
                   </button>
@@ -446,6 +450,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
                   pageNumber={pNum}
                   zoomScale={effectiveZoom}
                   title={title}
+                  isTechnique={isTechnique}
                 />
               ))}
             </div>
@@ -466,7 +471,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
               <ZoomOut className="w-4 h-4 stroke-[2.5]" />
             </button>
 
-            <span className="text-xs font-black uppercase tracking-wider text-sky-300 px-1.5 min-w-[42px] text-center select-none whitespace-nowrap">
+            <span className={`text-xs font-black uppercase tracking-wider px-1.5 min-w-[42px] text-center select-none whitespace-nowrap ${isTechnique ? 'text-purple-300' : 'text-sky-300'}`}>
               {zoomLevel}%
             </span>
 

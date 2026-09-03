@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Song, SongType } from '../types';
 import { checkStorageQuota, saveSongDirectDirectBlob } from '../lib/dbStorage';
+import { formatTitleFromFilename } from '../lib/titleUtils';
 
 export type UploadStatus = 'queued' | 'processing' | 'saving' | 'completed' | 'error';
 
@@ -22,12 +23,7 @@ export interface UploadEntryInput {
 }
 
 const cleanFileName = (filename: string): string => {
-  return filename
-    .replace(/\.[^/.]+$/, '')
-    .replace(/[-_]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+  return formatTitleFromFilename(filename);
 };
 
 export function usePDFUploadQueue(onSongsUpdated?: () => void) {

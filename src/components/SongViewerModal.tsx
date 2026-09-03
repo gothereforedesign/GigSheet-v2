@@ -211,7 +211,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   return (
     <div className="song-viewer-modal fixed inset-0 z-50 flex flex-col bg-slate-950 text-white w-screen h-screen overflow-hidden select-none">
       {/* Top Header Bar */}
-      <header className="song-viewer-header sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-md">
+      <header className={`song-viewer-header sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] bg-slate-950/90 border-b ${isTechnique ? 'border-purple-900/60' : 'border-slate-800/80'} backdrop-blur-md`}>
         {/* Item 1: Close Button + Chart Title */}
         <div className="flex items-center gap-2 max-w-[80vw] sm:max-w-md md:max-w-xl min-w-0">
           <button
@@ -232,7 +232,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               {song.title}
             </h3>
 
-            <span className="hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs bg-slate-800 text-slate-300 border border-slate-700 shrink-0 shadow-2xs">
+            <span className={`hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs shrink-0 shadow-2xs ${isTechnique ? 'bg-purple-950/80 text-purple-200 border border-purple-800/80' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
               {navigation?.listName || song.genre || (isTechnique ? 'Scales' : 'Hymns')}
             </span>
           </div>
@@ -244,7 +244,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             <button
               type="button"
               onClick={() => onAddToSetlist(song)}
-              className="px-2.5 sm:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-sky-300 hover:text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg"
+              className={`px-2.5 sm:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 ${isTechnique ? 'text-purple-300 hover:border-purple-500/40' : 'text-sky-300 hover:border-sky-500/40'} hover:text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg`}
               title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
             >
               <ListPlus className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -258,15 +258,15 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             type="button"
             onClick={handleDownload}
             disabled={isDownloading}
-            className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 bg-slate-900 hover:bg-slate-800 text-white cursor-pointer active:scale-95 transition-all shadow-lg hover:border-sky-500/50 disabled:opacity-60"
+            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 bg-slate-900 hover:bg-slate-800 text-white cursor-pointer active:scale-95 transition-all shadow-lg ${isTechnique ? 'hover:border-purple-500/50' : 'hover:border-sky-500/50'} disabled:opacity-60`}
             title="Download PDF chart"
           >
             {isDownloading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" />
+              <Loader2 className={`w-3.5 h-3.5 animate-spin ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
             ) : downloadSuccess ? (
               <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
             ) : (
-              <Download className="w-3.5 h-3.5 stroke-[2.2] text-sky-400" />
+              <Download className={`w-3.5 h-3.5 stroke-[2.2] ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
             )}
             <span className="text-[11px] font-black">
               {isDownloading ? 'Saving...' : downloadSuccess ? 'Saved' : 'Download'}
@@ -293,6 +293,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               zoomLevel={zoomLevel}
               externalZoomControls={true}
               onNumPagesChange={setNumPages}
+              isTechnique={isTechnique}
             />
           ) : song.svgData ? (
             <div className="w-full h-full overflow-auto flex items-center justify-center p-4">
@@ -304,7 +305,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           ) : !isLoading ? (
             <div className="w-full h-full overflow-y-auto p-4 sm:p-8 flex items-center justify-center">
               <div className="printable-song-details max-w-xl w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md text-white flex flex-col items-center text-center gap-5">
-                <div className="no-print w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-inner">
+                <div className={`no-print w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${isTechnique ? 'bg-purple-500/10 border border-purple-500/30 text-purple-400' : 'bg-sky-500/10 border border-sky-500/30 text-sky-400'}`}>
                   <Music className="w-8 h-8 stroke-[1.8]" />
                 </div>
 
@@ -316,11 +317,11 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                 <div className="grid grid-cols-2 gap-2.5 w-full py-2">
                   <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
                     <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Category</span>
-                    <span className="text-sm font-black text-purple-400 mt-0.5 truncate max-w-[120px]">{song.genre || 'General'}</span>
+                    <span className={`text-sm font-black mt-0.5 truncate max-w-[120px] ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`}>{song.genre || 'General'}</span>
                   </div>
                   <div className="bg-slate-950/60 border border-slate-800/80 p-2.5 rounded-xl flex flex-col items-center">
                     <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Time Sig</span>
-                    <span className="text-sm font-black text-purple-300 mt-0.5">{song.timeSignature || '4/4'}</span>
+                    <span className={`text-sm font-black mt-0.5 ${isTechnique ? 'text-purple-300' : 'text-sky-300'}`}>{song.timeSignature || '4/4'}</span>
                   </div>
                 </div>
 
@@ -342,7 +343,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                    className={`w-full sm:w-auto px-5 py-2.5 ${isTechnique ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/20' : 'bg-sky-600 hover:bg-sky-500 shadow-sky-600/20'} text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer`}
                   >
                     <Upload className="w-4 h-4 stroke-[2.2]" />
                     <span>Attach PDF Chart</span>

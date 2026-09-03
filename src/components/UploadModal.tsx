@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, FileText, Check, AlertCircle, Trash2, Plus, Folder, Loader2, CheckCircle2 } from 'lucide-react';
 import { Song, SongType } from '../types';
 import { DEFAULT_SHEET_MUSIC_CATEGORIES, DEFAULT_TECHNIQUE_CATEGORIES } from '../lib/categoryStorage';
+import { formatTitleFromFilename } from '../lib/titleUtils';
 
 interface UploadModalProps {
   genres?: string[];
@@ -27,12 +28,7 @@ interface FileEntry {
 }
 
 const cleanFileName = (filename: string): string => {
-  return filename
-    .replace(/\.[^/.]+$/, '')
-    .replace(/[-_]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+  return formatTitleFromFilename(filename);
 };
 
 const createEntriesFromFiles = (files: File[]): FileEntry[] => {
