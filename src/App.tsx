@@ -1067,10 +1067,11 @@ export default function App() {
   const activeSongs = songs.filter((s) => !s.deletedAt);
   const sectionSongs = activeSongs.filter((s) => {
     if (s.isSetlistDuplicate || s.setlistId) return false;
+    const songSec = s.section || 'sheet_music';
     if (activeTab === 'technique' || activeTab === 'technique_routines') {
-      return s.section === 'technique';
+      return songSec === 'technique';
     }
-    return s.section !== 'technique';
+    return songSec !== 'technique';
   });
   const trashedSongs = songs.filter((s) => !!s.deletedAt);
 

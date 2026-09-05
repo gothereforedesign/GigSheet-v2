@@ -30,38 +30,44 @@ async function songContentToDataUri(s: Song): Promise<string | undefined> {
 
   if (!blobData) return undefined;
 
+  const mimeType = s.type === 'pdf' ? 'application/pdf' : 'image/jpeg';
+
   if (typeof blobData === 'string') {
     if (blobData.startsWith('data:')) {
       return blobData;
     }
     if (blobData.length > 100) {
-      const mime = s.type === 'pdf' ? 'application/pdf' : 'image/jpeg';
-      return `data:${mime};base64,${blobData}`;
+      return `data:${mimeType};base64,${blobData.trim()}`;
     }
-    return blobData;
+    return undefined;
   }
 
-  let buf: ArrayBuffer;
-  if (blobData instanceof ArrayBuffer) {
-    buf = blobData;
-  } else if (blobData instanceof Blob) {
-    buf = await blobData.arrayBuffer();
+  let blob: Blob;
+  if (blobData instanceof Blob) {
+    blob = blobData;
+  } else if (blobData instanceof ArrayBuffer) {
+    blob = new Blob([blobData], { type: mimeType });
+  } else if (ArrayBuffer.isView(blobData)) {
+    blob = new Blob([(blobData as any).buffer || blobData], { type: mimeType });
   } else {
     return undefined;
   }
 
-  if (buf.byteLength === 0) return undefined;
+  if (blob.size === 0) return undefined;
 
-  const bytes = new Uint8Array(buf);
-  let binary = '';
-  const len = bytes.byteLength;
-  const chunkSize = 0x8000;
-  for (let i = 0; i < len; i += chunkSize) {
-    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
-    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
-  }
-  const mime = s.type === 'pdf' ? 'application/pdf' : 'image/jpeg';
-  return `data:${mime};base64,${btoa(binary)}`;
+  return new Promise<string | undefined>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const res = reader.result;
+      if (typeof res === 'string' && res.startsWith('data:')) {
+        resolve(res);
+      } else {
+        resolve(undefined);
+      }
+    };
+    reader.onerror = () => resolve(undefined);
+    reader.readAsDataURL(blob);
+  });
 }
 
 export async function exportLibraryData(onProgress?: (msg: string) => void): Promise<Blob> {
@@ -79,18 +85,8 @@ export async function exportLibraryData(onProgress?: (msg: string) => void): Pro
     if (onProgress) onProgress(`Packing chart ${i + 1} of ${allSongs.length}: ${s.title}...`);
     const dataUri = await songContentToDataUri(s);
 
-    // Explicitly omit metadata for tempo, key, time signature, artist, and original key
-    // Retain title, category/genre, section, type, meter, lyrics, tags, notes, annotations, dates, and media
-    const {
-      tempo,
-      key,
-      originalKey,
-      timeSignature,
-      artist,
-      fileBlob,
-      fileUrl,
-      ...retainedMetadata
-    } = s;
+    // Retain ALL metadata for complete application state restore
+    const { fileBlob, fileUrl, ...retainedMetadata } = s;
 
     // Retain category color association
     const categoryColor = s.section === 'technique'

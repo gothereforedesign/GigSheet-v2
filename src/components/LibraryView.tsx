@@ -270,16 +270,25 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   // Count charts per category for display on category square cards
   const categoryChartCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
+    const normalizedMap: Record<string, string> = {};
+
     availableCategories.forEach((cat) => {
       counts[cat] = 0;
+      normalizedMap[cat.trim().toLowerCase()] = cat;
     });
+
     songs.forEach((song) => {
       const defaultCat = isTechnique ? 'Scales' : 'Hymns';
-      const cat = song.genre || defaultCat;
-      if (counts[cat] !== undefined) {
-        counts[cat] += 1;
+      const rawCat = (song.genre || defaultCat).trim();
+      const norm = rawCat.toLowerCase();
+
+      const matchedKey = normalizedMap[norm];
+      if (matchedKey) {
+        counts[matchedKey] = (counts[matchedKey] || 0) + 1;
+      } else if (counts[rawCat] !== undefined) {
+        counts[rawCat] += 1;
       } else {
-        counts[cat] = 1;
+        counts[rawCat] = 1;
       }
     });
     return counts;

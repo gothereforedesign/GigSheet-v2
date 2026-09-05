@@ -68,6 +68,20 @@ export function getDB() {
           db.createObjectStore('settings');
         }
       },
+      blocked() {
+        console.warn('IndexedDB open blocked by another tab or connection');
+      },
+      blocking() {
+        console.warn('IndexedDB connection blocking higher version upgrade');
+      },
+      terminated() {
+        console.warn('IndexedDB connection terminated unexpectedly, resetting connection promise');
+        dbPromise = null;
+      },
+    }).catch((err) => {
+      console.error('Failed to open IndexedDB:', err);
+      dbPromise = null;
+      throw err;
     });
   }
   return dbPromise;
@@ -77,26 +91,24 @@ export function getDB() {
  * Seed initial data if library is empty
  */
 export async function seedInitialDataIfNeeded(): Promise<void> {
-  if (typeof window !== 'undefined') {
-    const hasSeeded = localStorage.getItem('gigsheet_db_seeded');
-    if (hasSeeded === 'true') {
-      return;
+  try {
+    const db = await getDB();
+    const count = await db.count('songs');
+    if (count === 0 && BUNDLED_SAMPLE_SONGS.length > 0) {
+      console.info('Library database empty, seeding initial sample songs and default setlists...');
+      for (const song of BUNDLED_SAMPLE_SONGS) {
+        await saveSong(song);
+      }
+      for (const setlist of BUNDLED_DEFAULT_SETLISTS) {
+        await db.put('setlists', setlist);
+      }
     }
-  }
 
-  const db = await getDB();
-  const count = await db.count('songs');
-  if (count === 0 && BUNDLED_SAMPLE_SONGS.length > 0) {
-    for (const song of BUNDLED_SAMPLE_SONGS) {
-      await saveSong(song);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('gigsheet_db_seeded', 'true');
     }
-    for (const setlist of BUNDLED_DEFAULT_SETLISTS) {
-      await db.put('setlists', setlist);
-    }
-  }
-
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('gigsheet_db_seeded', 'true');
+  } catch (err) {
+    console.warn('Failed to check or seed initial data:', err);
   }
 }
 
@@ -227,38 +239,54 @@ async function serializeToBinary(blobOrBuffer: Blob | File | ArrayBuffer | strin
   if (blobOrBuffer instanceof ArrayBuffer) {
     return blobOrBuffer;
   }
+  if (ArrayBuffer.isView(blobOrBuffer) || (blobOrBuffer && (blobOrBuffer as any).buffer instanceof ArrayBuffer)) {
+    return (blobOrBuffer as any).buffer as ArrayBuffer;
+  }
   if (typeof (blobOrBuffer as Blob).arrayBuffer === 'function') {
-    return await (blobOrBuffer as Blob).arrayBuffer();
+    try {
+      return await (blobOrBuffer as Blob).arrayBuffer();
+    } catch (e) {
+      console.warn('arrayBuffer() call failed on blob:', e);
+    }
   }
   if (typeof blobOrBuffer === 'string') {
-    if (blobOrBuffer.startsWith('data:')) {
-      const commaIdx = blobOrBuffer.indexOf(',');
+    const str = blobOrBuffer.trim();
+    if (str.startsWith('data:')) {
+      const commaIdx = str.indexOf(',');
       if (commaIdx !== -1) {
-        try {
-          const base64Str = blobOrBuffer.substring(commaIdx + 1).trim();
-          const binaryStr = window.atob(base64Str);
-          const len = binaryStr.length;
-          const bytes = new Uint8Array(len);
-          for (let i = 0; i < len; i++) {
-            bytes[i] = binaryStr.charCodeAt(i);
+        const meta = str.substring(0, commaIdx);
+        const rawData = str.substring(commaIdx + 1);
+        if (meta.includes('base64')) {
+          try {
+            const cleanBase64 = rawData.replace(/[\r\n\s]/g, '');
+            const binaryStr = window.atob(cleanBase64);
+            const len = binaryStr.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryStr.charCodeAt(i);
+            }
+            return bytes.buffer as ArrayBuffer;
+          } catch (e) {
+            console.warn('Direct base64 decode failed, trying fetch fallback:', e);
           }
-          return bytes.buffer as ArrayBuffer;
-        } catch (e) {
-          console.warn('Direct base64 decode failed, trying fetch fallback:', e);
         }
       }
       try {
-        const res = await fetch(blobOrBuffer);
-        return await res.arrayBuffer();
+        const res = await fetch(str);
+        if (res.ok) {
+          return await res.arrayBuffer();
+        }
       } catch (e) {
         console.warn('Fetch data URI failed:', e);
       }
     }
-    if (blobOrBuffer.length > 100) {
+    if (str.length > 100) {
       try {
-        const binaryStr = window.atob(blobOrBuffer.trim());
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
+        const cleanBase64 = str.replace(/[\r\n\s]/g, '');
+        const binaryStr = window.atob(cleanBase64);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
           bytes[i] = binaryStr.charCodeAt(i);
         }
         return bytes.buffer as ArrayBuffer;
@@ -272,20 +300,19 @@ export async function saveSong(song: Song): Promise<void> {
   const db = await getDB();
   const { fileBlob, ...metadata } = song;
   
-  let binaryData: Blob | ArrayBuffer | null = null;
+  let binaryData: ArrayBuffer | null = null;
   const candidate = fileBlob || (song as any).pdfDataUri || song.fileUrl;
   if (candidate) {
-    if (candidate instanceof Blob || candidate instanceof File) {
-      binaryData = candidate;
-    } else if (candidate instanceof ArrayBuffer || Object.prototype.toString.call(candidate) === '[object ArrayBuffer]') {
-      binaryData = candidate;
-    } else if (typeof candidate === 'string') {
-      try {
-        binaryData = await serializeToBinary(candidate);
-      } catch (e) {
-        console.warn('Could not serialize candidate fileBlob:', e);
-      }
+    try {
+      binaryData = await serializeToBinary(candidate);
+    } catch (e) {
+      console.warn('Could not serialize candidate fileBlob:', e);
     }
+  }
+
+  // Ensure default section property
+  if (!metadata.section) {
+    metadata.section = 'sheet_music';
   }
 
   try {
@@ -321,26 +348,25 @@ export async function saveSongsBatch(
     const preparedItems = await Promise.all(
       chunk.map(async (song) => {
         const { fileBlob, ...metadata } = song;
-        let binaryData: Blob | ArrayBuffer | null = null;
+        let binaryData: ArrayBuffer | null = null;
         const candidate = fileBlob || (song as any).pdfDataUri || song.fileUrl;
         if (candidate) {
-          if (candidate instanceof Blob || candidate instanceof File) {
-            binaryData = candidate;
-          } else if (candidate instanceof ArrayBuffer || Object.prototype.toString.call(candidate) === '[object ArrayBuffer]') {
-            binaryData = candidate;
-          } else if (typeof candidate === 'string') {
-            try {
-              binaryData = await serializeToBinary(candidate);
-            } catch (e) {
-              console.warn('Batch serialization failed:', e);
-            }
+          try {
+            binaryData = await serializeToBinary(candidate);
+          } catch (e) {
+            console.warn('Batch serialization failed:', e);
           }
         }
+
+        if (!metadata.section) {
+          metadata.section = 'sheet_music';
+        }
+
         return { metadata: metadata as Song, id: song.id, binaryData };
       })
     );
 
-    // Step 2: Write chunk to IndexedDB
+    // Write chunk to IndexedDB
     try {
       const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
       const songStore = tx.objectStore('songs');
