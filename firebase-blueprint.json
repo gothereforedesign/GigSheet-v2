@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "Song": {
+      "title": "Song",
+      "description": "Sheet music or technique chart metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "key": { "type": "string" },
+        "originalKey": { "type": "string" },
+        "tempo": { "type": "number" },
+        "timeSignature": { "type": "string" },
+        "genre": { "type": "string" },
+        "section": { "type": "string" },
+        "type": { "type": "string" },
+        "favorite": { "type": "boolean" },
+        "dateAdded": { "type": "number" }
+      },
+      "required": ["id", "title", "genre", "section"]
+    },
+    "SongBlob": {
+      "title": "SongBlob",
+      "description": "Binary PDF or chart data stored in base64 chunks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "blobData": { "type": "string" },
+        "chunks": { "type": "array" }
+      },
+      "required": ["id"]
+    },
+    "Setlist": {
+      "title": "Setlist",
+      "description": "Performance setlist",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "dateCreated": { "type": "number" }
+      },
+      "required": ["id", "name"]
+    }
+  },
+  "firestore": {
+    "/songs/{songId}": {
+      "schema": { "$ref": "#/entities/Song" },
+      "description": "Collection of song charts and technique items"
+    },
+    "/song_blobs/{songId}": {
+      "schema": { "$ref": "#/entities/SongBlob" },
+      "description": "Collection of binary PDF and image data"
+    },
+    "/setlists/{setlistId}": {
+      "schema": { "$ref": "#/entities/Setlist" },
+      "description": "Collection of performance setlists"
+    }
+  }
+}

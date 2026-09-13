@@ -1480,6 +1480,8 @@ export default function App() {
       {/* Fixed Bottom Navigation Bar */}
       <BottomNav
         activeTab={activeTab}
+        selectedCategory={selectedCategory}
+        hasActiveViewer={!!activeSongForViewer}
         onSelectTab={handleSelectTab}
         onOpenCategoryManager={handleOpenCategoryManager}
         onAddPdf={() => handleOpenUploadModal()}

@@ -38,8 +38,17 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 py-3 transition-colors">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className={`p-1.5 text-white rounded-md shadow-2xs transition-colors ${
+        <div
+          onClick={() => {
+            if (onSelectTab) {
+              const rootTab = activeTab === 'trash' ? 'sheet_music' : (activeTab || 'sheet_music');
+              onSelectTab(rootTab);
+            }
+          }}
+          className="flex items-center gap-2.5 shrink-0 cursor-pointer group"
+          title="Return to Homescreen"
+        >
+          <div className={`p-1.5 text-white rounded-md shadow-2xs transition-colors group-hover:scale-105 ${
             isRoutines
               ? 'bg-[#581c87] dark:bg-purple-700'
               : isSetlists

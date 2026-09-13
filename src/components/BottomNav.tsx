@@ -4,6 +4,8 @@ import { ActiveTab } from '../types';
 
 interface BottomNavProps {
   activeTab: ActiveTab;
+  selectedCategory?: string | null;
+  hasActiveViewer?: boolean;
   onSelectTab: (tab: ActiveTab) => void;
   onOpenCategoryManager?: () => void;
   onAddPdf?: () => void;
@@ -11,6 +13,8 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
+  selectedCategory = null,
+  hasActiveViewer = false,
   onSelectTab,
   onAddPdf,
 }) => {
@@ -19,28 +23,50 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const isTechniqueSection = activeTab === 'technique' || activeTab === 'technique_routines';
   const isRoutinesActive = activeTab === 'technique_routines';
 
+  const isSubViewActive = Boolean(selectedCategory || hasActiveViewer);
+
   const handleSheetClick = () => {
     if (activeTab === 'sheet_music') {
-      // 2nd tap: switch to setlists category ("hidden section")
-      onSelectTab('sheet_music_setlists');
+      if (isSubViewActive) {
+        // Return to the main sheet music category grid homescreen
+        onSelectTab('sheet_music');
+      } else {
+        // 2nd tap from root: switch to setlists category ("hidden section")
+        onSelectTab('sheet_music_setlists');
+      }
     } else if (activeTab === 'sheet_music_setlists') {
-      // 3rd tap: cycle back to original sheet music
-      onSelectTab('sheet_music');
+      if (isSubViewActive) {
+        // Return to the setlists main view
+        onSelectTab('sheet_music_setlists');
+      } else {
+        // 3rd tap from root: cycle back to original sheet music
+        onSelectTab('sheet_music');
+      }
     } else {
-      // 1st tap: navigate to sheet music section
+      // Navigate to sheet music section
       onSelectTab('sheet_music');
     }
   };
 
   const handleTechClick = () => {
     if (activeTab === 'technique') {
-      // 2nd tap: switch to routines category ("hidden section")
-      onSelectTab('technique_routines');
+      if (isSubViewActive) {
+        // Return to the main technique category grid homescreen
+        onSelectTab('technique');
+      } else {
+        // 2nd tap from root: switch to routines category ("hidden section")
+        onSelectTab('technique_routines');
+      }
     } else if (activeTab === 'technique_routines') {
-      // 3rd tap: cycle back to original technique
-      onSelectTab('technique');
+      if (isSubViewActive) {
+        // Return to the routines main view
+        onSelectTab('technique_routines');
+      } else {
+        // 3rd tap from root: cycle back to original technique
+        onSelectTab('technique');
+      }
     } else {
-      // 1st tap: navigate to technique section
+      // Navigate to technique section
       onSelectTab('technique');
     }
   };

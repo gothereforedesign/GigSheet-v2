@@ -1,6 +1,15 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { Song, Setlist } from '../types';
 import { BUNDLED_SAMPLE_SONGS, BUNDLED_DEFAULT_SETLISTS } from './sampleSongs';
+import {
+  syncSongToCloud,
+  getSongBlobFromCloud,
+  fetchSongsFromCloud,
+  deleteSongFromCloud,
+  syncSetlistToCloud,
+  fetchSetlistsFromCloud,
+  deleteSetlistFromCloud,
+} from './firestoreSync';
 
 interface GigSheetDB extends DBSchema {
   songs: {
@@ -120,7 +129,25 @@ export async function purgeSampleSongsIfNeeded(): Promise<void> {
 export async function getAllSongs(): Promise<Song[]> {
   const db = await getDB();
   await seedInitialDataIfNeeded();
-  const all = await db.getAll('songs');
+  let all = await db.getAll('songs');
+
+  // If local DB is empty, try fetching cloud songs
+  if (all.length === 0) {
+    try {
+      const cloudSongs = await fetchSongsFromCloud();
+      if (cloudSongs.length > 0) {
+        console.info(`Hydrating ${cloudSongs.length} songs from Firestore Cloud...`);
+        for (const s of cloudSongs) {
+          const { fileBlob, ...meta } = s;
+          await db.put('songs', meta as Song);
+        }
+        all = await db.getAll('songs');
+      }
+    } catch (e) {
+      console.warn('Could not fetch cloud songs during getAllSongs:', e);
+    }
+  }
+
   // We return them WITHOUT blobs to keep memory usage low for the library view
   return all.map(s => ({ ...s, fileBlob: undefined }));
 }
@@ -164,6 +191,19 @@ export async function getSongById(id: string): Promise<Song | undefined> {
       return { ...song, fileBlob: raw as any };
     }
     return { ...song, fileBlob: raw as unknown as Blob };
+  }
+
+  // If local blob is missing, check Firestore Cloud
+  try {
+    const cloudBuffer = await getSongBlobFromCloud(id);
+    if (cloudBuffer) {
+      // Cache back to local IndexedDB
+      await db.put('song_blobs', { id, blob: cloudBuffer });
+      const createdBlob = new Blob([cloudBuffer], { type: song.type === 'pdf' ? 'application/pdf' : 'image/jpeg' });
+      return { ...song, fileBlob: createdBlob };
+    }
+  } catch (e) {
+    console.warn(`Could not load cloud blob for ${id}:`, e);
   }
 
   // Check if fileBlob or pdfDataUri is attached directly on the song object in 'songs' store
@@ -333,6 +373,11 @@ export async function saveSong(song: Song): Promise<void> {
       throw e;
     }
   }
+
+  // Non-blocking sync to Firestore Cloud
+  syncSongToCloud(metadata as Song, binaryData).catch((e) =>
+    console.warn(`Cloud sync deferred for song ${song.id}:`, e)
+  );
 }
 
 export async function saveSongsBatch(
@@ -406,6 +451,11 @@ export async function saveSongsBatch(
       }
     }
 
+    // Sync chunk items to Firestore Cloud non-blockingly
+    for (const item of preparedItems) {
+      syncSongToCloud(item.metadata, item.binaryData).catch(() => {});
+    }
+
     // Step 3: Explicitly release references so browser GC can reclaim memory
     for (let k = 0; k < preparedItems.length; k++) {
       preparedItems[k].binaryData = null;
@@ -428,6 +478,7 @@ export async function deleteSong(id: string): Promise<void> {
     tx.objectStore('song_blobs').delete(id),
     tx.done
   ]);
+  deleteSongFromCloud(id).catch(() => {});
 }
 
 export async function deleteSongsBatch(ids: string[]): Promise<void> {
@@ -457,6 +508,11 @@ export async function deleteSongsBatch(ids: string[]): Promise<void> {
         }
       }
     }
+
+    for (const id of chunk) {
+      deleteSongFromCloud(id).catch(() => {});
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 }
@@ -467,6 +523,7 @@ export async function toggleSongFavorite(id: string): Promise<boolean> {
   if (song) {
     song.favorite = !song.favorite;
     await db.put('songs', song);
+    syncSongToCloud(song).catch(() => {});
     return song.favorite;
   }
   return false;
@@ -478,6 +535,7 @@ export async function updateSongLastPlayed(id: string): Promise<void> {
   if (song) {
     song.lastPlayed = Date.now();
     await db.put('songs', song);
+    syncSongToCloud(song).catch(() => {});
   }
 }
 
@@ -485,7 +543,23 @@ export async function updateSongLastPlayed(id: string): Promise<void> {
 export async function getAllSetlists(): Promise<Setlist[]> {
   const db = await getDB();
   await seedInitialDataIfNeeded();
-  return db.getAll('setlists');
+  let setlists = await db.getAll('setlists');
+
+  if (setlists.length === 0) {
+    try {
+      const cloudSetlists = await fetchSetlistsFromCloud();
+      if (cloudSetlists.length > 0) {
+        for (const sl of cloudSetlists) {
+          await db.put('setlists', sl);
+        }
+        setlists = await db.getAll('setlists');
+      }
+    } catch (e) {
+      console.warn('Could not fetch cloud setlists:', e);
+    }
+  }
+
+  return setlists;
 }
 
 export async function getSetlistById(id: string): Promise<Setlist | undefined> {
@@ -496,11 +570,13 @@ export async function getSetlistById(id: string): Promise<Setlist | undefined> {
 export async function saveSetlist(setlist: Setlist): Promise<void> {
   const db = await getDB();
   await db.put('setlists', setlist);
+  syncSetlistToCloud(setlist).catch(() => {});
 }
 
 export async function deleteSetlist(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('setlists', id);
+  deleteSetlistFromCloud(id).catch(() => {});
 }
 
 // SETTINGS operations
