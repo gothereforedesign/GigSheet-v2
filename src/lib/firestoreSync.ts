@@ -202,3 +202,50 @@ export async function deleteSetlistFromCloud(id: string): Promise<void> {
     console.warn(`Failed to delete setlist ${id} from Firestore cloud:`, err);
   }
 }
+
+/**
+ * Sync category list and category colors for a section to Firestore Cloud
+ */
+export async function syncCategoriesToCloud(
+  section: 'sheet_music' | 'technique',
+  categories: string[],
+  colors: Record<string, string>
+): Promise<void> {
+  try {
+    const docId = `categories_${section}`;
+    await setDoc(
+      doc(db, 'settings', docId),
+      {
+        section,
+        categories: categories || [],
+        colors: colors || {},
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn(`Failed to sync ${section} categories to Firestore cloud:`, err);
+  }
+}
+
+/**
+ * Fetch category config for a section from Firestore Cloud
+ */
+export async function fetchCategoriesFromCloud(
+  section: 'sheet_music' | 'technique'
+): Promise<{ categories?: string[]; colors?: Record<string, string> } | null> {
+  try {
+    const docId = `categories_${section}`;
+    const snap = await getDoc(doc(db, 'settings', docId));
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        categories: Array.isArray(data.categories) ? data.categories : undefined,
+        colors: data.colors && typeof data.colors === 'object' ? data.colors : undefined,
+      };
+    }
+  } catch (err) {
+    console.warn(`Failed to fetch ${section} categories from Firestore cloud:`, err);
+  }
+  return null;
+}

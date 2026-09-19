@@ -17,6 +17,7 @@ import {
   saveStoredCategories, 
   getStoredCategoryColors, 
   saveStoredCategoryColors, 
+  hydrateCategoriesFromCloud,
   getCategoryPalette,
   DEFAULT_SHEET_MUSIC_CATEGORIES, 
   DEFAULT_SHEET_MUSIC_COLORS,
@@ -381,6 +382,16 @@ export default function App() {
         if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
           navigator.storage.persist().catch(() => {});
         }
+
+        // Hydrate category settings from Cloud
+        const smCatData = await hydrateCategoriesFromCloud('sheet_music');
+        setSheetMusicCategories(smCatData.categories);
+        setSheetMusicColors(smCatData.colors);
+
+        const techCatData = await hydrateCategoriesFromCloud('technique');
+        setTechniqueCategories(techCatData.categories);
+        setTechniqueColors(techCatData.colors);
+
         let loadedSongs = await getAllSongs();
         setSongs(loadedSongs);
         let loadedSetlists = await getAllSetlists();

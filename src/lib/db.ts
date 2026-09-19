@@ -97,14 +97,35 @@ export function getDB() {
 }
 
 /**
- * Seed initial data if library is empty
+ * Seed initial sample songs ONLY if both local storage and Firestore cloud are empty
+ * and app hasn't been seeded or used before.
  */
 export async function seedInitialDataIfNeeded(): Promise<void> {
   try {
+    const isAlreadySeeded = typeof window !== 'undefined' && localStorage.getItem('gigsheet_db_seeded') === 'true';
+    if (isAlreadySeeded) return;
+
     const db = await getDB();
     const count = await db.count('songs');
-    if (count === 0 && BUNDLED_SAMPLE_SONGS.length > 0) {
-      console.info('Library database empty, seeding initial sample songs and default setlists...');
+    if (count > 0) {
+      localStorage.setItem('gigsheet_db_seeded', 'true');
+      return;
+    }
+
+    // Check Cloud before seeding sample data
+    const cloudSongs = await fetchSongsFromCloud();
+    if (cloudSongs.length > 0) {
+      console.info(`Hydrating ${cloudSongs.length} songs from Cloud...`);
+      for (const s of cloudSongs) {
+        const { fileBlob, ...meta } = s;
+        await db.put('songs', meta as Song);
+      }
+      localStorage.setItem('gigsheet_db_seeded', 'true');
+      return;
+    }
+
+    if (BUNDLED_SAMPLE_SONGS.length > 0) {
+      console.info('Library empty locally and in Cloud. Seeding initial sample songs and default setlists...');
       for (const song of BUNDLED_SAMPLE_SONGS) {
         await saveSong(song);
       }
@@ -128,25 +149,30 @@ export async function purgeSampleSongsIfNeeded(): Promise<void> {
 // SONG CRUD operations
 export async function getAllSongs(): Promise<Song[]> {
   const db = await getDB();
-  await seedInitialDataIfNeeded();
-  let all = await db.getAll('songs');
 
-  // If local DB is empty, try fetching cloud songs
-  if (all.length === 0) {
-    try {
-      const cloudSongs = await fetchSongsFromCloud();
-      if (cloudSongs.length > 0) {
-        console.info(`Hydrating ${cloudSongs.length} songs from Firestore Cloud...`);
-        for (const s of cloudSongs) {
-          const { fileBlob, ...meta } = s;
-          await db.put('songs', meta as Song);
-        }
-        all = await db.getAll('songs');
+  // Try fetching cloud songs first to stay synced across sessions & devices
+  try {
+    const cloudSongs = await fetchSongsFromCloud();
+    if (cloudSongs && cloudSongs.length > 0) {
+      const tx = db.transaction('songs', 'readwrite');
+      const store = tx.objectStore('songs');
+      for (const s of cloudSongs) {
+        const { fileBlob, ...meta } = s;
+        store.put(meta as Song);
       }
-    } catch (e) {
-      console.warn('Could not fetch cloud songs during getAllSongs:', e);
+      await tx.done;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('gigsheet_db_seeded', 'true');
+      }
     }
+  } catch (e) {
+    console.warn('Could not fetch cloud songs during getAllSongs:', e);
   }
+
+  // Ensure initial seed only if totally empty
+  await seedInitialDataIfNeeded();
+
+  const all = await db.getAll('songs');
 
   // We return them WITHOUT blobs to keep memory usage low for the library view
   return all.map(s => ({ ...s, fileBlob: undefined }));
@@ -542,24 +568,23 @@ export async function updateSongLastPlayed(id: string): Promise<void> {
 // SETLIST CRUD operations
 export async function getAllSetlists(): Promise<Setlist[]> {
   const db = await getDB();
-  await seedInitialDataIfNeeded();
-  let setlists = await db.getAll('setlists');
-
-  if (setlists.length === 0) {
-    try {
-      const cloudSetlists = await fetchSetlistsFromCloud();
-      if (cloudSetlists.length > 0) {
-        for (const sl of cloudSetlists) {
-          await db.put('setlists', sl);
-        }
-        setlists = await db.getAll('setlists');
+  
+  try {
+    const cloudSetlists = await fetchSetlistsFromCloud();
+    if (cloudSetlists && cloudSetlists.length > 0) {
+      const tx = db.transaction('setlists', 'readwrite');
+      const store = tx.objectStore('setlists');
+      for (const sl of cloudSetlists) {
+        store.put(sl);
       }
-    } catch (e) {
-      console.warn('Could not fetch cloud setlists:', e);
+      await tx.done;
     }
+  } catch (e) {
+    console.warn('Could not fetch cloud setlists:', e);
   }
 
-  return setlists;
+  await seedInitialDataIfNeeded();
+  return db.getAll('setlists');
 }
 
 export async function getSetlistById(id: string): Promise<Setlist | undefined> {

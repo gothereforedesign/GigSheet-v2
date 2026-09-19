@@ -1,3 +1,5 @@
+import { syncCategoriesToCloud, fetchCategoriesFromCloud } from './firestoreSync';
+
 /**
  * Category storage and dynamic cascading color palette definitions.
  * Categories dynamically cascade from lightest shade (first on list) to darkest shade (last on list):
@@ -203,6 +205,10 @@ export function saveStoredCategories(section: 'sheet_music' | 'technique', categ
   } catch (e) {
     console.warn('Failed to save categories to localStorage:', e);
   }
+
+  // Non-blocking sync to cloud
+  const colors = getStoredCategoryColors(section);
+  syncCategoriesToCloud(section, categories, colors).catch(() => {});
 }
 
 export function getStoredCategoryColors(section: 'sheet_music' | 'technique'): Record<string, CategoryColorKey> {
@@ -229,6 +235,36 @@ export function saveStoredCategoryColors(section: 'sheet_music' | 'technique', c
   } catch (e) {
     console.warn('Failed to save category colors to localStorage:', e);
   }
+
+  // Non-blocking sync to cloud
+  const categories = getStoredCategories(section);
+  syncCategoriesToCloud(section, categories, colors).catch(() => {});
+}
+
+/**
+ * Hydrates categories and colors from Firestore Cloud into local storage if available
+ */
+export async function hydrateCategoriesFromCloud(section: 'sheet_music' | 'technique'): Promise<{
+  categories: string[];
+  colors: Record<string, CategoryColorKey>;
+}> {
+  try {
+    const cloudConfig = await fetchCategoriesFromCloud(section);
+    if (cloudConfig) {
+      if (cloudConfig.categories && cloudConfig.categories.length > 0) {
+        saveStoredCategories(section, cloudConfig.categories);
+      }
+      if (cloudConfig.colors) {
+        saveStoredCategoryColors(section, cloudConfig.colors);
+      }
+    }
+  } catch (err) {
+    console.warn(`Could not hydrate ${section} categories from cloud:`, err);
+  }
+  return {
+    categories: getStoredCategories(section),
+    colors: getStoredCategoryColors(section),
+  };
 }
 
 /**

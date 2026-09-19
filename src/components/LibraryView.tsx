@@ -241,13 +241,23 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     }
   };
 
-  // Extract list of defined categories for this section
+  // Extract list of defined categories for this section, dynamically incorporating any unique genres present in songs
   const availableCategories = React.useMemo(() => {
-    if (genres && genres.length > 0) {
-      return genres;
+    const baseList = (genres && genres.length > 0)
+      ? genres
+      : (isTechnique ? DEFAULT_TECHNIQUE_CATEGORIES : DEFAULT_SHEET_MUSIC_CATEGORIES);
+
+    const result = [...baseList];
+    if (songs && songs.length > 0) {
+      songs.forEach((song) => {
+        const rawGenre = (song.genre || '').trim();
+        if (rawGenre && !result.some((c) => c.toLowerCase().trim() === rawGenre.toLowerCase())) {
+          result.push(rawGenre);
+        }
+      });
     }
-    return isTechnique ? DEFAULT_TECHNIQUE_CATEGORIES : DEFAULT_SHEET_MUSIC_CATEGORIES;
-  }, [genres, isTechnique]);
+    return result;
+  }, [genres, isTechnique, songs]);
 
   // Filtered Songs when inside a category
   const filteredSongs = songs.filter((song) => {
