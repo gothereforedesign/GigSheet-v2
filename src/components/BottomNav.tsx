@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music2, ListMusic, GraduationCap, Flame, Plus } from 'lucide-react';
+import { Music2, GraduationCap, ListMusic, Plus } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface BottomNavProps {
@@ -13,128 +13,95 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
-  selectedCategory = null,
-  hasActiveViewer = false,
   onSelectTab,
   onAddPdf,
 }) => {
-  const isSheetMusicSection = activeTab === 'sheet_music' || activeTab === 'sheet_music_setlists';
-  const isSetlistsActive = activeTab === 'sheet_music_setlists';
-  const isTechniqueSection = activeTab === 'technique' || activeTab === 'technique_routines';
-  const isRoutinesActive = activeTab === 'technique_routines';
+  const isSheetMusicActive = activeTab === 'sheet_music';
+  const isTechniqueActive = activeTab === 'technique';
+  const isSetlistsActive = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
 
-  const isSubViewActive = Boolean(selectedCategory || hasActiveViewer);
-
-  const handleSheetClick = () => {
-    if (activeTab === 'sheet_music') {
-      if (isSubViewActive) {
-        // Return to the main sheet music category grid homescreen
-        onSelectTab('sheet_music');
-      } else {
-        // 2nd tap from root: switch to setlists category ("hidden section")
-        onSelectTab('sheet_music_setlists');
-      }
-    } else if (activeTab === 'sheet_music_setlists') {
-      if (isSubViewActive) {
-        // Return to the setlists main view
-        onSelectTab('sheet_music_setlists');
-      } else {
-        // 3rd tap from root: cycle back to original sheet music
-        onSelectTab('sheet_music');
-      }
-    } else {
-      // Navigate to sheet music section
-      onSelectTab('sheet_music');
-    }
+  const handleSheetMusicClick = () => {
+    onSelectTab('sheet_music');
   };
 
-  const handleTechClick = () => {
-    if (activeTab === 'technique') {
-      if (isSubViewActive) {
-        // Return to the main technique category grid homescreen
-        onSelectTab('technique');
-      } else {
-        // 2nd tap from root: switch to routines category ("hidden section")
-        onSelectTab('technique_routines');
-      }
-    } else if (activeTab === 'technique_routines') {
-      if (isSubViewActive) {
-        // Return to the routines main view
-        onSelectTab('technique_routines');
-      } else {
-        // 3rd tap from root: cycle back to original technique
-        onSelectTab('technique');
-      }
-    } else {
-      // Navigate to technique section
-      onSelectTab('technique');
-    }
+  const handleTechniqueClick = () => {
+    onSelectTab('technique');
+  };
+
+  const handleSetlistsClick = () => {
+    onSelectTab('sheet_music_setlists');
   };
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-lg select-none">
-      <div className="max-w-md mx-auto flex items-center justify-between h-16 px-4 gap-2">
-        {/* 1. Sheet Music / Setlist Tab Button */}
-        <button
-          type="button"
-          onClick={handleSheetClick}
-          className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all cursor-pointer ${
-            isSetlistsActive
-              ? 'text-[#0c4a6e] dark:text-sky-300 font-black bg-sky-100/80 dark:bg-sky-950/90 border border-sky-400/40 shadow-2xs'
-              : isSheetMusicSection
-              ? 'text-[#0c4a6e] dark:text-sky-300 font-black bg-sky-50/80 dark:bg-sky-950/80'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-          }`}
-        >
-          <div className="flex flex-col items-center">
-            {isSetlistsActive ? (
-              <ListMusic className="w-5 h-5 stroke-[2.5] text-[#0c4a6e] dark:text-sky-300" />
-            ) : (
-              <Music2 className={`w-5 h-5 ${isSheetMusicSection ? 'stroke-[2.5]' : 'stroke-2'}`} />
-            )}
-            <span className="text-[10px] tracking-wider font-extrabold uppercase mt-0.5 truncate">
-              {isSetlistsActive ? 'Setlists' : 'Music'}
-            </span>
-          </div>
-        </button>
+      <div className="max-w-md mx-auto flex items-center justify-between h-16 px-3 gap-2">
+        {/* LEFT SECTION (1fr): Section 1 - Sheets (Blue Sheet Music Note & Purple Graduation Cap icon buttons) */}
+        <div className="flex-1 grid grid-cols-2 gap-1.5 bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px]">
+          {/* Blue Button: Sheet Music Note Icon */}
+          <button
+            type="button"
+            onClick={handleSheetMusicClick}
+            className={`flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              isSheetMusicActive
+                ? 'bg-[#0c4a6e] dark:bg-sky-700 text-white font-black shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
+            }`}
+            title="Sheet Music Directory"
+            aria-label="Sheet Music"
+          >
+            <Music2 className={`w-5 h-5 ${isSheetMusicActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          </button>
 
-        {/* 2. Center Action: Add PDF Chart */}
+          {/* Purple Button: Graduation Cap Icon */}
+          <button
+            type="button"
+            onClick={handleTechniqueClick}
+            className={`flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              isTechniqueActive
+                ? 'bg-[#581c87] dark:bg-purple-800 text-white font-black shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
+            }`}
+            title="Technique Directory"
+            aria-label="Technique"
+          >
+            <GraduationCap className={`w-5 h-5 ${isTechniqueActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          </button>
+        </div>
+
+        {/* CENTER ACTION: Add PDF Chart (+) */}
         <button
           type="button"
           onClick={onAddPdf}
-          className={`p-3 rounded-2xl text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 mx-1 ${
-            isTechniqueSection
+          className={`p-3 rounded-2xl text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 mx-0.5 ${
+            isTechniqueActive
               ? 'bg-[#581c87] hover:bg-[#4a044e] dark:bg-purple-700 dark:hover:bg-purple-600 shadow-purple-900/20'
+              : isSetlistsActive
+              ? 'bg-zinc-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-700 shadow-zinc-900/20'
               : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600 shadow-sky-900/20'
           }`}
           title="Add PDF Chart"
+          aria-label="Add PDF Chart"
         >
-          <Plus className="w-6 h-6 stroke-[2.5]" />
+          <Plus className="w-5 h-5 stroke-[2.5]" />
         </button>
 
-        {/* 3. Technique / Routines Tab Button */}
-        <button
-          type="button"
-          onClick={handleTechClick}
-          className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all cursor-pointer ${
-            isRoutinesActive
-              ? 'text-purple-900 dark:text-purple-300 font-black bg-purple-100/80 dark:bg-purple-950/90 border border-purple-400/40 shadow-2xs'
-              : isTechniqueSection
-              ? 'text-purple-900 dark:text-purple-300 font-black bg-purple-50/80 dark:bg-purple-950/80'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-          }`}
-        >
-          <div className="flex flex-col items-center">
-            {isRoutinesActive ? (
-              <Flame className="w-5 h-5 stroke-[2.5] text-purple-900 dark:text-purple-300" />
-            ) : (
-              <GraduationCap className={`w-5 h-5 ${isTechniqueSection ? 'stroke-[2.5]' : 'stroke-2'}`} />
-            )}
-            <span className="text-[10px] tracking-wider font-extrabold uppercase mt-0.5 truncate">
-              {isRoutinesActive ? 'Routines' : 'Technique'}
-            </span>
-          </div>
-        </button>
+        {/* RIGHT SECTION (1fr): Section 2 - Practice Setlists Icon */}
+        <div className="flex-1 flex items-center justify-center bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px]">
+          {/* Charcoal Black Button: Practice Setlists Icon */}
+          <button
+            type="button"
+            onClick={handleSetlistsClick}
+            className={`w-full h-full flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              isSetlistsActive
+                ? 'bg-zinc-900 dark:bg-zinc-950 text-white font-black border border-zinc-700 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-slate-700/60'
+            }`}
+            title="Practice Setlists"
+            aria-label="Practice Setlists"
+          >
+            <ListMusic className={`w-5 h-5 ${isSetlistsActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          </button>
+        </div>
       </div>
     </nav>
   );

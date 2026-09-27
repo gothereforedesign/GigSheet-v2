@@ -38,6 +38,46 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   const [, setNumPages] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Landscape Orientation Clean View Mode
+  const [isLandscape, setIsLandscape] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(orientation: landscape)').matches;
+    }
+    return false;
+  });
+  const [showLandscapeOverlay, setShowLandscapeOverlay] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(orientation: landscape)');
+    const handleOrientationChange = () => {
+      const matches = mediaQuery.matches;
+      setIsLandscape(matches);
+      if (matches) {
+        setShowLandscapeOverlay(false);
+      }
+    };
+
+    handleOrientationChange();
+
+    try {
+      mediaQuery.addEventListener('change', handleOrientationChange);
+      return () => mediaQuery.removeEventListener('change', handleOrientationChange);
+    } catch {
+      mediaQuery.addListener(handleOrientationChange);
+      return () => mediaQuery.removeListener(handleOrientationChange);
+    }
+  }, []);
+
+  const isLandscapeClean = isLandscape && !showLandscapeOverlay;
+
+  const handleToggleLandscapeOverlay = () => {
+    if (isLandscape) {
+      setShowLandscapeOverlay((prev) => !prev);
+    }
+  };
+
   // Derive Category Brand Styling
   const section = song.section === 'technique' ? 'technique' : 'sheet_music';
   const isTechnique = section === 'technique';
@@ -209,9 +249,14 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   };
 
   return (
-    <div className="song-viewer-modal fixed inset-0 z-50 flex flex-col bg-slate-950 text-white w-screen h-screen overflow-hidden select-none">
-      {/* Top Header Bar */}
-      <header className={`song-viewer-header sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] bg-slate-950/90 border-b ${isTechnique ? 'border-purple-900/60' : 'border-slate-800/80'} backdrop-blur-md`}>
+    <div 
+      className={`song-viewer-modal fixed inset-0 z-50 flex flex-col bg-slate-950 text-white w-screen h-screen overflow-hidden select-none ${isLandscapeClean ? 'landscape-clean' : ''}`}
+      onClick={handleToggleLandscapeOverlay}
+    >
+      {/* Top Header Bar - Hidden in Landscape Clean mode */}
+      <header className={`song-viewer-header sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] bg-slate-950/90 border-b ${isTechnique ? 'border-purple-900/60' : 'border-slate-800/80'} backdrop-blur-md transition-all duration-200 ${
+        isLandscapeClean ? 'hidden' : 'flex'
+      }`}>
         {/* Item 1: Close Button + Chart Title */}
         <div className="flex items-center gap-2 max-w-[80vw] sm:max-w-md md:max-w-xl min-w-0">
           <button
@@ -294,6 +339,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               externalZoomControls={true}
               onNumPagesChange={setNumPages}
               isTechnique={isTechnique}
+              isLandscapeClean={isLandscapeClean}
             />
           ) : song.svgData ? (
             <div className="w-full h-full overflow-auto flex items-center justify-center p-4">
@@ -360,8 +406,10 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         </div>
       </main>
 
-      {/* Bottom Navigation & Performance Controls */}
-      <footer className="song-viewer-footer sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 pointer-events-none bg-transparent">
+      {/* Bottom Navigation & Performance Controls - Hidden in Landscape Clean mode */}
+      <footer className={`song-viewer-footer sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-2.5 sm:py-3 items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 pointer-events-none bg-transparent transition-all duration-200 ${
+        isLandscapeClean ? 'hidden' : 'flex'
+      }`}>
         {/* Item 3: Zoom Controls */}
         <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-700/80 p-1 rounded-md shadow-lg backdrop-blur-md pointer-events-auto shrink-0">
           <button

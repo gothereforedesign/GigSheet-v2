@@ -148,31 +148,13 @@ export const ALL_CATEGORY_PALETTES: Record<string, CategoryColorPalette> = {
   ...PURPLE_PALETTES,
 };
 
-// Default Sheet Music Categories
-export const DEFAULT_SHEET_MUSIC_CATEGORIES: string[] = [
-  'Hymns',
-  'Jazz',
-  'Gospel',
-  'Praise & Worship',
-  'Classical',
-  'Pop',
-  'Choral',
-  'General',
-];
+// Default Sheet Music Categories (start blank as requested)
+export const DEFAULT_SHEET_MUSIC_CATEGORIES: string[] = [];
 
 export const DEFAULT_SHEET_MUSIC_COLORS: Record<string, CategoryColorKey> = {};
 
-// Default Technique Categories
-export const DEFAULT_TECHNIQUE_CATEGORIES: string[] = [
-  'Scales',
-  'Arpeggios',
-  'Chords & Voicings',
-  'Hanon & Warmups',
-  'Sight Reading',
-  'Rhythm & Grooves',
-  'Etudes & Exercises',
-  'General Technique',
-];
+// Default Technique Categories (start blank as requested)
+export const DEFAULT_TECHNIQUE_CATEGORIES: string[] = [];
 
 export const DEFAULT_TECHNIQUE_COLORS: Record<string, CategoryColorKey> = {};
 

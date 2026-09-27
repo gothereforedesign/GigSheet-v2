@@ -21,14 +21,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCategoryManager,
   onOpenBackupModal,
 }) => {
-  const isTechnique = activeTab === 'technique' || activeTab === 'technique_routines';
-  const isSetlists = activeTab === 'sheet_music_setlists';
-  const isRoutines = activeTab === 'technique_routines';
+  const isTechnique = activeTab === 'technique';
+  const isSetlists = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
 
   const subtitle = isSetlists
-    ? 'Performance Setlists'
-    : isRoutines
-    ? 'Practice Routines'
+    ? 'Practice Setlists'
     : isTechnique
     ? 'Technique Directory'
     : activeTab === 'trash'
@@ -49,22 +46,18 @@ export const Header: React.FC<HeaderProps> = ({
           title="Return to Homescreen"
         >
           <div className={`p-1.5 text-white rounded-md shadow-2xs transition-colors group-hover:scale-105 ${
-            isRoutines
-              ? 'bg-[#581c87] dark:bg-purple-700'
-              : isSetlists
-              ? 'bg-[#0c4a6e] dark:bg-sky-700'
+            isSetlists
+              ? 'bg-indigo-700 dark:bg-indigo-600'
               : isTechnique
-              ? 'bg-purple-900 dark:bg-purple-700'
+              ? 'bg-[#581c87] dark:bg-purple-700'
               : 'bg-[#0c4a6e] dark:bg-sky-700'
           }`}>
             <Music className="w-4 h-4 stroke-[2.5]" />
           </div>
           <div>
             <h1 className={`text-base sm:text-lg font-black uppercase tracking-wider leading-none transition-colors ${
-              isRoutines
-                ? 'text-purple-900 dark:text-purple-300'
-                : isSetlists
-                ? 'text-[#0c4a6e] dark:text-sky-300'
+              isSetlists
+                ? 'text-indigo-900 dark:text-indigo-300'
                 : isTechnique
                 ? 'text-purple-900 dark:text-purple-300'
                 : 'text-[#0c4a6e] dark:text-sky-300'
@@ -73,9 +66,7 @@ export const Header: React.FC<HeaderProps> = ({
             </h1>
             <p className={`text-[9px] uppercase tracking-widest mt-0.5 transition-colors font-extrabold ${
               isSetlists
-                ? 'text-[#0c4a6e] dark:text-sky-300'
-                : isRoutines
-                ? 'text-purple-600 dark:text-purple-400'
+                ? 'text-indigo-600 dark:text-indigo-400'
                 : isTechnique
                 ? 'text-purple-600 dark:text-purple-400'
                 : 'text-slate-400 dark:text-slate-400'

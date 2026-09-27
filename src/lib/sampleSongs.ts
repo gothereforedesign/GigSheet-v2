@@ -1,60 +1,61 @@
 import { Song, Setlist } from '../types';
 
 export function createValidSamplePdf(title: string, subtitle: string, details: string, chords: string): string {
-  const contentStream = `BT
-/F1 22 Tf
-50 730 Td
-(${title}) Tj
-/F1 12 Tf
-0 -28 Td
-(${subtitle}) Tj
-0 -22 Td
-(${details}) Tj
-/F1 14 Tf
-0 -40 Td
-(CHORDS & LEAD SHEET:) Tj
-/F1 12 Tf
-0 -25 Td
-(${chords}) Tj
-ET`;
+  const sanitize = (str: string) =>
+    (str || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)')
+      .replace(/[^\x20-\x7E]/g, '');
 
-  const encoder = new TextEncoder();
-  const contentBytes = encoder.encode(contentStream);
-  const streamLen = contentBytes.length;
+  const safeTitle = sanitize(title);
+  const safeSubtitle = sanitize(subtitle);
+  const safeDetails = sanitize(details);
+  const safeChords = sanitize(chords);
 
-  let pdf = '%PDF-1.4\n';
+  const contentStream =
+    'BT\n' +
+    '/F1 22 Tf\n' +
+    '50 730 Td\n' +
+    '(' + safeTitle + ') Tj\n' +
+    '/F1 12 Tf\n' +
+    '0 -28 Td\n' +
+    '(' + safeSubtitle + ') Tj\n' +
+    '0 -22 Td\n' +
+    '(' + safeDetails + ') Tj\n' +
+    '/F1 14 Tf\n' +
+    '0 -40 Td\n' +
+    '(CHORDS & LEAD SHEET:) Tj\n' +
+    '/F1 12 Tf\n' +
+    '0 -25 Td\n' +
+    '(' + safeChords + ') Tj\n' +
+    'ET';
+
+  const streamLen = contentStream.length;
+
+  let body = '%PDF-1.4\n';
   const offsets: number[] = [0];
 
-  function getLen(str: string) {
-    return encoder.encode(str).length;
-  }
-
-  function addObj(str: string) {
-    offsets.push(getLen(pdf));
-    pdf += str + '\n';
+  function addObj(objStr: string) {
+    offsets.push(body.length);
+    body += objStr + '\n';
   }
 
   addObj('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj');
   addObj('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj');
   addObj('3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>\nendobj');
   addObj('4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj');
-  addObj(`5 0 obj\n<< /Length ${streamLen} >>\nstream\n${contentStream}\nendstream\nendobj`);
+  addObj('5 0 obj\n<< /Length ' + streamLen + ' >>\nstream\n' + contentStream + '\nendstream\nendobj');
 
-  const startXref = getLen(pdf);
-  let xref = `xref\n0 ${offsets.length}\n0000000000 65535 f \n`;
+  const startXref = body.length;
+  let xref = 'xref\n0 ' + offsets.length + '\n0000000000 65535 f \n';
   for (let i = 1; i < offsets.length; i++) {
     xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
   }
-  xref += `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${startXref}\n%%EOF`;
+  xref += 'trailer\n<< /Size ' + offsets.length + ' /Root 1 0 R >>\nstartxref\n' + startXref + '\n%%EOF';
 
-  pdf += xref;
-
-  const pdfBytes = encoder.encode(pdf);
-  let binStr = '';
-  for (let i = 0; i < pdfBytes.length; i++) {
-    binStr += String.fromCharCode(pdfBytes[i]);
-  }
-  const b64 = typeof btoa === 'function' ? btoa(binStr) : (globalThis as any).Buffer ? (globalThis as any).Buffer.from(pdfBytes).toString('base64') : '';
+  const fullPdf = body + xref;
+  const b64 = btoa(fullPdf);
   return 'data:application/pdf;base64,' + b64;
 }
 
@@ -93,212 +94,6 @@ const SAMPLE_PDF_MAJOR_SCALES = createValidSamplePdf(
   'C - D - E - F - G - A - B - C | Arpeggios: C - E - G - C'
 );
 
-export const BUNDLED_SAMPLE_SONGS: Song[] = [
-  // Original Library Songs (Sheet Music & Technique)
-  {
-    id: 'song_mighty_fortress',
-    title: 'A Mighty Fortress Is Our God',
-    artist: 'Martin Luther',
-    key: 'Cmaj',
-    originalKey: 'Cmaj',
-    tempo: 100,
-    timeSignature: '4/4',
-    meter: '8.7.8.7.6.6.6.6.7',
-    genre: 'Hymns',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 50000000,
-    fileBlob: SAMPLE_PDF_MIGHTY_FORTRESS as any,
-    fileUrl: SAMPLE_PDF_MIGHTY_FORTRESS,
-  },
-  {
-    id: 'song_autumn_leaves',
-    title: 'Autumn Leaves',
-    artist: 'Joseph Kosma',
-    key: 'Emin',
-    originalKey: 'Emin',
-    tempo: 120,
-    timeSignature: '4/4',
-    genre: 'Jazz',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 40000000,
-    fileBlob: SAMPLE_PDF_AUTUMN_LEAVES as any,
-    fileUrl: SAMPLE_PDF_AUTUMN_LEAVES,
-  },
-  {
-    id: 'song_fly_me',
-    title: 'Fly Me to the Moon',
-    artist: 'Bart Howard',
-    key: 'Cmaj',
-    originalKey: 'Cmaj',
-    tempo: 118,
-    timeSignature: '4/4',
-    genre: 'Jazz',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 30000000,
-    fileBlob: SAMPLE_PDF_FLY_ME as any,
-    fileUrl: SAMPLE_PDF_FLY_ME,
-  },
-  {
-    id: 'song_amazing_grace',
-    title: 'Amazing Grace',
-    artist: 'John Newton',
-    key: 'Gmaj',
-    originalKey: 'Gmaj',
-    tempo: 84,
-    timeSignature: '3/4',
-    meter: 'C.M.',
-    genre: 'Hymns',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 20000000,
-    fileBlob: SAMPLE_PDF_AMAZING_GRACE as any,
-    fileUrl: SAMPLE_PDF_AMAZING_GRACE,
-  },
-  {
-    id: 'song_major_scales',
-    title: 'Major Scales & Arpeggios',
-    artist: 'Technique Warmup',
-    key: 'Cmaj',
-    originalKey: 'Cmaj',
-    tempo: 140,
-    timeSignature: '4/4',
-    genre: 'Scales',
-    section: 'technique',
-    type: 'pdf',
-    dateAdded: Date.now() - 10000000,
-    fileBlob: SAMPLE_PDF_MAJOR_SCALES as any,
-    fileUrl: SAMPLE_PDF_MAJOR_SCALES,
-  },
+export const BUNDLED_SAMPLE_SONGS: Song[] = [];
 
-  // Duplicated Song Records for Default Setlists and Practice Routines
-  {
-    id: 'song_setlist_setlist_sunday_worship_song_mighty_fortress',
-    title: 'A Mighty Fortress Is Our God',
-    artist: 'Martin Luther',
-    key: 'Cmaj',
-    originalKey: 'Cmaj',
-    tempo: 100,
-    timeSignature: '4/4',
-    meter: '8.7.8.7.6.6.6.6.7',
-    genre: 'Hymns',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 10000000,
-    fileBlob: SAMPLE_PDF_MIGHTY_FORTRESS as any,
-    fileUrl: SAMPLE_PDF_MIGHTY_FORTRESS,
-    originalSongId: 'song_mighty_fortress',
-    setlistId: 'setlist_sunday_worship',
-    isSetlistDuplicate: true,
-  },
-  {
-    id: 'song_setlist_setlist_sunday_worship_song_amazing_grace',
-    title: 'Amazing Grace',
-    artist: 'John Newton',
-    key: 'Gmaj',
-    originalKey: 'Gmaj',
-    tempo: 84,
-    timeSignature: '3/4',
-    meter: 'C.M.',
-    genre: 'Hymns',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 10000000,
-    fileBlob: SAMPLE_PDF_AMAZING_GRACE as any,
-    fileUrl: SAMPLE_PDF_AMAZING_GRACE,
-    originalSongId: 'song_amazing_grace',
-    setlistId: 'setlist_sunday_worship',
-    isSetlistDuplicate: true,
-  },
-  {
-    id: 'song_setlist_setlist_jazz_gig_song_autumn_leaves',
-    title: 'Autumn Leaves',
-    artist: 'Joseph Kosma',
-    key: 'Emin',
-    originalKey: 'Emin',
-    tempo: 120,
-    timeSignature: '4/4',
-    genre: 'Jazz',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 5000000,
-    fileBlob: SAMPLE_PDF_AUTUMN_LEAVES as any,
-    fileUrl: SAMPLE_PDF_AUTUMN_LEAVES,
-    originalSongId: 'song_autumn_leaves',
-    setlistId: 'setlist_jazz_gig',
-    isSetlistDuplicate: true,
-  },
-  {
-    id: 'song_setlist_setlist_jazz_gig_song_fly_me',
-    title: 'Fly Me to the Moon',
-    artist: 'Bart Howard',
-    key: 'Cmaj',
-    originalKey: 'Cmaj',
-    tempo: 118,
-    timeSignature: '4/4',
-    genre: 'Jazz',
-    section: 'sheet_music',
-    type: 'pdf',
-    dateAdded: Date.now() - 5000000,
-    fileBlob: SAMPLE_PDF_FLY_ME as any,
-    fileUrl: SAMPLE_PDF_FLY_ME,
-    originalSongId: 'song_fly_me',
-    setlistId: 'setlist_jazz_gig',
-    isSetlistDuplicate: true,
-  },
-  {
-    id: 'song_setlist_routine_daily_warmup_song_major_scales',
-    title: 'Major Scales & Arpeggios',
-    artist: 'Technique Warmup',
-    key: 'Cmaj',
-    originalKey: 'Cmaj',
-    tempo: 140,
-    timeSignature: '4/4',
-    genre: 'Scales',
-    section: 'technique',
-    type: 'pdf',
-    dateAdded: Date.now() - 2000000,
-    fileBlob: SAMPLE_PDF_MAJOR_SCALES as any,
-    fileUrl: SAMPLE_PDF_MAJOR_SCALES,
-    originalSongId: 'song_major_scales',
-    setlistId: 'routine_daily_warmup',
-    isSetlistDuplicate: true,
-  },
-];
-
-export const BUNDLED_DEFAULT_SETLISTS: Setlist[] = [
-  {
-    id: 'setlist_sunday_worship',
-    name: 'Sunday Worship',
-    dateCreated: Date.now() - 10000000,
-    dateModified: Date.now() - 10000000,
-    type: 'sheet_music',
-    items: [
-      { songId: 'song_setlist_setlist_sunday_worship_song_mighty_fortress', notes: 'Opener hymn' },
-      { songId: 'song_setlist_setlist_sunday_worship_song_amazing_grace', notes: 'Refinement' },
-    ],
-  },
-  {
-    id: 'setlist_jazz_gig',
-    name: 'Jazz Standards Set',
-    dateCreated: Date.now() - 5000000,
-    dateModified: Date.now() - 5000000,
-    type: 'sheet_music',
-    items: [
-      { songId: 'song_setlist_setlist_jazz_gig_song_autumn_leaves', notes: 'Swing feel' },
-      { songId: 'song_setlist_setlist_jazz_gig_song_fly_me', notes: 'Up tempo' },
-    ],
-  },
-  {
-    id: 'routine_daily_warmup',
-    name: 'Daily Warmup Routine',
-    dateCreated: Date.now() - 2000000,
-    dateModified: Date.now() - 2000000,
-    type: 'technique',
-    items: [
-      { songId: 'song_setlist_routine_daily_warmup_song_major_scales', notes: '10 mins at 120 BPM' },
-    ],
-  },
-];
+export const BUNDLED_DEFAULT_SETLISTS: Setlist[] = [];

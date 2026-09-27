@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Song, ViewFilterState } from '../types';
 import { 
-  Music, Trash2, FolderEdit, ListPlus, ChevronLeft, FileText, LayoutList, LayoutGrid
+  Music, GraduationCap, Trash2, FolderEdit, ListPlus, ChevronLeft, FileText, LayoutList, LayoutGrid
 } from 'lucide-react';
 import { 
   CategoryColorKey, 
@@ -311,35 +311,51 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     <div className="space-y-4 pb-0">
       {/* VIEW 1: 2-COLUMN CATEGORY GRID (3:2 Aspect Ratio Cards with Cascading Color Progression) */}
       {showCategorySquaresGrid ? (
-        <div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-            {availableCategories.map((catName, index) => {
-              const palette = getCascadingCategoryPalette(index, availableCategories.length, section);
-              const count = categoryChartCounts[catName] || 0;
-
-              return (
-                <div
-                  key={catName}
-                  onClick={() => handleSetSelectedCategory(catName)}
-                  style={{
-                    backgroundColor: palette.cardBgHex,
-                    borderColor: palette.cardBorderHex,
-                  }}
-                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none hover:brightness-110 ${palette.cardText}`}
-                >
-                  {/* Subtle PDF count badge */}
-                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/25 text-white/95 backdrop-blur-xs border border-white/15 shadow-2xs">
-                    <span>{count}</span>
-                  </div>
-
-                  <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
-                    {catName}
-                  </h3>
-                </div>
-              );
-            })}
+        availableCategories.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white/60 dark:bg-slate-900/60 border border-dashed border-slate-300/80 dark:border-slate-800 rounded-xl space-y-3">
+            <div className={`p-3.5 rounded-2xl ${isTechnique ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300' : 'bg-sky-100 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300'}`}>
+              {isTechnique ? <GraduationCap className="w-8 h-8 stroke-[2]" /> : <Music className="w-8 h-8 stroke-[2]" />}
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                {isTechnique ? 'No Technique Categories' : 'No Sheet Music Categories'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+                Tap <span className="font-extrabold text-slate-700 dark:text-slate-300">+</span> below to add PDF charts, or tap <span className="font-extrabold text-slate-700 dark:text-slate-300">Edit</span> above to create categories.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              {availableCategories.map((catName, index) => {
+                const palette = getCascadingCategoryPalette(index, availableCategories.length, section);
+                const count = categoryChartCounts[catName] || 0;
+
+                return (
+                  <div
+                    key={catName}
+                    onClick={() => handleSetSelectedCategory(catName)}
+                    style={{
+                      backgroundColor: palette.cardBgHex,
+                      borderColor: palette.cardBorderHex,
+                    }}
+                    className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none hover:brightness-110 ${palette.cardText}`}
+                  >
+                    {/* Subtle PDF count badge */}
+                    <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/25 text-white/95 backdrop-blur-xs border border-white/15 shadow-2xs">
+                      <span>{count}</span>
+                    </div>
+
+                    <h3 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 ${palette.cardText}`}>
+                      {catName}
+                    </h3>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )
       ) : (
         /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED CATEGORY - UNIFIED CONTAINER WITH CATEGORY HUE TINT */
         <div

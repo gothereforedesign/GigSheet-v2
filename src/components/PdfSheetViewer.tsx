@@ -12,6 +12,7 @@ interface PdfSheetViewerProps {
   useNativeViewer?: boolean;
   onToggleNativeViewer?: (useNative: boolean) => void;
   isTechnique?: boolean;
+  isLandscapeClean?: boolean;
 }
 
 // Individual progressive page renderer component with canvas cancellation
@@ -155,6 +156,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   useNativeViewer: externalUseNativeViewer,
   onToggleNativeViewer,
   isTechnique = false,
+  isLandscapeClean = false,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -254,7 +256,8 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         return { buffer: freshBuffer, blobUrl: pdfData.startsWith('blob:') ? pdfData : URL.createObjectURL(blob) };
       }
       // Raw base64 string fallback
-      const binaryStr = window.atob(pdfData.trim());
+      const cleanB64 = pdfData.trim().replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '');
+      const binaryStr = window.atob(cleanB64);
       const bytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) {
         bytes[i] = binaryStr.charCodeAt(i);
@@ -313,8 +316,14 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
       } catch (err: any) {
         console.error('PDF Document load error:', err);
         if (!isCancelled) {
-          setError(err.message || 'Failed to load PDF document.');
-          setLoading(false);
+          if (localBlobUrl) {
+            console.info('Switching to native browser PDF viewer for invalid/non-standard PDF structure...');
+            setUseNativeViewer(true);
+            setLoading(false);
+          } else {
+            setError(err.message || 'Failed to load PDF document.');
+            setLoading(false);
+          }
         }
       }
     };
@@ -385,7 +394,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         </div>
       ) : (
         /* Main Scrollable Canvas Area */
-        <div ref={scrollContainerRef} className="pdf-sheet-scroll-container w-full h-full overflow-auto pt-2 pb-24 px-2">
+        <div ref={scrollContainerRef} className={`pdf-sheet-scroll-container w-full h-full overflow-auto ${isLandscapeClean ? 'p-1 py-1' : 'pt-2 pb-24 px-2'}`}>
           {loading && (
             <div className="no-print my-auto flex flex-col items-center justify-center p-8 bg-slate-900/80 rounded-2xl border border-slate-800 text-white text-center space-y-3 max-w-sm mx-auto shadow-2xl">
               <Loader2 className={`w-8 h-8 animate-spin ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
@@ -459,7 +468,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
       )}
 
       {/* Floating Zoom & Page Counter Bar (Shown if external controls are not used and not in embedded mode) */}
-      {!externalZoomControls && !useNativeViewer && (
+      {!externalZoomControls && !useNativeViewer && !isLandscapeClean && (
         <div className="floating-controls no-print absolute bottom-3 inset-x-0 z-30 flex items-center justify-center gap-2.5 px-3 max-w-lg mx-auto pointer-events-none">
           <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl px-2 py-1.5 shadow-2xl flex items-center gap-1.5 pointer-events-auto">
             <button

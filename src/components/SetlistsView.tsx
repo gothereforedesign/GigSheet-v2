@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Setlist, Song } from '../types';
 import { 
   Plus, ListMusic, Flame, Trash2, ChevronUp, ChevronDown, 
-  Music, Sparkles, X, ChevronLeft, LayoutList, LayoutGrid, FolderEdit, Search
+  Music, Sparkles, X, ChevronLeft, LayoutList, LayoutGrid, FolderEdit, Search, FileText
 } from 'lucide-react';
 import { 
   CategoryColorKey, 
@@ -46,14 +46,12 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
   const isTechnique = section === 'technique';
   const targetSection = isTechnique ? 'technique' : 'sheet_music';
 
-  // Filter setlists matching section
-  const sectionSetlists = setlists.filter(
-    (s) => (s.type || 'sheet_music') === targetSection
-  );
+  // Show all setlists in Practice view
+  const sectionSetlists = setlists;
 
-  // Filter songs matching section (exclude setlist duplicates for picker)
+  // Filter songs matching section or all songs for setlist song picker (exclude duplicates)
   const sectionSongs = allSongs.filter(
-    (s) => (s.section || 'sheet_music') === targetSection && !s.isSetlistDuplicate && !s.setlistId
+    (s) => !s.isSetlistDuplicate && !s.setlistId
   );
 
   const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
@@ -126,105 +124,95 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
   return (
     <div className="space-y-4 pb-0">
-      {/* VIEW 1: 2-COLUMN CATEGORY GRID (Matches Sheet Music / Technique Category View) */}
+      {/* VIEW 1: 2-COLUMN CATEGORY GRID IN SHADES OF BLACK AND GRAY */}
       {!selectedSetlistId ? (
-        <div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-            {sectionSetlists.map((setlist) => {
-              const palette = getCategoryPalette(setlist.name, genreColors, section);
-              const count = setlist.items.length;
-
-              return (
-                <div
-                  key={setlist.id}
-                  onClick={() => setSelectedSetlistId(setlist.id)}
-                  className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${
-                    isTechnique
-                      ? 'bg-gradient-to-br from-[#581c87] to-[#3b0764] border-[#7c3aed]/50 hover:border-[#a78bfa]'
-                      : 'bg-gradient-to-br from-[#0c4a6e] to-[#0f172a] border-[#0284c7]/50 hover:border-[#38bdf8]'
-                  }`}
-                >
-                  {/* Category Accent Badge (Sky/Blue for Setlists, Purple/Violet for Routines) */}
-                  <div className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-black tracking-tight border shadow-xs backdrop-blur-xs flex items-center gap-1 ${
-                    isTechnique
-                      ? 'bg-purple-950/80 text-purple-200 border-purple-400/40'
-                      : 'bg-sky-950/80 text-sky-200 border-sky-400/40'
-                  }`}>
-                    {isTechnique ? (
-                      <Flame className="w-2.5 h-2.5 text-purple-300 stroke-[2.5]" />
-                    ) : (
-                      <ListMusic className="w-2.5 h-2.5 text-sky-300 stroke-[2.5]" />
-                    )}
-                    <span>{count}</span>
-                  </div>
-
-                  <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 text-white">
-                    {setlist.name}
-                  </h3>
-                </div>
-              );
-            })}
-
-            {/* "+ Create Setlist / Routine" Card in the Grid */}
-            <div
-              onClick={() => setIsCreating(true)}
-              className="relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-900/80 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all select-none shadow-2xs hover:shadow-xs active:scale-[0.99]"
-            >
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-1.5 text-white shadow-xs ${
-                isTechnique ? 'bg-[#581c87] dark:bg-purple-700' : 'bg-[#0c4a6e] dark:bg-sky-700'
-              }`}>
-                <Plus className="w-6 h-6 stroke-[2.5]" />
-              </div>
-              <span className="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                New {isTechnique ? 'Routine' : 'Setlist'}
-              </span>
+        sectionSetlists.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white/60 dark:bg-zinc-900/60 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-xl space-y-3">
+            <div className="p-3.5 rounded-2xl bg-zinc-900 text-zinc-100 border border-zinc-700 shadow-md">
+              <ListMusic className="w-8 h-8 stroke-[2]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100">
+                No Practice Setlists
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm">
+                Tap <span className="font-extrabold text-zinc-700 dark:text-zinc-300">+</span> below to add PDF charts, or tap <span className="font-extrabold text-zinc-700 dark:text-zinc-300">Edit</span> above to create setlists.
+              </p>
             </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              {sectionSetlists.map((setlist, idx) => {
+                const count = setlist.items.length;
+                const isEven = idx % 2 === 0;
+
+                return (
+                  <div
+                    key={setlist.id}
+                    onClick={() => setSelectedSetlistId(setlist.id)}
+                    className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${
+                      isEven
+                        ? 'bg-gradient-to-br from-[#18181b] via-[#111113] to-[#09090b] border-[#27272a] hover:border-[#52525b]'
+                        : 'bg-gradient-to-br from-[#27272a] via-[#1c1c20] to-[#18181b] border-[#3f3f46] hover:border-[#71717a]'
+                    }`}
+                  >
+                    {/* Category Accent Badge */}
+                    <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/50 text-zinc-200 border border-zinc-700/80 shadow-2xs flex items-center gap-1">
+                      <ListMusic className="w-3 h-3 text-zinc-300 stroke-[2.5]" />
+                      <span>{count}</span>
+                    </div>
+
+                    <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 text-zinc-100">
+                      {setlist.name}
+                    </h3>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )
       ) : (
         /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED SETLIST / ROUTINE - UNIFIED CONTAINER */
         activeSetlist && (
           <div
             style={{
               backgroundColor: isDarkMode
-                ? (isTechnique ? 'rgba(24, 17, 39, 0.96)' : 'rgba(10, 29, 47, 0.96)')
-                : (isTechnique ? 'rgba(124, 58, 237, 0.055)' : 'rgba(2, 132, 199, 0.055)'),
+                ? 'rgba(24, 24, 27, 0.96)'
+                : 'rgba(24, 24, 27, 0.04)',
               borderColor: isDarkMode
-                ? (isTechnique ? 'rgba(168, 85, 247, 0.22)' : 'rgba(56, 189, 248, 0.22)')
-                : (isTechnique ? 'rgba(124, 58, 237, 0.18)' : 'rgba(2, 132, 199, 0.18)'),
+                ? 'rgba(63, 63, 70, 0.4)'
+                : 'rgba(39, 39, 42, 0.15)',
             }}
             className="rounded-lg md:rounded-xl border p-3 sm:p-4.5 shadow-2xs space-y-3 transition-colors"
           >
             {/* Top Bar Navigation */}
-            <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800">
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60 dark:border-zinc-800">
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
                 {/* Back Arrow Button */}
                 <button
                   type="button"
                   onClick={() => setSelectedSetlistId(null)}
-                  className="p-1.5 text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
-                  title={`Back to ${isTechnique ? 'Routines' : 'Setlists'}`}
+                  className="p-1.5 text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-800 hover:bg-white dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                  title="Back to Setlists"
                 >
                   <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
                 </button>
 
                 {/* Category / Setlist Title Badge + Category Editor Button */}
-                <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                <div className="flex items-center gap-2 bg-white/95 dark:bg-zinc-800 border border-slate-200/90 dark:border-zinc-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs"
-                    style={{
-                      backgroundColor: isTechnique ? '#9333ea' : '#0284c7'
-                    }}
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs bg-zinc-900 dark:bg-zinc-200"
                   />
-                  <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate max-w-[120px] sm:max-w-[200px]">
+                  <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-zinc-100 truncate max-w-[120px] sm:max-w-[200px]">
                     {activeSetlist.name}
                   </h2>
                   {onOpenGenreManager && (
                     <button
                       type="button"
                       onClick={onOpenGenreManager}
-                      className="p-0.5 rounded-xs text-slate-400 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shrink-0"
-                      title="Edit Categories"
+                      className="p-0.5 rounded-xs text-slate-400 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 cursor-pointer shrink-0"
+                      title="Edit Setlists"
                     >
                       <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
                     </button>
@@ -232,11 +220,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 </div>
 
                 {/* Section Count Badge */}
-                <div className={`inline-flex items-center justify-center border px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center ${
-                  isTechnique
-                    ? 'bg-white/80 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                    : 'bg-white/80 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-200 dark:border-sky-800'
-                }`} title={`${activeSetlist.items.length} Charts`}>
+                <div className="inline-flex items-center justify-center border px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center bg-white/80 dark:bg-zinc-950/80 text-zinc-900 dark:text-zinc-200 border-zinc-300 dark:border-zinc-700" title={`${activeSetlist.items.length} Charts`}>
                   <span>{activeSetlist.items.length}</span>
                 </div>
               </div>
