@@ -170,7 +170,7 @@ export function getStoredCategories(section: 'sheet_music' | 'technique'): strin
     const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed.map((g) => String(g).trim()).filter(Boolean);
       }
     }
@@ -233,7 +233,7 @@ export async function hydrateCategoriesFromCloud(section: 'sheet_music' | 'techn
   try {
     const cloudConfig = await fetchCategoriesFromCloud(section);
     if (cloudConfig) {
-      if (cloudConfig.categories && cloudConfig.categories.length > 0) {
+      if (Array.isArray(cloudConfig.categories)) {
         saveStoredCategories(section, cloudConfig.categories);
       }
       if (cloudConfig.colors) {

@@ -479,7 +479,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
       {/* CREATE NEW SETLIST / ROUTINE MODAL */}
       {isCreating && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-start justify-center p-3 sm:p-4 pt-4 sm:pt-8 md:pt-12">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
@@ -556,8 +556,8 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
       {/* ADD CHART TO SETLIST PICKER MODAL */}
       {showAddSongPicker && activeSetlist && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-5 space-y-3 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-start justify-center p-3 sm:p-4 pt-4 sm:pt-8 md:pt-12">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-4 sm:p-5 space-y-3 flex flex-col max-h-[75vh] sm:max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
               <div className="flex items-center gap-2">
                 <Plus className={`w-5 h-5 ${isTechnique ? 'text-purple-900 dark:text-purple-400' : 'text-[#0c4a6e] dark:text-sky-400'}`} />

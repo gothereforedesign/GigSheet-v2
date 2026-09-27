@@ -504,7 +504,11 @@ export async function deleteSong(id: string): Promise<void> {
     tx.objectStore('song_blobs').delete(id),
     tx.done
   ]);
-  deleteSongFromCloud(id).catch(() => {});
+  try {
+    await deleteSongFromCloud(id);
+  } catch (err) {
+    console.warn(`Failed to delete song ${id} from cloud:`, err);
+  }
 }
 
 export async function deleteSongsBatch(ids: string[]): Promise<void> {
@@ -571,9 +575,19 @@ export async function getAllSetlists(): Promise<Setlist[]> {
   
   try {
     const cloudSetlists = await fetchSetlistsFromCloud();
-    if (cloudSetlists && cloudSetlists.length > 0) {
+    if (cloudSetlists && Array.isArray(cloudSetlists)) {
       const tx = db.transaction('setlists', 'readwrite');
       const store = tx.objectStore('setlists');
+      const localSetlists = await store.getAll();
+      const cloudIds = new Set(cloudSetlists.map((s) => s.id));
+
+      // Remove any local setlists deleted from Cloud
+      for (const local of localSetlists) {
+        if (!cloudIds.has(local.id)) {
+          store.delete(local.id);
+        }
+      }
+
       for (const sl of cloudSetlists) {
         store.put(sl);
       }
@@ -601,7 +615,11 @@ export async function saveSetlist(setlist: Setlist): Promise<void> {
 export async function deleteSetlist(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('setlists', id);
-  deleteSetlistFromCloud(id).catch(() => {});
+  try {
+    await deleteSetlistFromCloud(id);
+  } catch (err) {
+    console.warn(`Failed to delete setlist ${id} from cloud:`, err);
+  }
 }
 
 // SETTINGS operations
