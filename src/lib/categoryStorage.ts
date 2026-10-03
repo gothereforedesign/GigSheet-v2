@@ -62,16 +62,16 @@ export function getCascadingCategoryPalette(
   let borderR: number, borderG: number, borderB: number;
 
   if (section === 'technique') {
-    // Purple spectrum: from Electric Violet (lightest purple) to Deep Midnight Plum (darkest purple)
-    // Start (t=0.0): rgb(124, 58, 237) -> #7c3aed
-    // End (t=1.0):   rgb(30, 7, 56)    -> #1e0738
-    r = Math.round(124 + t * (30 - 124));
-    g = Math.round(58 + t * (7 - 58));
-    b = Math.round(237 + t * (56 - 237));
+    // Purple spectrum: from Vibrant Lavender Purple (#a855f7) to Deep Royal Purple (#3b0764)
+    // Start (t=0.0): rgb(168, 85, 247) -> #a855f7
+    // End (t=1.0):   rgb(59, 7, 100)   -> #3b0764
+    r = Math.round(168 + t * (59 - 168));
+    g = Math.round(85 + t * (7 - 85));
+    b = Math.round(247 + t * (100 - 247));
 
     borderR = Math.min(255, Math.round(r * 1.15 + 20));
-    borderG = Math.min(255, Math.round(g * 1.1 + 15));
-    borderB = Math.min(255, Math.round(b * 1.1 + 25));
+    borderG = Math.min(255, Math.round(g * 1.2 + 15));
+    borderB = Math.min(255, Math.round(b * 1.15 + 25));
   } else {
     // Blue spectrum: from Vibrant Sky Azure (lightest blue) to Deep Midnight Navy (darkest blue)
     // Start (t=0.0): rgb(2, 132, 199)  -> #0284c7

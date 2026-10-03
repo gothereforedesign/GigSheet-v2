@@ -98,7 +98,7 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, genres = DEF
               onClick={() => setSection('technique')}
               className={`py-1.5 px-2 rounded-xs text-xs font-bold uppercase cursor-pointer whitespace-nowrap transition-all ${
                 section === 'technique'
-                  ? 'bg-purple-900 dark:bg-purple-700 text-white shadow-2xs'
+                  ? 'bg-purple-800 dark:bg-purple-700 text-white shadow-2xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -109,8 +109,10 @@ export const EditSongModal: React.FC<EditSongModalProps> = ({ song, genres = DEF
 
         <button
           type="submit"
-          className={`w-full py-2.5 text-white rounded-sm font-bold text-xs uppercase tracking-wider cursor-pointer active:scale-98 shadow-2xs flex items-center justify-center gap-1.5 mt-4 whitespace-nowrap transition-all ${
-            isTechnique ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
+          className={`w-full py-2.5 rounded-sm font-bold text-xs uppercase tracking-wider cursor-pointer active:scale-98 shadow-2xs flex items-center justify-center gap-1.5 mt-4 whitespace-nowrap transition-all ${
+            isTechnique 
+              ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600 text-white' 
+              : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600 text-white'
           }`}
         >
           <Save className="w-3.5 h-3.5" />

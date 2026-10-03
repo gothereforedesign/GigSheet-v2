@@ -78,7 +78,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
         {/* Header */}
         <div
           className={`px-5 py-4 flex items-center justify-between text-white ${
-            isTechnique ? 'bg-purple-900 dark:bg-purple-800' : 'bg-[#0c4a6e] dark:bg-sky-800'
+            isTechnique ? 'bg-purple-900 dark:bg-purple-950 border-b border-purple-800' : 'bg-[#0c4a6e] dark:bg-sky-800'
           }`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
@@ -117,7 +117,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
                 type="button"
                 onClick={() => setIsCreatingInline(true)}
                 className={`text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg text-white transition-all cursor-pointer ${
-                  isTechnique ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
+                  isTechnique ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
                 }`}
               >
                 + Create First {isTechnique ? 'Routine' : 'Setlist'}
@@ -135,7 +135,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
                     className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
                       isChecked
                         ? isTechnique
-                          ? 'bg-purple-50 dark:bg-purple-950/70 border-purple-300 dark:border-purple-700 text-purple-950 dark:text-purple-200 shadow-2xs font-black'
+                          ? 'bg-purple-50 dark:bg-purple-950/70 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-2xs font-black'
                           : 'bg-sky-50 dark:bg-sky-950/70 border-sky-300 dark:border-sky-700 text-[#0c4a6e] dark:text-sky-200 shadow-2xs font-black'
                         : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-200 font-bold'
                     }`}
@@ -153,7 +153,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
                       className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
                         isChecked
                           ? isTechnique
-                            ? 'bg-purple-900 dark:bg-purple-600 border-purple-900 dark:border-purple-600 text-white'
+                            ? 'bg-purple-800 dark:bg-purple-600 border-purple-800 dark:border-purple-600 text-white'
                             : 'bg-[#0c4a6e] dark:bg-sky-600 border-[#0c4a6e] dark:border-sky-600 text-white'
                           : 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800'
                       }`}
@@ -185,7 +185,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
                 <button
                   type="submit"
                   className={`px-3 py-2 text-white rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer ${
-                    isTechnique ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
+                    isTechnique ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
                   }`}
                 >
                   Add
@@ -205,7 +205,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
                 type="button"
                 onClick={() => setIsCreatingInline(true)}
                 className={`w-full text-left py-2 px-1 text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-colors ${
-                  isTechnique ? 'text-purple-600 dark:text-purple-400 hover:text-purple-800' : 'text-sky-600 dark:text-sky-400 hover:text-sky-800'
+                  isTechnique ? 'text-purple-700 dark:text-purple-300 hover:text-purple-950 dark:hover:text-purple-100' : 'text-sky-600 dark:text-sky-400 hover:text-sky-800'
                 }`}
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -233,7 +233,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
               onClick={handleDone}
               disabled={isSubmitting}
               className={`px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-md ${
-                isTechnique ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
+                isTechnique ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
               }`}
             >
               {isSubmitting ? 'Saving...' : 'Done'}

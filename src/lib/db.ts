@@ -633,3 +633,44 @@ export async function setSetting<T>(key: string, value: T): Promise<void> {
   const db = await getDB();
   await db.put('settings', value, key);
 }
+
+/**
+ * Completely resets and wipes all local databases, localStorage, sessionStorage, and caches
+ * returning the application to a pristine factory state.
+ */
+export async function resetEntireApp(): Promise<void> {
+  try {
+    const db = await getDB();
+    db.close();
+  } catch (err) {
+    console.warn('Error closing IndexedDB instance:', err);
+  }
+  dbPromise = null;
+
+  try {
+    indexedDB.deleteDatabase(DB_NAME);
+  } catch (err) {
+    console.warn('Error deleting IndexedDB database:', err);
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+
+  if (typeof caches !== 'undefined') {
+    try {
+      const keys = await caches.keys();
+      for (const key of keys) {
+        await caches.delete(key);
+      }
+    } catch (err) {
+      console.warn('Error purging cache storage:', err);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.location.hash = '#sheet_music';
+    window.location.reload();
+  }
+}

@@ -6,6 +6,7 @@ interface BottomDrawerProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  section?: 'sheet_music' | 'technique' | 'trash' | 'setlist';
   maxWidthClass?: string;
   closeDisabled?: boolean;
 }
@@ -15,6 +16,7 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
   onClose,
   title,
   children,
+  section = 'sheet_music',
   maxWidthClass = 'max-w-md',
   closeDisabled = false,
 }) => {
@@ -37,7 +39,7 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 backdrop-blur-xs p-0 sm:p-4 transition-all">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/50 backdrop-blur-xs p-3 sm:p-4 pt-4 sm:pt-8 md:pt-12 transition-all">
       {/* Backdrop Click */}
       <div 
         className="absolute inset-0" 
@@ -47,11 +49,19 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
 
       {/* Drawer Container */}
       <div 
-        className={`relative w-full ${maxWidthClass} bg-white dark:bg-slate-900 rounded-t-xl sm:rounded-xl p-5 pb-8 sm:p-6 shadow-2xl border-t sm:border border-slate-200/90 dark:border-slate-800 max-h-[88vh] overflow-y-auto z-10 transition-transform duration-300 animate-in slide-in-from-bottom`}
+        className={`relative w-full ${maxWidthClass} bg-white dark:bg-slate-900 rounded-2xl p-5 pb-6 sm:p-6 shadow-2xl border border-slate-200/90 dark:border-slate-800 max-h-[85vh] overflow-y-auto z-10 animate-in fade-in zoom-in-95 duration-150`}
       >
         {/* Drawer Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-          <h3 className="text-sm font-black uppercase tracking-wider text-[#0c4a6e] dark:text-sky-300">
+          <h3 className={`text-sm font-black uppercase tracking-wider ${
+            section === 'technique'
+              ? 'text-purple-900 dark:text-purple-300'
+              : section === 'setlist'
+              ? 'text-zinc-900 dark:text-zinc-100'
+              : section === 'trash'
+              ? 'text-rose-900 dark:text-rose-300'
+              : 'text-[#0c4a6e] dark:text-sky-300'
+          }`}>
             {title}
           </h3>
           {!closeDisabled && (

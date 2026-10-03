@@ -141,12 +141,12 @@ const SongRow: React.FC<SongRowProps> = ({
         className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-md px-4 py-3 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs cursor-pointer group ${
           isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         } ${
-          isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
+          isTechnique ? 'hover:border-zinc-500 dark:hover:border-zinc-400' : 'hover:border-sky-400 dark:hover:border-sky-500'
         }`}
       >
         <div className="min-w-0 flex-1">
           <h3 className={`text-sm font-bold text-slate-900 dark:text-slate-100 truncate transition-colors leading-tight ${
-            isTechnique ? 'group-hover:text-purple-900 dark:group-hover:text-purple-300' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
+            isTechnique ? 'group-hover:text-zinc-900 dark:group-hover:text-zinc-100' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
           }`}>
             {song.title}
           </h3>
@@ -313,7 +313,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       {showCategorySquaresGrid ? (
         availableCategories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white/60 dark:bg-slate-900/60 border border-dashed border-slate-300/80 dark:border-slate-800 rounded-xl space-y-3">
-            <div className={`p-3.5 rounded-2xl ${isTechnique ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300' : 'bg-sky-100 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300'}`}>
+            <div className={`p-3.5 rounded-2xl ${isTechnique ? 'bg-zinc-900 text-zinc-100 border border-zinc-700' : 'bg-sky-100 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300'}`}>
               {isTechnique ? <GraduationCap className="w-8 h-8 stroke-[2]" /> : <Music className="w-8 h-8 stroke-[2]" />}
             </div>
             <div className="space-y-1">

@@ -37,6 +37,7 @@ import { UploadModal } from './components/UploadModal';
 import { EditSongModal } from './components/EditSongModal';
 import { CategoryManagerModal } from './components/CategoryManagerModal';
 import { BackupModal } from './components/BackupModal';
+import { NotesModal } from './components/NotesModal';
 import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
 import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
@@ -170,12 +171,38 @@ export default function App() {
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState<boolean>(false);
   const [isBackupOpen, setIsBackupOpen] = useState<boolean>(false);
+  const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [initialFilesForUpload, setInitialFilesForUpload] = useState<File[] | null>(null);
   const [songToEdit, setSongToEdit] = useState<Song | null>(null);
   const [isSavingSongs, setIsSavingSongs] = useState<boolean>(false);
   const [isGlobalDragging, setIsGlobalDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef<number>(0);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Randomizer handler: picks a random PDF from the current section (sheet_music or technique)
+  const handleRandomizePdf = () => {
+    const activeSection = (activeTab === 'technique' || activeTab === 'technique_routines') ? 'technique' : 'sheet_music';
+    const availableSongs = songs.filter((s) => {
+      if (s.deletedAt) return false;
+      if (activeSection === 'technique') return s.section === 'technique';
+      return s.section !== 'technique';
+    });
+
+    if (availableSongs.length === 0) {
+      showToast(`No PDF charts in ${activeSection === 'technique' ? 'Technique' : 'Sheet Music'} section.`);
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * availableSongs.length);
+    const randomSong = availableSongs[randomIndex];
+    handleOpenSongViewer(randomSong);
+  };
 
   // Load IndexedDB Data on Mount
   const loadSongs = async () => {
@@ -902,11 +929,15 @@ export default function App() {
   const handleAddCategory = (
     newCategoryName: string, 
     color?: CategoryColorKey,
-    targetSection?: 'sheet_music' | 'technique'
+    targetSection?: 'sheet_music' | 'technique' | 'setlists'
   ) => {
     const trimmed = newCategoryName.trim();
     if (!trimmed) return;
-    const activeSection = targetSection || section;
+    if (targetSection === 'setlists') {
+      handleCreateSetlist(trimmed, undefined, section);
+      return;
+    }
+    const activeSection = targetSection === 'technique' ? 'technique' : 'sheet_music';
     const list = activeSection === 'technique' ? techniqueCategories : sheetMusicCategories;
     const colorList = activeSection === 'technique' ? techniqueColors : sheetMusicColors;
 
@@ -929,8 +960,13 @@ export default function App() {
     }
   };
 
-  const handleReorderCategories = (reordered: string[]) => {
-    if (section === 'technique') {
+  const handleReorderCategories = (reordered: string[], targetSection?: 'sheet_music' | 'technique' | 'setlists') => {
+    if (targetSection === 'setlists') {
+      handleReorderSetlists(reordered);
+      return;
+    }
+    const activeSection = targetSection === 'technique' ? 'technique' : 'sheet_music';
+    if (activeSection === 'technique') {
       setTechniqueCategories(reordered);
       saveStoredCategories('technique', reordered);
     } else {
@@ -972,20 +1008,36 @@ export default function App() {
     }
   };
 
-  const handleRenameCategory = async (oldCategoryName: string, newCategoryName: string) => {
+  const handleRenameCategory = async (oldCategoryName: string, newCategoryName: string, targetSection?: 'sheet_music' | 'technique' | 'setlists') => {
     const trimmed = newCategoryName.trim();
     if (!trimmed) return;
 
-    const updatedCategories = currentCategories.map((g) => (g === oldCategoryName ? trimmed : g));
+    if (targetSection === 'setlists') {
+      const target = setlists.find((s) => s.name === oldCategoryName);
+      if (target) {
+        await handleUpdateSetlist({
+          ...target,
+          name: trimmed,
+          dateModified: Date.now(),
+        });
+      }
+      return;
+    }
+
+    const activeSection = targetSection === 'technique' ? 'technique' : 'sheet_music';
+    const categoriesList = activeSection === 'technique' ? techniqueCategories : sheetMusicCategories;
+    const colorsList = activeSection === 'technique' ? techniqueColors : sheetMusicColors;
+
+    const updatedCategories = categoriesList.map((g) => (g === oldCategoryName ? trimmed : g));
     const uniqueCategories = Array.from(new Set<string>(updatedCategories));
 
-    const updatedColors = { ...currentCategoryColors };
+    const updatedColors = { ...colorsList };
     if (updatedColors[oldCategoryName]) {
       updatedColors[trimmed] = updatedColors[oldCategoryName];
       delete updatedColors[oldCategoryName];
     }
 
-    if (section === 'technique') {
+    if (activeSection === 'technique') {
       setTechniqueCategories(uniqueCategories);
       setTechniqueColors(updatedColors);
       saveStoredCategories('technique', uniqueCategories);
@@ -998,10 +1050,10 @@ export default function App() {
     }
 
     // Update songs matching old category spelling
-    const defaultCat = section === 'technique' ? 'Scales' : 'Hymns';
+    const defaultCat = activeSection === 'technique' ? 'Scales' : 'Hymns';
     const affected = songs.filter((s) => {
-      if (section === 'technique' && s.section !== 'technique') return false;
-      if (section === 'sheet_music' && s.section === 'technique') return false;
+      if (activeSection === 'technique' && s.section !== 'technique') return false;
+      if (activeSection === 'sheet_music' && s.section === 'technique') return false;
       return (s.genre || defaultCat) === oldCategoryName;
     });
 
@@ -1017,16 +1069,36 @@ export default function App() {
     }
   };
 
-  const handleDeleteCategory = async (categoryToDelete: string) => {
-    if (selectedCategory === categoryToDelete) {
+  const handleDeleteCategory = async (categoryToDelete: string, targetSection?: 'sheet_music' | 'technique' | 'setlists') => {
+    const trimmedTarget = categoryToDelete.trim();
+    if (!trimmedTarget) return;
+
+    if (targetSection === 'setlists') {
+      const target = setlists.find((s) => s.name.trim().toLowerCase() === trimmedTarget.toLowerCase());
+      if (target) {
+        await handleDeleteSetlist(target.id);
+      }
+      return;
+    }
+
+    const activeSection = targetSection === 'technique' ? 'technique' : 'sheet_music';
+    const categoriesList = activeSection === 'technique' ? techniqueCategories : sheetMusicCategories;
+    const colorsList = activeSection === 'technique' ? techniqueColors : sheetMusicColors;
+
+    if (selectedCategory && selectedCategory.trim().toLowerCase() === trimmedTarget.toLowerCase()) {
       setSelectedCategory(null);
     }
-    const updatedCategories = currentCategories.filter((g) => g !== categoryToDelete);
 
-    const updatedColors = { ...currentCategoryColors };
-    delete updatedColors[categoryToDelete];
+    const updatedCategories = categoriesList.filter((g) => g.trim().toLowerCase() !== trimmedTarget.toLowerCase());
 
-    if (section === 'technique') {
+    const updatedColors = { ...colorsList };
+    Object.keys(updatedColors).forEach((key) => {
+      if (key.trim().toLowerCase() === trimmedTarget.toLowerCase()) {
+        delete updatedColors[key];
+      }
+    });
+
+    if (activeSection === 'technique') {
       setTechniqueCategories(updatedCategories);
       setTechniqueColors(updatedColors);
       saveStoredCategories('technique', updatedCategories);
@@ -1040,17 +1112,19 @@ export default function App() {
 
     // Move any active songs in this deleted category directly to Trash
     const now = Date.now();
-    const defaultCat = section === 'technique' ? 'Scales' : 'Hymns';
+    const defaultCat = activeSection === 'technique' ? 'Scales' : 'Hymns';
     const affected = songs.filter((s) => {
       if (s.deletedAt) return false;
-      if (section === 'technique' && s.section !== 'technique') return false;
-      if (section === 'sheet_music' && s.section === 'technique') return false;
-      return (s.genre || defaultCat) === categoryToDelete;
+      if (activeSection === 'technique' && s.section !== 'technique') return false;
+      if (activeSection === 'sheet_music' && s.section === 'technique') return false;
+      const songCatNorm = (s.genre || defaultCat).trim().toLowerCase();
+      return songCatNorm === trimmedTarget.toLowerCase();
     });
 
     if (affected.length > 0) {
       const updatedSongs = affected.map((s) => ({
         ...s,
+        genre: '', // clear genre so category won't resurrect
         deletedAt: now,
         dateModified: now,
       }));
@@ -1181,6 +1255,7 @@ export default function App() {
     return (
       <SongViewerModal
         song={activeSongForViewer}
+        activeTab={activeTab}
         onClose={handleCloseSongViewer}
         onAddToSetlist={(s) => setSongForAddToSetlist(s)}
         onSaveSong={handleUpdateSong}
@@ -1195,13 +1270,12 @@ export default function App() {
     if (isDarkMode) {
       switch (activeTab) {
         case 'sheet_music':
-          return 'bg-slate-950 text-slate-100';
-        case 'sheet_music_setlists':
           return 'bg-[#071d2c] text-slate-100';
         case 'technique':
-          return 'bg-[#130d1d] text-slate-100';
+          return 'bg-[#18092b] text-slate-100';
+        case 'sheet_music_setlists':
         case 'technique_routines':
-          return 'bg-[#1d0e2c] text-slate-100';
+          return 'bg-black text-slate-100';
         case 'trash':
           return 'bg-[#1c0d11] text-slate-100';
         default:
@@ -1210,15 +1284,14 @@ export default function App() {
     } else {
       switch (activeTab) {
         case 'sheet_music':
-          return 'bg-slate-50 text-slate-900';
-        case 'sheet_music_setlists':
           return 'bg-[#f0f7fc] text-slate-900';
         case 'technique':
-          return 'bg-[#fbf7fd] text-slate-900';
+          return 'bg-purple-50/70 text-slate-900';
+        case 'sheet_music_setlists':
         case 'technique_routines':
-          return 'bg-[#f5ecfc] text-slate-900';
+          return 'bg-zinc-100/90 text-slate-900';
         case 'trash':
-          return 'bg-rose-50/50 text-slate-900';
+          return 'bg-rose-50/60 text-slate-900';
         default:
           return 'bg-slate-50 text-slate-900';
       }
@@ -1230,17 +1303,21 @@ export default function App() {
       {/* Fullscreen Global Drag & Drop Target Overlay */}
       {isGlobalDragging && (
         <div className={`fixed inset-0 z-50 backdrop-blur-md flex flex-col items-center justify-center text-white p-6 animate-in fade-in duration-200 ${
-          section === 'technique' ? 'bg-purple-950/90' : 'bg-[#0c4a6e]/90'
+          activeTab === 'technique'
+            ? 'bg-purple-950/90'
+            : activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines'
+            ? 'bg-zinc-950/95'
+            : 'bg-[#0c4a6e]/90'
         }`}>
           <div className="p-6 bg-white/10 rounded-xl border-2 border-dashed border-white/40 flex flex-col items-center space-y-3 max-w-sm w-full text-center shadow-2xl">
             <div className={`w-16 h-16 rounded-lg bg-white flex items-center justify-center shadow-lg animate-bounce ${
-              section === 'technique' ? 'text-purple-900' : 'text-[#0c4a6e]'
+              section === 'technique' ? 'text-zinc-900' : 'text-[#0c4a6e]'
             }`}>
               <Upload className="w-8 h-8 stroke-[2.5]" />
             </div>
             <div>
               <p className="text-base font-black uppercase tracking-wider whitespace-nowrap">Drop PDFs</p>
-              <p className={`text-xs font-medium mt-1 whitespace-nowrap ${section === 'technique' ? 'text-purple-100' : 'text-sky-100'}`}>
+              <p className={`text-xs font-medium mt-1 whitespace-nowrap ${section === 'technique' ? 'text-zinc-300' : 'text-sky-100'}`}>
                 Release to import
               </p>
             </div>
@@ -1273,6 +1350,7 @@ export default function App() {
           onSelectTab={handleSelectTab}
           onOpenCategoryManager={handleOpenCategoryManager}
           onOpenBackupModal={handleOpenBackupModal}
+          onAddPdf={() => handleOpenUploadModal()}
         />
       )}
 
@@ -1348,8 +1426,8 @@ export default function App() {
       {renderViewerModal()}
 
       {isUploadOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 pt-4 sm:pt-8 md:pt-12 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[85vh] sm:max-h-[88vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-850/80">
               <div>
@@ -1399,6 +1477,7 @@ export default function App() {
         isOpen={!!songToEdit}
         onClose={handleCloseEditSong}
         title="Edit Chart Info"
+        section={songToEdit?.section || section}
       >
         {songToEdit && (
           <EditSongModal
@@ -1413,60 +1492,23 @@ export default function App() {
       <BottomDrawer
         isOpen={isCategoryManagerOpen}
         onClose={handleCloseCategoryManager}
-        title={
-          isSetlistTab
-            ? (section === 'technique' ? 'Edit Practice Routines' : 'Edit Performance Setlists')
-            : `Edit ${section === 'technique' ? 'Technique' : 'Sheet Music'} Categories`
-        }
+        section={isSetlistTab ? 'setlist' : section}
+        title="Edit Categories & Setlists"
       >
         <CategoryManagerModal
           section={section}
           isSetlistMode={isSetlistTab}
-          categories={
-            isSetlistTab
-              ? setlists.filter((s) => (s.type || 'sheet_music') === section).map((s) => s.name)
-              : currentCategories
-          }
-          setlists={isSetlistTab ? setlists.filter((s) => (s.type || 'sheet_music') === section) : undefined}
-          categoryColors={isSetlistTab ? undefined : currentCategoryColors}
+          categories={currentCategories}
+          sheetMusicCategories={sheetMusicCategories}
+          techniqueCategories={techniqueCategories}
+          setlists={setlists}
+          categoryColors={currentCategoryColors}
           songs={songs}
-          onAddCategory={
-            isSetlistTab
-              ? (name) => handleCreateSetlist(name, undefined, section)
-              : handleAddCategory
-          }
-          onRenameCategory={
-            isSetlistTab
-              ? async (oldName, newName) => {
-                  const target = setlists.find(
-                    (s) => (s.type || 'sheet_music') === section && s.name === oldName
-                  );
-                  if (target) {
-                    await handleUpdateSetlist({
-                      ...target,
-                      name: newName,
-                      dateModified: Date.now(),
-                    });
-                  }
-                }
-              : handleRenameCategory
-          }
-          onReorderCategories={
-            isSetlistTab ? handleReorderSetlists : handleReorderCategories
-          }
-          onUpdateCategoryColor={isSetlistTab ? undefined : handleUpdateCategoryColor}
-          onDeleteCategory={
-            isSetlistTab
-              ? async (name) => {
-                  const target = setlists.find(
-                    (s) => (s.type || 'sheet_music') === section && s.name === name
-                  );
-                  if (target) {
-                    await handleDeleteSetlist(target.id);
-                  }
-                }
-              : handleDeleteCategory
-          }
+          onAddCategory={handleAddCategory}
+          onRenameCategory={handleRenameCategory}
+          onReorderCategories={handleReorderCategories}
+          onUpdateCategoryColor={handleUpdateCategoryColor}
+          onDeleteCategory={handleDeleteCategory}
           onClose={handleCloseCategoryManager}
         />
       </BottomDrawer>
@@ -1488,14 +1530,31 @@ export default function App() {
         />
       )}
 
+      {/* Minimal Notes Modal */}
+      <NotesModal
+        isOpen={isNotesOpen}
+        onClose={() => setIsNotesOpen(false)}
+        isDarkMode={isDarkMode}
+      />
+
+      {/* Toast Banner for Randomizer / Alerts */}
+      {toastMessage && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 px-4 py-2.5 rounded-xl text-xs font-black shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 border border-zinc-700/80 dark:border-zinc-300/80">
+          {toastMessage}
+        </div>
+      )}
+
       {/* Fixed Bottom Navigation Bar */}
       <BottomNav
         activeTab={activeTab}
         selectedCategory={selectedCategory}
         hasActiveViewer={!!activeSongForViewer}
+        isNotesOpen={isNotesOpen}
         onSelectTab={handleSelectTab}
         onOpenCategoryManager={handleOpenCategoryManager}
         onAddPdf={() => handleOpenUploadModal()}
+        onRandomizePdf={handleRandomizePdf}
+        onToggleNotes={() => setIsNotesOpen((prev) => !prev)}
       />
     </div>
   );

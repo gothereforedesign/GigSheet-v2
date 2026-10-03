@@ -12,6 +12,7 @@ interface PdfSheetViewerProps {
   useNativeViewer?: boolean;
   onToggleNativeViewer?: (useNative: boolean) => void;
   isTechnique?: boolean;
+  viewerSection?: 'sheet_music' | 'technique' | 'setlists' | 'trash';
   isLandscapeClean?: boolean;
 }
 
@@ -156,8 +157,28 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   useNativeViewer: externalUseNativeViewer,
   onToggleNativeViewer,
   isTechnique = false,
+  viewerSection = isTechnique ? 'technique' : 'sheet_music',
   isLandscapeClean = false,
 }) => {
+  const isTechSection = viewerSection === 'technique';
+  const isSetlistsSection = viewerSection === 'setlists';
+  const isTrashSection = viewerSection === 'trash';
+
+  const accentColorClass = isTechSection
+    ? 'text-purple-400'
+    : isSetlistsSection
+    ? 'text-zinc-200'
+    : isTrashSection
+    ? 'text-rose-400'
+    : 'text-sky-400';
+
+  const accentBtnClass = isTechSection
+    ? 'bg-purple-600 hover:bg-purple-500'
+    : isSetlistsSection
+    ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700'
+    : isTrashSection
+    ? 'bg-rose-700 hover:bg-rose-600'
+    : 'bg-sky-600 hover:bg-sky-500';
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
@@ -397,10 +418,10 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
         <div ref={scrollContainerRef} className={`pdf-sheet-scroll-container w-full h-full overflow-auto ${isLandscapeClean ? 'p-1 py-1' : 'pt-2 pb-24 px-2'}`}>
           {loading && (
             <div className="no-print my-auto flex flex-col items-center justify-center p-8 bg-slate-900/80 rounded-2xl border border-slate-800 text-white text-center space-y-3 max-w-sm mx-auto shadow-2xl">
-              <Loader2 className={`w-8 h-8 animate-spin ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
+              <Loader2 className={`w-8 h-8 animate-spin ${accentColorClass}`} />
               <div>
-                <p className={`text-xs font-black uppercase tracking-wider ${isTechnique ? 'text-purple-300' : 'text-sky-300'}`}>
-                  {isTechnique ? 'Opening Technique Chart PDF' : 'Opening Sheet Music PDF'}
+                <p className={`text-xs font-black uppercase tracking-wider ${accentColorClass}`}>
+                  {isTechSection ? 'Opening Technique Chart PDF' : isSetlistsSection ? 'Opening Setlist Chart PDF' : isTrashSection ? 'Opening Trashed Chart PDF' : 'Opening Sheet Music PDF'}
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
                   Loading high-definition vector pages...
@@ -480,7 +501,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
               <ZoomOut className="w-4 h-4 stroke-[2.5]" />
             </button>
 
-            <span className={`text-xs font-black uppercase tracking-wider px-1.5 min-w-[42px] text-center select-none whitespace-nowrap ${isTechnique ? 'text-purple-300' : 'text-sky-300'}`}>
+            <span className={`text-xs font-black uppercase tracking-wider px-1.5 min-w-[42px] text-center select-none whitespace-nowrap ${accentColorClass}`}>
               {zoomLevel}%
             </span>
 

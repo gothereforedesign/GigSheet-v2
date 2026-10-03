@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Song } from '../types';
+import { Song, ActiveTab } from '../types';
 import { PdfSheetViewer } from './PdfSheetViewer';
 import { 
   X, ChevronLeft, ChevronRight, ListPlus,
@@ -13,6 +13,7 @@ import { downloadSongPdf } from '../lib/printEngine';
 
 interface SongViewerModalProps {
   song: Song;
+  activeTab?: ActiveTab;
   onClose: () => void;
   onAddToSetlist?: (song: Song) => void;
   onSaveSong?: (song: Song) => void;
@@ -26,6 +27,7 @@ interface SongViewerModalProps {
 
 export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   song: initialSong,
+  activeTab,
   onClose,
   onAddToSetlist,
   onSaveSong,
@@ -78,11 +80,20 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
     }
   };
 
-  // Derive Category Brand Styling
-  const section = song.section === 'technique' ? 'technique' : 'sheet_music';
-  const isTechnique = section === 'technique';
-  const categoryColors = getStoredCategoryColors(section);
-  const palette = getCategoryPalette(song.genre, categoryColors, section);
+  // Derive Section Brand Styling based on where PDF is being viewed
+  const viewerSection: 'sheet_music' | 'technique' | 'setlists' | 'trash' = (() => {
+    if (activeTab === 'technique') return 'technique';
+    if (activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines') return 'setlists';
+    if (activeTab === 'trash') return 'trash';
+    if (activeTab === 'sheet_music') return 'sheet_music';
+    return song.section === 'technique' ? 'technique' : 'sheet_music';
+  })();
+
+  const isTechnique = viewerSection === 'technique';
+  const isSetlists = viewerSection === 'setlists';
+  const isTrash = viewerSection === 'trash';
+
+  const section = isTechnique ? 'technique' : 'sheet_music';
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,7 +165,6 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   useEffect(() => {
     let isMounted = true;
     
-    // Check if initialSong already has blob/fileUrl/svgData attached
     const hasContent = Boolean(initialSong.fileBlob || initialSong.fileUrl || initialSong.svgData);
     setSong(initialSong);
 
@@ -186,7 +196,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
     };
   }, [initialSong.id, initialSong.fileBlob, initialSong.fileUrl, initialSong.svgData]);
 
-  // Keyboard navigation listener (Left/Right arrow keys & Escape)
+  // Keyboard navigation listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
@@ -250,11 +260,27 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
   return (
     <div 
-      className={`song-viewer-modal fixed inset-0 z-50 flex flex-col bg-slate-950 text-white w-screen h-screen overflow-hidden select-none ${isLandscapeClean ? 'landscape-clean' : ''}`}
+      className={`song-viewer-modal fixed inset-0 z-50 flex flex-col w-screen h-screen overflow-hidden select-none ${
+        isTechnique
+          ? 'bg-[#130d1d] text-purple-100'
+          : isSetlists
+          ? 'bg-black text-zinc-100'
+          : isTrash
+          ? 'bg-[#120508] text-rose-100'
+          : 'bg-[#030d17] text-sky-100'
+      } ${isLandscapeClean ? 'landscape-clean' : ''}`}
       onClick={handleToggleLandscapeOverlay}
     >
-      {/* Top Header Bar - Hidden in Landscape Clean mode */}
-      <header className={`song-viewer-header sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] bg-slate-950/90 border-b ${isTechnique ? 'border-purple-900/60' : 'border-slate-800/80'} backdrop-blur-md transition-all duration-200 ${
+      {/* Top Header Bar - Matches Active Section Palette */}
+      <header className={`song-viewer-header sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] border-b backdrop-blur-md transition-all duration-200 ${
+        isTechnique
+          ? 'bg-[#18092b]/95 border-purple-900/60'
+          : isSetlists
+          ? 'bg-zinc-950/95 border-zinc-800'
+          : isTrash
+          ? 'bg-[#1f0a0f]/95 border-rose-900/60'
+          : 'bg-[#071d2c]/95 border-sky-900/60'
+      } ${
         isLandscapeClean ? 'hidden' : 'flex'
       }`}>
         {/* Item 1: Close Button + Chart Title */}
@@ -265,31 +291,63 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               e.stopPropagation();
               onClose();
             }}
-            className="p-2 sm:px-3 sm:py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white active:scale-95 cursor-pointer transition-colors border border-slate-700/80 shrink-0 flex items-center gap-1.5 shadow-lg"
+            className={`p-2 sm:px-3 sm:py-1.5 rounded-md active:scale-95 cursor-pointer transition-colors border shrink-0 flex items-center gap-1.5 shadow-lg ${
+              isTechnique
+                ? 'bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 border-purple-800/80'
+                : isSetlists
+                ? 'bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border-zinc-700'
+                : isTrash
+                ? 'bg-rose-950/60 hover:bg-rose-900/60 text-rose-200 border-rose-800/80'
+                : 'bg-[#0c4a6e]/40 hover:bg-[#0c4a6e]/70 text-sky-200 border-sky-800/80'
+            }`}
             title="Close Viewer (Esc)"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Close</span>
           </button>
 
-          <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-md bg-slate-900 border border-slate-700/80 shadow-lg">
+          <div className={`flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-md border shadow-lg ${
+            isTechnique
+              ? 'bg-purple-950/40 border-purple-800/80'
+              : isSetlists
+              ? 'bg-zinc-900 border-zinc-700'
+              : isTrash
+              ? 'bg-rose-950/40 border-rose-800/80'
+              : 'bg-[#0c4a6e]/30 border-sky-800/80'
+          }`}>
             <h3 className="text-xs sm:text-sm font-extrabold text-white truncate leading-tight">
               {song.title}
             </h3>
 
-            <span className={`hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs shrink-0 shadow-2xs ${isTechnique ? 'bg-purple-950/80 text-purple-200 border border-purple-800/80' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
+            <span className={`hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs shrink-0 shadow-2xs ${
+              isTechnique
+                ? 'bg-purple-950/90 text-purple-200 border border-purple-800'
+                : isSetlists
+                ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
+                : isTrash
+                ? 'bg-rose-950/90 text-rose-200 border border-rose-800'
+                : 'bg-sky-950/90 text-sky-200 border border-sky-800'
+            }`}>
               {navigation?.listName || song.genre || (isTechnique ? 'Scales' : 'Hymns')}
             </span>
           </div>
         </div>
 
-        {/* Item 2: Actions */}
+        {/* Item 2: Actions - +Setlist & Download */}
         <div className="flex items-center gap-1.5 shrink-0">
           {onAddToSetlist && (
             <button
               type="button"
               onClick={() => onAddToSetlist(song)}
-              className={`px-2.5 sm:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 ${isTechnique ? 'text-purple-300 hover:border-purple-500/40' : 'text-sky-300 hover:border-sky-500/40'} hover:text-white rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer active:scale-95 shadow-lg`}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border transition-all cursor-pointer active:scale-95 shadow-lg ${
+                isTechnique
+                  ? 'bg-purple-800 hover:bg-purple-900 text-purple-100 border-purple-700'
+                  : isSetlists
+                  ? 'bg-zinc-900 hover:bg-black text-zinc-100 border-zinc-700'
+                  : isTrash
+                  ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
+                  : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
+              }`}
               title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
             >
               <ListPlus className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -303,15 +361,27 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             type="button"
             onClick={handleDownload}
             disabled={isDownloading}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700/80 bg-slate-900 hover:bg-slate-800 text-white cursor-pointer active:scale-95 transition-all shadow-lg ${isTechnique ? 'hover:border-purple-500/50' : 'hover:border-sky-500/50'} disabled:opacity-60`}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border cursor-pointer active:scale-95 transition-all shadow-lg ${
+              isTechnique
+                ? 'bg-purple-800 hover:bg-purple-900 text-purple-100 border-purple-700'
+                : isSetlists
+                ? 'bg-zinc-900 hover:bg-black text-zinc-100 border-zinc-700'
+                : isTrash
+                ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
+                : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
+            } disabled:opacity-60`}
             title="Download PDF chart"
           >
             {isDownloading ? (
-              <Loader2 className={`w-3.5 h-3.5 animate-spin ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
+              <Loader2 className={`w-3.5 h-3.5 animate-spin ${
+                isTechnique ? 'text-purple-300' : isSetlists ? 'text-zinc-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
+              }`} />
             ) : downloadSuccess ? (
               <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
             ) : (
-              <Download className={`w-3.5 h-3.5 stroke-[2.2] ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
+              <Download className={`w-3.5 h-3.5 stroke-[2.2] ${
+                isTechnique ? 'text-purple-300' : isSetlists ? 'text-zinc-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
+              }`} />
             )}
             <span className="text-[11px] font-black">
               {isDownloading ? 'Saving...' : downloadSuccess ? 'Saved' : 'Download'}
@@ -321,7 +391,9 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
       </header>
 
       {/* Main Sheet Music Viewing Canvas */}
-      <main className="song-viewer-main flex-1 w-full relative overflow-hidden flex flex-col bg-slate-950">
+      <main className={`song-viewer-main flex-1 w-full relative overflow-hidden flex flex-col ${
+        isTechnique ? 'bg-[#130d1d]' : isSetlists ? 'bg-black' : isTrash ? 'bg-[#120508]' : 'bg-[#030d17]'
+      }`}>
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -339,6 +411,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               externalZoomControls={true}
               onNumPagesChange={setNumPages}
               isTechnique={isTechnique}
+              viewerSection={viewerSection}
               isLandscapeClean={isLandscapeClean}
             />
           ) : song.svgData ? (
@@ -351,7 +424,9 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           ) : !isLoading ? (
             <div className="w-full h-full overflow-y-auto p-4 sm:p-8 flex items-center justify-center">
               <div className="printable-song-details max-w-xl w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md text-white flex flex-col items-center text-center gap-5">
-                <div className={`no-print w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${isTechnique ? 'bg-purple-500/10 border border-purple-500/30 text-purple-400' : 'bg-sky-500/10 border border-sky-500/30 text-sky-400'}`}>
+                <div className={`no-print w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${
+                  isTechnique ? 'bg-purple-500/10 border border-purple-500/30 text-purple-400' : 'bg-sky-500/10 border border-sky-500/30 text-sky-400'
+                }`}>
                   <Music className="w-8 h-8 stroke-[1.8]" />
                 </div>
 
@@ -406,29 +481,69 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         </div>
       </main>
 
-      {/* Bottom Navigation & Performance Controls - Hidden in Landscape Clean mode */}
-      <footer className={`song-viewer-footer sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-2.5 sm:py-3 items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 pointer-events-none bg-transparent transition-all duration-200 ${
+      {/* Bottom Navigation & Performance Controls - Matches Section Palette */}
+      <footer className={`song-viewer-footer sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-2.5 sm:py-3 items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 border-t backdrop-blur-md transition-all duration-200 ${
+        isTechnique
+          ? 'bg-[#18092b]/95 border-purple-900/60'
+          : isSetlists
+          ? 'bg-zinc-950/95 border-zinc-800'
+          : isTrash
+          ? 'bg-[#1f0a0f]/95 border-rose-900/60'
+          : 'bg-[#071d2c]/95 border-sky-900/60'
+      } ${
         isLandscapeClean ? 'hidden' : 'flex'
       }`}>
         {/* Item 3: Zoom Controls */}
-        <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-700/80 p-1 rounded-md shadow-lg backdrop-blur-md pointer-events-auto shrink-0">
+        <div className={`flex items-center gap-1 p-1 rounded-md shadow-lg border shrink-0 ${
+          isTechnique
+            ? 'bg-[#130721] border-purple-800/80 text-purple-200'
+            : isSetlists
+            ? 'bg-zinc-900 border-zinc-700 text-zinc-200'
+            : isTrash
+            ? 'bg-[#180509] border-rose-800/80 text-rose-200'
+            : 'bg-[#031320] border-sky-800/80 text-sky-200'
+        }`}>
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.max(50, z - 5))}
-            className="px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
+            className={`px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all ${
+              isTechnique
+                ? 'hover:bg-purple-900/50 hover:text-white'
+                : isSetlists
+                ? 'hover:bg-zinc-800 hover:text-white'
+                : isTrash
+                ? 'hover:bg-rose-900/50 hover:text-white'
+                : 'hover:bg-[#0c4a6e]/50 hover:text-white'
+            }`}
             title="Zoom Out (-5%)"
           >
             <ZoomOut className="w-4 h-4 stroke-[2.5]" />
           </button>
           
-          <span className="text-xs font-black tracking-wider text-slate-200 px-1.5 min-w-[42px] text-center whitespace-nowrap">
+          <span className={`text-xs font-black tracking-wider px-1.5 min-w-[42px] text-center whitespace-nowrap ${
+            isTechnique
+              ? 'text-purple-300'
+              : isSetlists
+              ? 'text-zinc-300'
+              : isTrash
+              ? 'text-rose-300'
+              : 'text-sky-300'
+          }`}>
             {zoomLevel}%
           </span>
 
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.min(300, z + 5))}
-            className="px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all"
+            className={`px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all ${
+              isTechnique
+                ? 'hover:bg-purple-900/50 hover:text-white'
+                : isSetlists
+                ? 'hover:bg-zinc-800 hover:text-white'
+                : isTrash
+                ? 'hover:bg-rose-900/50 hover:text-white'
+                : 'hover:bg-[#0c4a6e]/50 hover:text-white'
+            }`}
             title="Zoom In (+5%)"
           >
             <ZoomIn className="w-4 h-4 stroke-[2.5]" />
@@ -438,7 +553,15 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             <button
               type="button"
               onClick={() => updateZoom(100)}
-              className="px-2.5 py-1.5 h-9 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-sm cursor-pointer transition-all border-l border-slate-800 ml-0.5"
+              className={`px-2.5 py-1.5 h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all border-l ml-0.5 ${
+                isTechnique
+                  ? 'border-purple-800/60 hover:bg-purple-900/50 text-purple-300'
+                  : isSetlists
+                  ? 'border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                  : isTrash
+                  ? 'border-rose-800/60 hover:bg-rose-900/50 text-rose-300'
+                  : 'border-sky-800/60 hover:bg-[#0c4a6e]/50 text-sky-300'
+              }`}
               title="Reset Zoom to 100%"
             >
               <RotateCcw className="w-4 h-4" />
@@ -448,25 +571,49 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
         {/* Item 4: Directory Navigation */}
         {navigation && navigation.totalCount > 1 ? (
-          <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex - 1)}
               disabled={navigation.currentIndex <= 0}
-              className="px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
+              className={`px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg font-extrabold text-xs shrink-0 border ${
+                isTechnique
+                  ? 'bg-[#130721] hover:bg-purple-900/50 border-purple-800/80 text-purple-200'
+                  : isSetlists
+                  ? 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                  : isTrash
+                  ? 'bg-[#180509] hover:bg-rose-900/50 border-rose-800/80 text-rose-200'
+                  : 'bg-[#031320] hover:bg-[#0c4a6e]/50 border-sky-800/80 text-sky-200'
+              }`}
               title="Previous Chart (Left Arrow)"
             >
               <ChevronLeft className="w-5 h-5 stroke-[2.8]" />
               <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Prev</span>
             </button>
 
-            <div className="px-3 py-1.5 h-9 flex items-center justify-center bg-slate-900/90 border border-slate-700/80 text-slate-200 rounded-md text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg backdrop-blur-md">
+            <div className={`px-3 py-1.5 h-9 flex items-center justify-center border rounded-md text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg ${
+              isTechnique
+                ? 'bg-[#18092b] border-purple-800/80 text-purple-200'
+                : isSetlists
+                ? 'bg-zinc-950 border-zinc-700 text-zinc-200'
+                : isTrash
+                ? 'bg-[#1f0a0f] border-rose-800/80 text-rose-200'
+                : 'bg-[#071d2c] border-sky-800/80 text-sky-200'
+            }`}>
               {navigation.currentIndex + 1} <span className="text-slate-500 font-normal mx-0.5">/</span> {navigation.totalCount}
             </div>
 
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex + 1)}
               disabled={navigation.currentIndex >= navigation.totalCount - 1}
-              className="px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md bg-slate-900/90 hover:bg-slate-800 active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg backdrop-blur-md font-extrabold text-xs shrink-0 border border-slate-700/80"
+              className={`px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg font-extrabold text-xs shrink-0 border ${
+                isTechnique
+                  ? 'bg-[#130721] hover:bg-purple-900/50 border-purple-800/80 text-purple-200'
+                  : isSetlists
+                  ? 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                  : isTrash
+                  ? 'bg-[#180509] hover:bg-rose-900/50 border-rose-800/80 text-rose-200'
+                  : 'bg-[#031320] hover:bg-[#0c4a6e]/50 border-sky-800/80 text-sky-200'
+              }`}
               title="Next Chart (Right Arrow)"
             >
               <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Next</span>
