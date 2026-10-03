@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { 
   CategoryColorKey, 
-  getCategoryPalette 
+  getCategoryPalette,
+  getCascadingCategoryPalette
 } from '../lib/categoryStorage';
 import { LazyPDFThumbnail } from './LazyPDFThumbnail';
 
@@ -46,7 +47,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
   const isTechnique = section === 'technique';
   const targetSection = isTechnique ? 'technique' : 'sheet_music';
 
-  // Show all setlists in Practice view
+  // Show setlists
   const sectionSetlists = setlists;
 
   // Filter songs matching section or all songs for setlist song picker (exclude duplicates)
@@ -124,19 +125,19 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
   return (
     <div className="space-y-4 pb-0">
-      {/* VIEW 1: 2-COLUMN CATEGORY GRID IN SHADES OF BLACK AND GRAY */}
+      {/* VIEW 1: 2-COLUMN SETLISTS GRID IN RICH EMERALD GREEN PALETTE */}
       {!selectedSetlistId ? (
         sectionSetlists.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white/60 dark:bg-zinc-900/60 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-xl space-y-3">
-            <div className="p-3.5 rounded-2xl bg-zinc-900 text-zinc-100 border border-zinc-700 shadow-md">
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-emerald-50/80 dark:bg-emerald-950/40 border border-dashed border-emerald-200 dark:border-emerald-900 rounded-xl space-y-3">
+            <div className="p-3.5 rounded-2xl bg-emerald-800 dark:bg-emerald-700 text-white shadow-md">
               <ListMusic className="w-8 h-8 stroke-[2]" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100">
+              <h3 className="text-base font-bold text-emerald-950 dark:text-emerald-100">
                 No Practice Setlists
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm">
-                Tap <span className="font-extrabold text-zinc-700 dark:text-zinc-300">+</span> below to add PDF charts, or tap <span className="font-extrabold text-zinc-700 dark:text-zinc-300">Edit</span> above to create setlists.
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 max-w-sm">
+                Tap <span className="font-extrabold text-emerald-900 dark:text-emerald-200">+</span> below to pick random charts, or tap <span className="font-extrabold text-emerald-900 dark:text-emerald-200">Edit</span> above to create setlists.
               </p>
             </div>
           </div>
@@ -145,25 +146,25 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {sectionSetlists.map((setlist, idx) => {
                 const count = setlist.items.length;
-                const isEven = idx % 2 === 0;
+                const palette = getCascadingCategoryPalette(idx, sectionSetlists.length, 'setlists');
 
                 return (
                   <div
                     key={setlist.id}
                     onClick={() => setSelectedSetlistId(setlist.id)}
-                    className={`relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none ${
-                      isEven
-                        ? 'bg-gradient-to-br from-[#18181b] via-[#111113] to-[#09090b] border-[#27272a] hover:border-[#52525b]'
-                        : 'bg-gradient-to-br from-[#27272a] via-[#1c1c20] to-[#18181b] border-[#3f3f46] hover:border-[#71717a]'
-                    }`}
+                    style={{
+                      backgroundColor: palette.cardBgHex,
+                      borderColor: palette.cardBorderHex,
+                    }}
+                    className="relative group aspect-[3/2] rounded-lg md:rounded-xl p-3 sm:p-5 md:p-6 lg:p-8 border flex items-center justify-center text-center cursor-pointer shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all select-none hover:brightness-110 text-white"
                   >
-                    {/* Category Accent Badge */}
-                    <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/50 text-zinc-200 border border-zinc-700/80 shadow-2xs flex items-center gap-1">
-                      <ListMusic className="w-3 h-3 text-zinc-300 stroke-[2.5]" />
+                    {/* Setlist Count Badge */}
+                    <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold tracking-tight bg-black/25 text-white/95 backdrop-blur-xs border border-white/15 shadow-2xs flex items-center gap-1">
+                      <ListMusic className="w-3 h-3 text-emerald-200 stroke-[2.5]" />
                       <span>{count}</span>
                     </div>
 
-                    <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 text-zinc-100">
+                    <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[clamp(1.25rem,2.8vw+0.5rem,2.5rem)] font-black tracking-tight line-clamp-2 leading-tight sm:leading-snug md:leading-normal px-2 sm:px-4 text-white">
                       {setlist.name}
                     </h3>
                   </div>
@@ -173,45 +174,45 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
           </div>
         )
       ) : (
-        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED SETLIST / ROUTINE - UNIFIED CONTAINER */
+        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED SETLIST / ROUTINE - EMERALD GREEN PALETTE */
         activeSetlist && (
           <div
             style={{
               backgroundColor: isDarkMode
-                ? 'rgba(24, 24, 27, 0.96)'
-                : 'rgba(24, 24, 27, 0.04)',
+                ? 'rgba(6, 78, 59, 0.4)'
+                : 'rgba(236, 253, 245, 0.9)',
               borderColor: isDarkMode
-                ? 'rgba(63, 63, 70, 0.4)'
-                : 'rgba(39, 39, 42, 0.15)',
+                ? 'rgba(16, 185, 129, 0.3)'
+                : 'rgba(110, 231, 183, 0.5)',
             }}
             className="rounded-lg md:rounded-xl border p-3 sm:p-4.5 shadow-2xs space-y-3 transition-colors"
           >
             {/* Top Bar Navigation */}
-            <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60 dark:border-zinc-800">
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-emerald-200/60 dark:border-emerald-900/60">
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
                 {/* Back Arrow Button */}
                 <button
                   type="button"
                   onClick={() => setSelectedSetlistId(null)}
-                  className="p-1.5 text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-800 hover:bg-white dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                  className="p-1.5 text-emerald-900 dark:text-emerald-100 bg-white/90 dark:bg-emerald-900/80 hover:bg-white dark:hover:bg-emerald-800 border border-emerald-200 dark:border-emerald-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
                   title="Back to Setlists"
                 >
                   <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
                 </button>
 
                 {/* Category / Setlist Title Badge + Category Editor Button */}
-                <div className="flex items-center gap-2 bg-white/95 dark:bg-zinc-800 border border-slate-200/90 dark:border-zinc-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
+                <div className="flex items-center gap-2 bg-white/95 dark:bg-emerald-900/80 border border-emerald-200 dark:border-emerald-700 px-2.5 py-1 rounded-md shadow-2xs shrink-0">
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs bg-zinc-900 dark:bg-zinc-200"
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs bg-emerald-600 dark:bg-emerald-400"
                   />
-                  <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-zinc-100 truncate max-w-[120px] sm:max-w-[200px]">
+                  <h2 className="text-xs sm:text-sm font-black text-emerald-950 dark:text-emerald-100 truncate max-w-[120px] sm:max-w-[200px]">
                     {activeSetlist.name}
                   </h2>
                   {onOpenGenreManager && (
                     <button
                       type="button"
                       onClick={onOpenGenreManager}
-                      className="p-0.5 rounded-xs text-slate-400 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 cursor-pointer shrink-0"
+                      className="p-0.5 rounded-xs text-emerald-600 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 hover:bg-emerald-100 dark:hover:bg-emerald-800 cursor-pointer shrink-0"
                       title="Edit Setlists"
                     >
                       <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
@@ -220,7 +221,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 </div>
 
                 {/* Section Count Badge */}
-                <div className="inline-flex items-center justify-center border px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center bg-white/80 dark:bg-zinc-950/80 text-zinc-900 dark:text-zinc-200 border-zinc-300 dark:border-zinc-700" title={`${activeSetlist.items.length} Charts`}>
+                <div className="inline-flex items-center justify-center border px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 min-w-[28px] text-center bg-white/80 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800" title={`${activeSetlist.items.length} Charts`}>
                   <span>{activeSetlist.items.length}</span>
                 </div>
               </div>
@@ -230,7 +231,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddSongPicker(true)}
-                  className="px-2.5 py-1.5 rounded-md bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap flex items-center gap-1"
+                  className="px-2.5 py-1.5 rounded-md bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-black text-xs border border-emerald-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap flex items-center gap-1"
                   title="Add Chart to Setlist"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -241,7 +242,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setDisplayMode(displayMode === 'list' ? 'grid' : 'list')}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/90 dark:bg-emerald-900/80 hover:bg-white dark:hover:bg-emerald-800 text-emerald-900 dark:text-emerald-200 font-black text-xs border border-emerald-200 dark:border-emerald-700 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap"
                   title={displayMode === 'list' ? 'Switch to Grid Preview' : 'Switch to List View'}
                 >
                   {displayMode === 'list' ? (
@@ -261,37 +262,29 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
             {/* Description if present */}
             {activeSetlist.description && (
-              <p className="text-xs font-medium text-slate-500 px-0.5">
+              <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300 px-0.5">
                 {activeSetlist.description}
               </p>
             )}
 
             {/* Items inside Setlist */}
             {activeSetlist.items.length === 0 ? (
-              <div className="p-8 sm:p-10 text-center bg-slate-50/80 dark:bg-slate-850/80 rounded-lg border border-slate-200/60 dark:border-slate-800 space-y-3 shadow-2xs">
-                <div className={`w-10 h-10 rounded-md mx-auto flex items-center justify-center border ${
-                  isTechnique
-                    ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-100 dark:border-purple-800 text-purple-900 dark:text-purple-300'
-                    : 'bg-sky-50 dark:bg-sky-950/60 border-sky-100 dark:border-sky-800 text-[#0c4a6e] dark:text-sky-300'
-                }`}>
+              <div className="p-8 sm:p-10 text-center bg-white/80 dark:bg-emerald-950/60 rounded-lg border border-emerald-200 dark:border-emerald-800 space-y-3 shadow-2xs">
+                <div className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border bg-emerald-100 dark:bg-emerald-900 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200">
                   <Music className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                  <p className="text-sm font-bold text-emerald-950 dark:text-emerald-100">
                     No charts in this {isTechnique ? 'routine' : 'setlist'}
                   </p>
-                  <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
                     Tap "+ Add Chart" above to select charts from your library.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowAddSongPicker(true)}
-                  className={`mt-1 px-3.5 py-1.5 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 ${
-                    isTechnique
-                      ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600'
-                      : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
-                  }`}
+                  className="mt-1 px-3.5 py-1.5 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                 >
                   + Add Chart
                 </button>
@@ -307,26 +300,20 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                     <div
                       key={`${item.songId}_${idx}`}
                       onClick={() => onSelectSong?.(song, activeSetlist, idx)}
-                      className={`relative bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] transition-all ${
-                        isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
-                      }`}
+                      className="relative bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] transition-all hover:border-emerald-500 dark:hover:border-emerald-400"
                     >
                       {/* Order Overlay Badge */}
-                      <div className={`absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md text-[10px] font-black font-mono tracking-tight shadow-xs ${
-                        isTechnique
-                          ? 'bg-purple-950/90 text-purple-200 border border-purple-500/40'
-                          : 'bg-sky-950/90 text-sky-200 border border-sky-500/40'
-                      }`}>
+                      <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md text-[10px] font-black font-mono tracking-tight shadow-xs bg-emerald-950/90 text-emerald-200 border border-emerald-500/40">
                         #{idx + 1}
                       </div>
 
                       {/* Controls Top-Right */}
-                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs p-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-xs" onClick={(e) => e.stopPropagation()}>
+                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs p-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 shadow-xs" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => handleMoveSong(activeSetlist, idx, 'up')}
                           disabled={idx === 0}
-                          className="p-0.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-20 cursor-pointer"
+                          className="p-0.5 text-slate-500 dark:text-slate-400 hover:text-emerald-900 dark:hover:text-emerald-100 disabled:opacity-20 cursor-pointer"
                           title="Move Up"
                         >
                           <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -335,7 +322,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                           type="button"
                           onClick={() => handleMoveSong(activeSetlist, idx, 'down')}
                           disabled={idx === activeSetlist.items.length - 1}
-                          className="p-0.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-20 cursor-pointer"
+                          className="p-0.5 text-slate-500 dark:text-slate-400 hover:text-emerald-900 dark:hover:text-emerald-100 disabled:opacity-20 cursor-pointer"
                           title="Move Down"
                         >
                           <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -344,7 +331,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onEditSong(song)}
-                            className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                            className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-emerald-800 dark:hover:text-emerald-200 cursor-pointer"
                             title="Edit Chart Info"
                           >
                             <FolderEdit className="w-3.5 h-3.5 stroke-[2]" />
@@ -361,7 +348,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                       </div>
 
                       {/* Lazy Thumbnail Container */}
-                      <div className="relative aspect-[16/11] w-full bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+                      <div className="relative aspect-[16/11] w-full bg-slate-100/80 dark:bg-slate-800/80 border-b border-emerald-100 dark:border-emerald-900 flex items-center justify-center overflow-hidden">
                         <LazyPDFThumbnail
                           songId={song.id}
                           songType={song.type}
@@ -374,9 +361,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                       {/* Bottom Info Section */}
                       <div className="px-2.5 py-1.5 bg-white dark:bg-slate-900 flex items-center justify-between gap-1.5 min-h-[32px] shrink-0">
                         <div className="min-w-0 flex-1">
-                          <h3 className={`text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-tight ${
-                            isTechnique ? 'group-hover:text-purple-900 dark:group-hover:text-purple-300' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
-                          }`}>
+                          <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-tight group-hover:text-emerald-800 dark:group-hover:text-emerald-300">
                             {song.title}
                           </h3>
                           {song.artist && (
@@ -401,24 +386,16 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                     <div
                       key={`${item.songId}_${idx}`}
                       onClick={() => onSelectSong?.(song, activeSetlist, idx)}
-                      className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-md px-3.5 py-2.5 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs cursor-pointer group transition-all ${
-                        isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
-                      }`}
+                      className="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/80 rounded-md px-3.5 py-2.5 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs cursor-pointer group transition-all hover:border-emerald-500 dark:hover:border-emerald-400"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {/* Order Number Badge */}
-                        <div className={`w-6 h-6 rounded-md text-xs font-black font-mono flex items-center justify-center shrink-0 border ${
-                          isTechnique
-                            ? 'bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                            : 'bg-sky-50 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-200 dark:border-sky-800'
-                        }`}>
+                        <div className="w-6 h-6 rounded-md text-xs font-black font-mono flex items-center justify-center shrink-0 border bg-emerald-50 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
                           {idx + 1}
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h3 className={`text-sm font-bold text-slate-900 dark:text-slate-100 truncate leading-tight ${
-                            isTechnique ? 'group-hover:text-purple-900 dark:group-hover:text-purple-300' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
-                          }`}>
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate leading-tight group-hover:text-emerald-800 dark:group-hover:text-emerald-300">
                             {song.title}
                           </h3>
                           {song.artist && (
@@ -483,14 +460,8 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                {isTechnique ? (
-                  <Flame className="w-5 h-5 text-purple-900 dark:text-purple-400" />
-                ) : (
-                  <ListMusic className="w-5 h-5 text-[#0c4a6e] dark:text-sky-400" />
-                )}
-                <h3 className={`text-sm font-black uppercase tracking-wider ${
-                  isTechnique ? 'text-purple-900 dark:text-purple-400' : 'text-[#0c4a6e] dark:text-sky-400'
-                }`}>
+                <ListMusic className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
+                <h3 className="text-sm font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
                   Create {isTechnique ? 'Practice Routine' : 'Performance Setlist'}
                 </h3>
               </div>
@@ -515,7 +486,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   placeholder={isTechnique ? 'e.g., Daily Warmup Series' : 'e.g., Friday Night Gig'}
                   value={newSetName}
                   onChange={(e) => setNewSetName(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none text-slate-800 dark:text-slate-100 focus:border-slate-400 dark:focus:border-slate-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none text-slate-800 dark:text-slate-100 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
                 />
               </div>
 
@@ -528,7 +499,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   placeholder="Optional notes or details"
                   value={newSetDesc}
                   onChange={(e) => setNewSetDesc(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none text-slate-800 dark:text-slate-100 focus:border-slate-400 dark:focus:border-slate-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none text-slate-800 dark:text-slate-100 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
                 />
               </div>
 
@@ -542,9 +513,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className={`px-5 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer active:scale-95 shadow-md ${
-                    isTechnique ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600' : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
-                  }`}
+                  className="px-5 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer active:scale-95 shadow-md bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                 >
                   Create
                 </button>
@@ -560,10 +529,8 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-4 sm:p-5 space-y-3 flex flex-col max-h-[75vh] sm:max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
               <div className="flex items-center gap-2">
-                <Plus className={`w-5 h-5 ${isTechnique ? 'text-purple-900 dark:text-purple-400' : 'text-[#0c4a6e] dark:text-sky-400'}`} />
-                <h3 className={`text-sm font-black uppercase tracking-wider ${
-                  isTechnique ? 'text-purple-900 dark:text-purple-400' : 'text-[#0c4a6e] dark:text-sky-400'
-                }`}>
+                <Plus className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
+                <h3 className="text-sm font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
                   Add Chart to "{activeSetlist.name}"
                 </h3>
               </div>
@@ -587,7 +554,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 placeholder={`Search ${isTechnique ? 'technique' : 'sheet music'} charts...`}
                 value={pickerSearchQuery}
                 onChange={(e) => setPickerSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-slate-300 dark:focus:border-slate-600"
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-300 dark:focus:border-emerald-600"
               />
             </div>
 
@@ -612,9 +579,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                       className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-all ${
                         isInSetlist
                           ? 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/80 opacity-70 cursor-default'
-                          : 'cursor-pointer ' + (isTechnique
-                            ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-950/40'
-                            : 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-600 hover:bg-sky-50/50 dark:hover:bg-sky-950/40')
+                          : 'cursor-pointer bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
@@ -628,17 +593,11 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
 
                       <div className="shrink-0 flex items-center gap-2">
                         {isInSetlist ? (
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                            isTechnique
-                              ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/80 border-purple-200 dark:border-purple-800'
-                              : 'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/80 border-sky-200 dark:border-sky-800'
-                          }`}>
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 border-emerald-200 dark:border-emerald-800">
                             Added
                           </span>
                         ) : (
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md text-white shadow-2xs ${
-                            isTechnique ? 'bg-purple-900 dark:bg-purple-700' : 'bg-[#0c4a6e] dark:bg-sky-700'
-                          }`}>
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md text-white shadow-2xs bg-emerald-800 dark:bg-emerald-700">
                             + Add
                           </span>
                         )}
@@ -657,9 +616,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   setShowAddSongPicker(false);
                   setPickerSearchQuery('');
                 }}
-                className={`px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer ${
-                  isTechnique ? 'bg-purple-900 dark:bg-purple-700' : 'bg-[#0c4a6e] dark:bg-sky-700'
-                }`}
+                className="px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer bg-emerald-800 dark:bg-emerald-700"
               >
                 Done
               </button>

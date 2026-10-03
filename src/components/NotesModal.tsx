@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Bold, Check, X } from 'lucide-react';
+import { ArrowLeft, Bold, Check, Copy } from 'lucide-react';
 
 interface NotesModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const [isBoldActive, setIsBoldActive] = useState(false);
 
   // Load initial title and content when modal opens
@@ -75,6 +76,19 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     }
   };
 
+  const handleCopyAllText = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const rawContent = editorRef.current?.innerText || editorRef.current?.textContent || '';
+      const fullText = [title.trim(), rawContent.trim()].filter(Boolean).join('\n\n');
+      await navigator.clipboard.writeText(fullText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy notes text:', err);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
       e.preventDefault();
@@ -95,7 +109,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
         className="w-full sm:max-w-xl h-[85vh] sm:h-[620px] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Bar (Google Keep Style: Back Arrow + Save Status + Close) */}
+        {/* Top Header Bar (Google Keep Style: Back Arrow + Save Status) */}
         <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 shrink-0 select-none">
           <button
             type="button"
@@ -119,14 +133,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer active:scale-95"
-            title="Close Notes"
-          >
-            <X className="w-5 h-5 stroke-[2.2]" />
-          </button>
+          <div className="w-9" />
         </div>
 
         {/* Note Body Section */}
@@ -156,12 +163,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
         {/* Bottom Toolbar */}
         <div className="flex items-center justify-between px-3.5 py-2.5 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 shrink-0 select-none">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {/* Bold Toggle Button */}
             <button
               type="button"
               onMouseDown={handleToggleBold}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
+              className={`p-2 rounded-lg text-xs font-black transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
                 isBoldActive
                   ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs'
                   : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
@@ -169,11 +176,24 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               title="Toggle Bold (Cmd+B / Ctrl+B)"
             >
               <Bold className="w-4 h-4 stroke-[3]" />
-              <span>Bold</span>
+            </button>
+
+            {/* Copy Entire Notes Text Button */}
+            <button
+              type="button"
+              onClick={handleCopyAllText}
+              className="p-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700"
+              title="Copy entire text from notes"
+            >
+              {isCopied ? (
+                <Check className="w-4 h-4 stroke-[2.5] text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Copy className="w-4 h-4 stroke-[2]" />
+              )}
             </button>
           </div>
 
-          <div className="text-[10px] font-mono text-slate-400 dark:text-zinc-500 font-medium">
+          <div className="text-[10px] font-mono text-slate-400 dark:text-zinc-500 font-medium hidden sm:block">
             GigSheet Notes
           </div>
         </div>

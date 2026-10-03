@@ -81,7 +81,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             isTechniqueActive
               ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600 text-white shadow-purple-900/20'
               : isSetlistsActive
-              ? 'bg-zinc-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-700 shadow-zinc-900/20'
+              ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white shadow-emerald-900/20'
               : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600 shadow-sky-900/20'
           }`}
           title="Pick Random Chart"
@@ -92,14 +92,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
         {/* RIGHT SECTION (1fr): Section 2 - Practice Setlists & Notes Icon Buttons */}
         <div className="flex-1 grid grid-cols-2 gap-1.5 bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px]">
-          {/* Charcoal Black Button: Practice Setlists Icon */}
+          {/* Emerald Green Button: Practice Setlists Icon */}
           <button
             type="button"
             onClick={handleSetlistsClick}
             className={`flex items-center justify-center rounded-xl transition-all cursor-pointer ${
               isSetlistsActive
-                ? 'bg-zinc-900 dark:bg-zinc-950 text-white font-black border border-zinc-700 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-slate-700/60'
+                ? 'bg-emerald-800 dark:bg-emerald-700 text-white font-black shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
             }`}
             title="Practice Setlists"
             aria-label="Practice Setlists"

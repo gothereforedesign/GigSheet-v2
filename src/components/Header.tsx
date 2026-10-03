@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
     : isTechnique
     ? 'bg-purple-50/90 dark:bg-[#18092b]/95 border-purple-200/80 dark:border-purple-900/60'
     : isSetlists
-    ? 'bg-zinc-100/90 dark:bg-zinc-950/95 border-zinc-200/80 dark:border-zinc-800/80'
+    ? 'bg-emerald-50/90 dark:bg-[#042116]/95 border-emerald-200/80 dark:border-emerald-900/60'
     : 'bg-[#f0f7fc]/90 dark:bg-[#071d2c]/95 border-sky-200/80 dark:border-sky-900/60';
 
   // Click Outside Listener to close menu
@@ -75,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
             isTrash
               ? 'bg-rose-800 dark:bg-rose-700'
               : isSetlists
-              ? 'bg-zinc-900 dark:bg-zinc-800 border border-zinc-700'
+              ? 'bg-emerald-800 dark:bg-emerald-700 shadow-2xs'
               : isTechnique
               ? 'bg-purple-800 dark:bg-purple-700 text-white shadow-2xs'
               : 'bg-[#0c4a6e] dark:bg-sky-700'
@@ -87,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
               isTrash
                 ? 'text-rose-950 dark:text-rose-200'
                 : isSetlists
-                ? 'text-zinc-900 dark:text-zinc-100'
+                ? 'text-emerald-950 dark:text-emerald-200'
                 : isTechnique
                 ? 'text-purple-950 dark:text-purple-200'
                 : 'text-[#0c4a6e] dark:text-sky-300'
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
               isTrash
                 ? 'text-rose-700 dark:text-rose-400'
                 : isSetlists
-                ? 'text-zinc-600 dark:text-zinc-400'
+                ? 'text-emerald-700 dark:text-emerald-400'
                 : isTechnique
                 ? 'text-purple-700 dark:text-purple-400'
                 : 'text-sky-700 dark:text-sky-400'
@@ -110,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Consolidated Action Buttons */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Primary Action: + PDF Upload Button */}
+          {/* Primary Action: PDF Upload Button */}
           {onAddPdf && (
             <button
               type="button"
@@ -119,13 +119,13 @@ export const Header: React.FC<HeaderProps> = ({
                 isTechnique
                   ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700'
                   : isSetlists
-                  ? 'bg-zinc-900 hover:bg-black dark:bg-zinc-800 border border-zinc-700'
+                  ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700'
                   : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700'
               }`}
               title="Add New PDF Chart"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>+ PDF</span>
+              <span>PDF</span>
             </button>
           )}
 

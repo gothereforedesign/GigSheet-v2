@@ -248,8 +248,8 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
           }}
           className={`flex-1 py-2 px-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             isSetlistsTab
-              ? 'bg-zinc-900 dark:bg-zinc-950 text-white border border-zinc-700 shadow-xs'
-              : 'text-slate-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              ? 'bg-emerald-800 dark:bg-emerald-700 text-white shadow-xs'
+              : 'text-slate-600 dark:text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-300'
           }`}
         >
           <ListMusic className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -289,7 +289,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
             isTechniqueTab
               ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700'
               : isSetlistsTab
-              ? 'bg-zinc-900 hover:bg-black dark:bg-zinc-800 border border-zinc-700'
+              ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700'
               : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700'
           }`}
         >
@@ -429,7 +429,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
             isTechniqueTab
               ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600 text-white'
               : isSetlistsTab
-              ? 'bg-zinc-900 hover:bg-black dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 border border-zinc-700'
+              ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white'
               : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600 text-white'
           }`}
         >

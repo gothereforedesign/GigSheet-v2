@@ -264,7 +264,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         isTechnique
           ? 'bg-[#130d1d] text-purple-100'
           : isSetlists
-          ? 'bg-black text-zinc-100'
+          ? 'bg-[#022c22] text-emerald-100'
           : isTrash
           ? 'bg-[#120508] text-rose-100'
           : 'bg-[#030d17] text-sky-100'
@@ -276,7 +276,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         isTechnique
           ? 'bg-[#18092b]/95 border-purple-900/60'
           : isSetlists
-          ? 'bg-zinc-950/95 border-zinc-800'
+          ? 'bg-[#064e3b]/95 border-emerald-900/60'
           : isTrash
           ? 'bg-[#1f0a0f]/95 border-rose-900/60'
           : 'bg-[#071d2c]/95 border-sky-900/60'
@@ -295,7 +295,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               isTechnique
                 ? 'bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 border-purple-800/80'
                 : isSetlists
-                ? 'bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border-zinc-700'
+                ? 'bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-200 border-emerald-800/80'
                 : isTrash
                 ? 'bg-rose-950/60 hover:bg-rose-900/60 text-rose-200 border-rose-800/80'
                 : 'bg-[#0c4a6e]/40 hover:bg-[#0c4a6e]/70 text-sky-200 border-sky-800/80'
@@ -310,7 +310,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             isTechnique
               ? 'bg-purple-950/40 border-purple-800/80'
               : isSetlists
-              ? 'bg-zinc-900 border-zinc-700'
+              ? 'bg-emerald-950/40 border-emerald-800/80'
               : isTrash
               ? 'bg-rose-950/40 border-rose-800/80'
               : 'bg-[#0c4a6e]/30 border-sky-800/80'
@@ -323,7 +323,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               isTechnique
                 ? 'bg-purple-950/90 text-purple-200 border border-purple-800'
                 : isSetlists
-                ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
+                ? 'bg-emerald-950/90 text-emerald-200 border border-emerald-800'
                 : isTrash
                 ? 'bg-rose-950/90 text-rose-200 border border-rose-800'
                 : 'bg-sky-950/90 text-sky-200 border border-sky-800'
@@ -343,7 +343,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                 isTechnique
                   ? 'bg-purple-800 hover:bg-purple-900 text-purple-100 border-purple-700'
                   : isSetlists
-                  ? 'bg-zinc-900 hover:bg-black text-zinc-100 border-zinc-700'
+                  ? 'bg-emerald-800 hover:bg-emerald-900 text-emerald-100 border-emerald-700'
                   : isTrash
                   ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
                   : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
@@ -365,7 +365,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               isTechnique
                 ? 'bg-purple-800 hover:bg-purple-900 text-purple-100 border-purple-700'
                 : isSetlists
-                ? 'bg-zinc-900 hover:bg-black text-zinc-100 border-zinc-700'
+                ? 'bg-emerald-800 hover:bg-emerald-900 text-emerald-100 border-emerald-700'
                 : isTrash
                 ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
                 : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
@@ -374,13 +374,13 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           >
             {isDownloading ? (
               <Loader2 className={`w-3.5 h-3.5 animate-spin ${
-                isTechnique ? 'text-purple-300' : isSetlists ? 'text-zinc-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
+                isTechnique ? 'text-purple-300' : isSetlists ? 'text-emerald-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
               }`} />
             ) : downloadSuccess ? (
               <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
             ) : (
               <Download className={`w-3.5 h-3.5 stroke-[2.2] ${
-                isTechnique ? 'text-purple-300' : isSetlists ? 'text-zinc-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
+                isTechnique ? 'text-purple-300' : isSetlists ? 'text-emerald-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
               }`} />
             )}
             <span className="text-[11px] font-black">
@@ -392,7 +392,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
       {/* Main Sheet Music Viewing Canvas */}
       <main className={`song-viewer-main flex-1 w-full relative overflow-hidden flex flex-col ${
-        isTechnique ? 'bg-[#130d1d]' : isSetlists ? 'bg-black' : isTrash ? 'bg-[#120508]' : 'bg-[#030d17]'
+        isTechnique ? 'bg-[#130d1d]' : isSetlists ? 'bg-[#022c22]' : isTrash ? 'bg-[#120508]' : 'bg-[#030d17]'
       }`}>
         <input 
           type="file" 
@@ -486,7 +486,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         isTechnique
           ? 'bg-[#18092b]/95 border-purple-900/60'
           : isSetlists
-          ? 'bg-zinc-950/95 border-zinc-800'
+          ? 'bg-[#064e3b]/95 border-emerald-900/60'
           : isTrash
           ? 'bg-[#1f0a0f]/95 border-rose-900/60'
           : 'bg-[#071d2c]/95 border-sky-900/60'
@@ -498,7 +498,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           isTechnique
             ? 'bg-[#130721] border-purple-800/80 text-purple-200'
             : isSetlists
-            ? 'bg-zinc-900 border-zinc-700 text-zinc-200'
+            ? 'bg-[#043729] border-emerald-800/80 text-emerald-200'
             : isTrash
             ? 'bg-[#180509] border-rose-800/80 text-rose-200'
             : 'bg-[#031320] border-sky-800/80 text-sky-200'
@@ -510,7 +510,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               isTechnique
                 ? 'hover:bg-purple-900/50 hover:text-white'
                 : isSetlists
-                ? 'hover:bg-zinc-800 hover:text-white'
+                ? 'hover:bg-emerald-900/50 hover:text-white'
                 : isTrash
                 ? 'hover:bg-rose-900/50 hover:text-white'
                 : 'hover:bg-[#0c4a6e]/50 hover:text-white'
@@ -524,7 +524,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             isTechnique
               ? 'text-purple-300'
               : isSetlists
-              ? 'text-zinc-300'
+              ? 'text-emerald-300'
               : isTrash
               ? 'text-rose-300'
               : 'text-sky-300'
@@ -539,7 +539,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               isTechnique
                 ? 'hover:bg-purple-900/50 hover:text-white'
                 : isSetlists
-                ? 'hover:bg-zinc-800 hover:text-white'
+                ? 'hover:bg-emerald-900/50 hover:text-white'
                 : isTrash
                 ? 'hover:bg-rose-900/50 hover:text-white'
                 : 'hover:bg-[#0c4a6e]/50 hover:text-white'
@@ -557,7 +557,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                 isTechnique
                   ? 'border-purple-800/60 hover:bg-purple-900/50 text-purple-300'
                   : isSetlists
-                  ? 'border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                  ? 'border-emerald-800/60 hover:bg-emerald-900/50 text-emerald-300'
                   : isTrash
                   ? 'border-rose-800/60 hover:bg-rose-900/50 text-rose-300'
                   : 'border-sky-800/60 hover:bg-[#0c4a6e]/50 text-sky-300'
@@ -579,7 +579,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                 isTechnique
                   ? 'bg-[#130721] hover:bg-purple-900/50 border-purple-800/80 text-purple-200'
                   : isSetlists
-                  ? 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                  ? 'bg-[#03281f] hover:bg-emerald-900/50 border-emerald-800/80 text-emerald-200'
                   : isTrash
                   ? 'bg-[#180509] hover:bg-rose-900/50 border-rose-800/80 text-rose-200'
                   : 'bg-[#031320] hover:bg-[#0c4a6e]/50 border-sky-800/80 text-sky-200'
@@ -594,7 +594,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               isTechnique
                 ? 'bg-[#18092b] border-purple-800/80 text-purple-200'
                 : isSetlists
-                ? 'bg-zinc-950 border-zinc-700 text-zinc-200'
+                ? 'bg-[#064e3b] border-emerald-800/80 text-emerald-200'
                 : isTrash
                 ? 'bg-[#1f0a0f] border-rose-800/80 text-rose-200'
                 : 'bg-[#071d2c] border-sky-800/80 text-sky-200'
@@ -609,7 +609,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                 isTechnique
                   ? 'bg-[#130721] hover:bg-purple-900/50 border-purple-800/80 text-purple-200'
                   : isSetlists
-                  ? 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                  ? 'bg-[#03281f] hover:bg-emerald-900/50 border-emerald-800/80 text-emerald-200'
                   : isTrash
                   ? 'bg-[#180509] hover:bg-rose-900/50 border-rose-800/80 text-rose-200'
                   : 'bg-[#031320] hover:bg-[#0c4a6e]/50 border-sky-800/80 text-sky-200'

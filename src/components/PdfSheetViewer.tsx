@@ -167,7 +167,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   const accentColorClass = isTechSection
     ? 'text-purple-400'
     : isSetlistsSection
-    ? 'text-zinc-200'
+    ? 'text-emerald-400'
     : isTrashSection
     ? 'text-rose-400'
     : 'text-sky-400';
@@ -175,7 +175,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   const accentBtnClass = isTechSection
     ? 'bg-purple-600 hover:bg-purple-500'
     : isSetlistsSection
-    ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700'
+    ? 'bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600'
     : isTrashSection
     ? 'bg-rose-700 hover:bg-rose-600'
     : 'bg-sky-600 hover:bg-sky-500';

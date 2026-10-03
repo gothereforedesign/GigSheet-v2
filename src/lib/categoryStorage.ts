@@ -52,7 +52,7 @@ function rgbToHex(r: number, g: number, b: number): string {
 export function getCascadingCategoryPalette(
   index: number,
   total: number,
-  section: 'sheet_music' | 'technique'
+  section: 'sheet_music' | 'technique' | 'setlists'
 ): CategoryColorPalette {
   const safeTotal = Math.max(1, total);
   const safeIndex = Math.max(0, Math.min(index, safeTotal - 1));
@@ -61,7 +61,18 @@ export function getCascadingCategoryPalette(
   let r: number, g: number, b: number;
   let borderR: number, borderG: number, borderB: number;
 
-  if (section === 'technique') {
+  if (section === 'setlists') {
+    // Green spectrum: from Vibrant Emerald Green (#10b981) to Deep Dark Forest Green (#022c22)
+    // Start (t=0.0): rgb(16, 185, 129) -> #10b981
+    // End (t=1.0):   rgb(2, 44, 34)    -> #022c22
+    r = Math.round(16 + t * (2 - 16));
+    g = Math.round(185 + t * (44 - 185));
+    b = Math.round(129 + t * (34 - 129));
+
+    borderR = Math.min(255, Math.round(r * 1.2 + 15));
+    borderG = Math.min(255, Math.round(g * 1.25 + 20));
+    borderB = Math.min(255, Math.round(b * 1.2 + 15));
+  } else if (section === 'technique') {
     // Purple spectrum: from Vibrant Lavender Purple (#a855f7) to Deep Royal Purple (#3b0764)
     // Start (t=0.0): rgb(168, 85, 247) -> #a855f7
     // End (t=1.0):   rgb(59, 7, 100)   -> #3b0764
@@ -110,9 +121,9 @@ export function getCascadingCategoryPalette(
     lightContainerBorder,
     darkContainerBg,
     darkContainerBorder,
-    badgeBg: section === 'technique' ? 'bg-purple-500/20' : 'bg-sky-500/20',
-    badgeText: section === 'technique' ? 'text-purple-100' : 'text-sky-100',
-    badgeBorder: section === 'technique' ? 'border-purple-400/40' : 'border-sky-400/40',
+    badgeBg: section === 'setlists' ? 'bg-emerald-500/20' : section === 'technique' ? 'bg-purple-500/20' : 'bg-sky-500/20',
+    badgeText: section === 'setlists' ? 'text-emerald-100' : section === 'technique' ? 'text-purple-100' : 'text-sky-100',
+    badgeBorder: section === 'setlists' ? 'border-emerald-400/40' : section === 'technique' ? 'border-purple-400/40' : 'border-sky-400/40',
     cardBg: '',
     cardBorder: '',
     cardHover: 'hover:brightness-110',
