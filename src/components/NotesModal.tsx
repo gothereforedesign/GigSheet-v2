@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Bold, Check, Copy } from 'lucide-react';
+import { ArrowLeft, Bold, Check, Copy, Highlighter } from 'lucide-react';
 
 interface NotesModalProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isBoldActive, setIsBoldActive] = useState(false);
+  const [isHighlightActive, setIsHighlightActive] = useState(false);
 
   // Load initial title and content when modal opens
   useEffect(() => {
@@ -62,8 +63,19 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     try {
       const isBold = document.queryCommandState('bold');
       setIsBoldActive(isBold);
+
+      const bgVal = document.queryCommandValue('hiliteColor') || document.queryCommandValue('backColor');
+      const hasHighlight = Boolean(
+        bgVal && 
+        bgVal !== 'transparent' && 
+        bgVal !== 'rgba(0, 0, 0, 0)' && 
+        bgVal !== 'none' &&
+        bgVal !== 'inherit'
+      );
+      setIsHighlightActive(hasHighlight);
     } catch {
       setIsBoldActive(false);
+      setIsHighlightActive(false);
     }
   };
 
@@ -74,6 +86,42 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     if (editorRef.current) {
       editorRef.current.focus();
     }
+  };
+
+  const handleToggleHighlight = (e: React.MouseEvent, color = '#fef08a') => {
+    e.preventDefault();
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+
+    try {
+      const bgVal = document.queryCommandValue('hiliteColor') || document.queryCommandValue('backColor');
+      const isCurrentlyHighlighted = Boolean(
+        bgVal &&
+        bgVal !== 'transparent' &&
+        bgVal !== 'rgba(0, 0, 0, 0)' &&
+        bgVal !== 'none' &&
+        bgVal !== 'inherit'
+      );
+
+      if (isCurrentlyHighlighted) {
+        document.execCommand('hiliteColor', false, 'transparent');
+        document.execCommand('backColor', false, 'transparent');
+      } else {
+        const ok = document.execCommand('hiliteColor', false, color);
+        if (!ok) {
+          document.execCommand('backColor', false, color);
+        }
+      }
+    } catch {
+      const ok = document.execCommand('hiliteColor', false, color);
+      if (!ok) {
+        document.execCommand('backColor', false, color);
+      }
+    }
+
+    checkSelectionState();
+    handleInput();
   };
 
   const handleCopyAllText = async (e: React.MouseEvent) => {
@@ -94,6 +142,10 @@ export const NotesModal: React.FC<NotesModalProps> = ({
       e.preventDefault();
       document.execCommand('bold', false);
       checkSelectionState();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'h') {
+      e.preventDefault();
+      handleToggleHighlight(e as any);
     }
     if (e.key === 'Escape') {
       onClose();
@@ -176,6 +228,20 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               title="Toggle Bold (Cmd+B / Ctrl+B)"
             >
               <Bold className="w-4 h-4 stroke-[3]" />
+            </button>
+
+            {/* Highlight Toggle Button */}
+            <button
+              type="button"
+              onMouseDown={(e) => handleToggleHighlight(e)}
+              className={`p-2 rounded-lg text-xs font-black transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
+                isHighlightActive
+                  ? 'bg-amber-300 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs border border-amber-400/80'
+                  : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
+              }`}
+              title="Highlight Selected Text (Cmd+H / Ctrl+H)"
+            >
+              <Highlighter className={`w-4 h-4 ${isHighlightActive ? 'stroke-[2.5] text-amber-950' : 'stroke-[2]'}`} />
             </button>
 
             {/* Copy Entire Notes Text Button */}
