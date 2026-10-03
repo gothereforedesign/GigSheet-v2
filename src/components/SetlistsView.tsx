@@ -17,6 +17,8 @@ interface SetlistsViewProps {
   allSongs: Song[];
   genreColors?: Record<string, CategoryColorKey>;
   isDarkMode?: boolean;
+  selectedSetlistId?: string | null;
+  onSelectSetlistId?: (id: string | null) => void;
   onCreateSetlist: (name: string, description?: string, section?: 'sheet_music' | 'technique') => Promise<Setlist | undefined | void>;
   onUpdateSetlist: (setlist: Setlist) => Promise<void>;
   onDeleteSetlist: (id: string) => Promise<void>;
@@ -34,6 +36,8 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
   allSongs,
   genreColors,
   isDarkMode = false,
+  selectedSetlistId: propSelectedSetlistId,
+  onSelectSetlistId,
   onCreateSetlist,
   onUpdateSetlist,
   onDeleteSetlist,
@@ -55,7 +59,15 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
     (s) => !s.isSetlistDuplicate && !s.setlistId
   );
 
-  const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
+  const [internalSetlistId, setInternalSetlistId] = useState<string | null>(null);
+  const selectedSetlistId = propSelectedSetlistId !== undefined ? propSelectedSetlistId : internalSetlistId;
+
+  const handleSetSelectedSetlistId = (id: string | null) => {
+    setInternalSetlistId(id);
+    if (onSelectSetlistId) {
+      onSelectSetlistId(id);
+    }
+  };
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [newSetName, setNewSetName] = useState<string>('');
@@ -73,7 +85,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
     setNewSetDesc('');
     setIsCreating(false);
     if (created && created.id) {
-      setSelectedSetlistId(created.id);
+      handleSetSelectedSetlistId(created.id);
     }
   };
 
@@ -151,7 +163,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 return (
                   <div
                     key={setlist.id}
-                    onClick={() => setSelectedSetlistId(setlist.id)}
+                    onClick={() => handleSetSelectedSetlistId(setlist.id)}
                     style={{
                       backgroundColor: palette.cardBgHex,
                       borderColor: palette.cardBorderHex,
@@ -193,7 +205,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 {/* Back Arrow Button */}
                 <button
                   type="button"
-                  onClick={() => setSelectedSetlistId(null)}
+                  onClick={() => handleSetSelectedSetlistId(null)}
                   className="p-1.5 text-emerald-900 dark:text-emerald-100 bg-white/90 dark:bg-emerald-900/80 hover:bg-white dark:hover:bg-emerald-800 border border-emerald-200 dark:border-emerald-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
                   title="Back to Setlists"
                 >

@@ -165,6 +165,7 @@ export default function App() {
 
   // Modal / Viewer Overlay State
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialNavStateRef.current.selectedCategory);
+  const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
   const [activeSongForViewer, setActiveSongForViewer] = useState<Song | null>(null);
   const savedSongIdRef = useRef<string | null>(initialNavStateRef.current.activeSongId);
 
@@ -185,17 +186,48 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Randomizer handler: picks a random PDF from the current section (sheet_music or technique)
+  // Randomizer handler: picks a random PDF from current category, current setlist, or current section
   const handleRandomizePdf = () => {
     const activeSection = (activeTab === 'technique' || activeTab === 'technique_routines') ? 'technique' : 'sheet_music';
-    const availableSongs = songs.filter((s) => {
-      if (s.deletedAt) return false;
-      if (activeSection === 'technique') return s.section === 'technique';
-      return s.section !== 'technique';
-    });
+    const isSetlistTab = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
+
+    let availableSongs: Song[] = [];
+    let contextLabel = '';
+
+    if (isSetlistTab && selectedSetlistId) {
+      const activeSet = setlists.find((s) => s.id === selectedSetlistId);
+      contextLabel = activeSet ? `setlist "${activeSet.name}"` : 'this setlist';
+      if (activeSet && activeSet.items.length > 0) {
+        const setSongIds = new Set(activeSet.items.map((item) => item.songId));
+        availableSongs = songs.filter((s) => {
+          if (s.deletedAt) return false;
+          return setSongIds.has(s.id) || (s.originalSongId && setSongIds.has(s.originalSongId));
+        });
+      }
+    } else if (!isSetlistTab && selectedCategory && selectedCategory !== 'ALL_SECTION_CHARTS') {
+      const normCategory = selectedCategory.trim().toLowerCase();
+      const defaultCat = activeSection === 'technique' ? 'Scales' : 'Hymns';
+      contextLabel = `category "${selectedCategory}"`;
+
+      availableSongs = songs.filter((s) => {
+        if (s.deletedAt) return false;
+        const inSection = activeSection === 'technique' ? s.section === 'technique' : s.section !== 'technique';
+        if (!inSection) return false;
+
+        const songCat = (s.genre || defaultCat).trim().toLowerCase();
+        return songCat === normCategory;
+      });
+    } else {
+      contextLabel = `${activeSection === 'technique' ? 'Technique' : 'Sheet Music'} section`;
+      availableSongs = songs.filter((s) => {
+        if (s.deletedAt) return false;
+        if (activeSection === 'technique') return s.section === 'technique';
+        return s.section !== 'technique';
+      });
+    }
 
     if (availableSongs.length === 0) {
-      showToast(`No PDF charts in ${activeSection === 'technique' ? 'Technique' : 'Sheet Music'} section.`);
+      showToast(`No PDF charts in ${contextLabel}.`);
       return;
     }
 
@@ -798,9 +830,10 @@ export default function App() {
 
   // Bottom Tab Select Handler
   const handleSelectTab = (tab: ActiveTab) => {
-    if (tab === activeTab && !selectedCategory && !activeSongForViewer && !isUploadOpen && !isCategoryManagerOpen && !songToEdit) return;
+    if (tab === activeTab && !selectedCategory && !selectedSetlistId && !activeSongForViewer && !isUploadOpen && !isCategoryManagerOpen && !songToEdit) return;
 
     setSelectedCategory(null);
+    setSelectedSetlistId(null);
     setActiveSongForViewer(null);
     setIsUploadOpen(false);
     setIsCategoryManagerOpen(false);
@@ -1399,6 +1432,8 @@ export default function App() {
                 allSongs={songs.filter((s) => !s.deletedAt)}
                 genreColors={currentCategoryColors}
                 isDarkMode={isDarkMode}
+                selectedSetlistId={selectedSetlistId}
+                onSelectSetlistId={(id) => setSelectedSetlistId(id)}
                 onCreateSetlist={handleCreateSetlist}
                 onUpdateSetlist={handleUpdateSetlist}
                 onDeleteSetlist={handleDeleteSetlist}

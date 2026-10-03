@@ -64,14 +64,20 @@ export const NotesModal: React.FC<NotesModalProps> = ({
       const isBold = document.queryCommandState('bold');
       setIsBoldActive(isBold);
 
-      const bgVal = document.queryCommandValue('hiliteColor') || document.queryCommandValue('backColor');
-      const hasHighlight = Boolean(
-        bgVal && 
-        bgVal !== 'transparent' && 
-        bgVal !== 'rgba(0, 0, 0, 0)' && 
-        bgVal !== 'none' &&
-        bgVal !== 'inherit'
-      );
+      const sel = window.getSelection();
+      let hasHighlight = false;
+      if (sel && sel.rangeCount > 0) {
+        let node: Node | null = sel.anchorNode;
+        if (node && node.nodeType === Node.TEXT_NODE) {
+          node = node.parentNode;
+        }
+        if (node && node instanceof HTMLElement && editorRef.current?.contains(node)) {
+          const bg = window.getComputedStyle(node).backgroundColor;
+          if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && bg !== 'none') {
+            hasHighlight = true;
+          }
+        }
+      }
       setIsHighlightActive(hasHighlight);
     } catch {
       setIsBoldActive(false);
@@ -88,35 +94,72 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     }
   };
 
-  const handleToggleHighlight = (e: React.MouseEvent, color = '#fef08a') => {
+  const handleToggleHighlight = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (editorRef.current) {
-      editorRef.current.focus();
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    const highlightBg = '#cbd5e1'; // Clean light gray highlight
+
+    // Check if anchor or parent element is already highlighted
+    let parentElem: HTMLElement | null = null;
+    let node: Node | null = sel.anchorNode;
+    if (node && node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+    if (node && node instanceof HTMLElement && editorRef.current.contains(node)) {
+      parentElem = node;
     }
 
-    try {
-      const bgVal = document.queryCommandValue('hiliteColor') || document.queryCommandValue('backColor');
-      const isCurrentlyHighlighted = Boolean(
-        bgVal &&
-        bgVal !== 'transparent' &&
-        bgVal !== 'rgba(0, 0, 0, 0)' &&
-        bgVal !== 'none' &&
-        bgVal !== 'inherit'
-      );
+    const currentBg = parentElem ? window.getComputedStyle(parentElem).backgroundColor : '';
+    const isAlreadyHighlighted = Boolean(
+      currentBg &&
+      currentBg !== 'rgba(0, 0, 0, 0)' &&
+      currentBg !== 'transparent' &&
+      currentBg !== 'none'
+    );
 
-      if (isCurrentlyHighlighted) {
+    if (isAlreadyHighlighted && parentElem && parentElem !== editorRef.current) {
+      try {
         document.execCommand('hiliteColor', false, 'transparent');
         document.execCommand('backColor', false, 'transparent');
-      } else {
-        const ok = document.execCommand('hiliteColor', false, color);
-        if (!ok) {
-          document.execCommand('backColor', false, color);
+      } catch (err) {}
+
+      if (parentElem.tagName.toLowerCase() === 'mark' || parentElem.style.backgroundColor) {
+        parentElem.style.backgroundColor = 'transparent';
+        if (parentElem.tagName.toLowerCase() === 'mark') {
+          const parent = parentElem.parentNode;
+          while (parentElem.firstChild) {
+            parent?.insertBefore(parentElem.firstChild, parentElem);
+          }
+          parent?.removeChild(parentElem);
         }
       }
-    } catch {
-      const ok = document.execCommand('hiliteColor', false, color);
-      if (!ok) {
-        document.execCommand('backColor', false, color);
+    } else {
+      try {
+        const ok = document.execCommand('hiliteColor', false, highlightBg);
+        if (!ok) {
+          document.execCommand('backColor', false, highlightBg);
+        }
+      } catch (err) {
+        if (!sel.isCollapsed) {
+          const range = sel.getRangeAt(0);
+          const mark = document.createElement('mark');
+          mark.style.backgroundColor = highlightBg;
+          mark.style.color = 'inherit';
+          mark.style.borderRadius = '2px';
+          mark.style.padding = '0 2px';
+          try {
+            range.surroundContents(mark);
+          } catch (ex) {
+            const contents = range.extractContents();
+            mark.appendChild(contents);
+            range.insertNode(mark);
+          }
+        }
       }
     }
 
@@ -236,12 +279,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               onMouseDown={(e) => handleToggleHighlight(e)}
               className={`p-2 rounded-lg text-xs font-black transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
                 isHighlightActive
-                  ? 'bg-amber-300 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs border border-amber-400/80'
+                  ? 'bg-slate-300 text-slate-900 dark:bg-zinc-600 dark:text-zinc-100 shadow-xs border border-slate-400 dark:border-zinc-500'
                   : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
               }`}
-              title="Highlight Selected Text (Cmd+H / Ctrl+H)"
+              title="Toggle Light Gray Highlight (Cmd+H / Ctrl+H)"
             >
-              <Highlighter className={`w-4 h-4 ${isHighlightActive ? 'stroke-[2.5] text-amber-950' : 'stroke-[2]'}`} />
+              <Highlighter className={`w-4 h-4 ${isHighlightActive ? 'stroke-[2.5] text-slate-900 dark:text-zinc-100' : 'stroke-[2]'}`} />
             </button>
 
             {/* Copy Entire Notes Text Button */}
