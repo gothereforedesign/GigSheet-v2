@@ -66,16 +66,30 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
       const sel = window.getSelection();
       let hasHighlight = false;
-      if (sel && sel.rangeCount > 0) {
+
+      // Check queryCommandValue for hiliteColor / backColor
+      try {
+        const hiliteVal = document.queryCommandValue('hiliteColor');
+        const backVal = document.queryCommandValue('backColor');
+        const val = hiliteVal || backVal;
+        if (val && val !== 'transparent' && val !== 'rgba(0, 0, 0, 0)' && val !== 'initial' && val !== 'inherit') {
+          hasHighlight = true;
+        }
+      } catch {}
+
+      if (!hasHighlight && sel && sel.rangeCount > 0 && editorRef.current) {
         let node: Node | null = sel.anchorNode;
         if (node && node.nodeType === Node.TEXT_NODE) {
           node = node.parentNode;
         }
-        if (node && node instanceof HTMLElement && editorRef.current?.contains(node)) {
-          const bg = window.getComputedStyle(node).backgroundColor;
-          if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && bg !== 'none') {
+        while (node && node instanceof HTMLElement && editorRef.current.contains(node) && node !== editorRef.current) {
+          const isMarkTag = node.tagName.toLowerCase() === 'mark';
+          const inlineBg = node.style.backgroundColor;
+          if (isMarkTag || (inlineBg && inlineBg !== 'transparent' && inlineBg !== 'rgba(0, 0, 0, 0)')) {
             hasHighlight = true;
+            break;
           }
+          node = node.parentNode;
         }
       }
       setIsHighlightActive(hasHighlight);
@@ -94,6 +108,19 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     }
   };
 
+  const applyHighlightColor = (color: string) => {
+    let ok = false;
+    try {
+      ok = document.execCommand('hiliteColor', false, color);
+    } catch {}
+    if (!ok) {
+      try {
+        ok = document.execCommand('backColor', false, color);
+      } catch {}
+    }
+    return ok;
+  };
+
   const handleToggleHighlight = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!editorRef.current) return;
@@ -102,63 +129,54 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
 
-    const highlightBg = '#cbd5e1'; // Clean light gray highlight
+    const lightGray = '#e2e8f0';
 
-    // Check if anchor or parent element is already highlighted
-    let parentElem: HTMLElement | null = null;
+    // Find if current selection or cursor is inside an existing highlight element
+    let highlightedNode: HTMLElement | null = null;
     let node: Node | null = sel.anchorNode;
     if (node && node.nodeType === Node.TEXT_NODE) {
       node = node.parentNode;
     }
-    if (node && node instanceof HTMLElement && editorRef.current.contains(node)) {
-      parentElem = node;
+    while (node && node instanceof HTMLElement && editorRef.current.contains(node) && node !== editorRef.current) {
+      const isMarkTag = node.tagName.toLowerCase() === 'mark';
+      const inlineBg = node.style.backgroundColor;
+      if (isMarkTag || (inlineBg && inlineBg !== 'transparent' && inlineBg !== 'rgba(0, 0, 0, 0)')) {
+        highlightedNode = node;
+        break;
+      }
+      node = node.parentNode;
     }
 
-    const currentBg = parentElem ? window.getComputedStyle(parentElem).backgroundColor : '';
-    const isAlreadyHighlighted = Boolean(
-      currentBg &&
-      currentBg !== 'rgba(0, 0, 0, 0)' &&
-      currentBg !== 'transparent' &&
-      currentBg !== 'none'
-    );
-
-    if (isAlreadyHighlighted && parentElem && parentElem !== editorRef.current) {
-      try {
-        document.execCommand('hiliteColor', false, 'transparent');
-        document.execCommand('backColor', false, 'transparent');
-      } catch (err) {}
-
-      if (parentElem.tagName.toLowerCase() === 'mark' || parentElem.style.backgroundColor) {
-        parentElem.style.backgroundColor = 'transparent';
-        if (parentElem.tagName.toLowerCase() === 'mark') {
-          const parent = parentElem.parentNode;
-          while (parentElem.firstChild) {
-            parent?.insertBefore(parentElem.firstChild, parentElem);
+    if (isHighlightActive || highlightedNode) {
+      // Remove highlight
+      applyHighlightColor('transparent');
+      if (highlightedNode) {
+        if (highlightedNode.tagName.toLowerCase() === 'mark') {
+          const parent = highlightedNode.parentNode;
+          while (highlightedNode.firstChild) {
+            parent?.insertBefore(highlightedNode.firstChild, highlightedNode);
           }
-          parent?.removeChild(parentElem);
+          parent?.removeChild(highlightedNode);
+        } else {
+          highlightedNode.style.backgroundColor = 'transparent';
         }
       }
     } else {
-      try {
-        const ok = document.execCommand('hiliteColor', false, highlightBg);
-        if (!ok) {
-          document.execCommand('backColor', false, highlightBg);
-        }
-      } catch (err) {
-        if (!sel.isCollapsed) {
-          const range = sel.getRangeAt(0);
-          const mark = document.createElement('mark');
-          mark.style.backgroundColor = highlightBg;
-          mark.style.color = 'inherit';
-          mark.style.borderRadius = '2px';
-          mark.style.padding = '0 2px';
-          try {
-            range.surroundContents(mark);
-          } catch (ex) {
-            const contents = range.extractContents();
-            mark.appendChild(contents);
-            range.insertNode(mark);
-          }
+      // Apply light gray highlight
+      const applied = applyHighlightColor(lightGray);
+      if (!applied && !sel.isCollapsed) {
+        const range = sel.getRangeAt(0);
+        const mark = document.createElement('mark');
+        mark.style.backgroundColor = '#e2e8f0';
+        mark.style.color = '#0f172a';
+        mark.style.borderRadius = '3px';
+        mark.style.padding = '0 3px';
+        try {
+          range.surroundContents(mark);
+        } catch {
+          const contents = range.extractContents();
+          mark.appendChild(contents);
+          range.insertNode(mark);
         }
       }
     }

@@ -38,6 +38,7 @@ import { EditSongModal } from './components/EditSongModal';
 import { CategoryManagerModal } from './components/CategoryManagerModal';
 import { BackupModal } from './components/BackupModal';
 import { NotesModal } from './components/NotesModal';
+import { GlobalSearchBar } from './components/GlobalSearchBar';
 import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
 import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
@@ -561,6 +562,7 @@ export default function App() {
 
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const droppedFiles = Array.from(e.dataTransfer.files);
+        showToast(`⚡ ${droppedFiles.length} ${droppedFiles.length === 1 ? 'PDF' : 'PDFs'} received. Preparing for approval...`);
         handleOpenUploadModal(droppedFiles);
       }
     };
@@ -1366,7 +1368,9 @@ export default function App() {
         ref={fileInputRef}
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) {
-            handleOpenUploadModal(Array.from(e.target.files));
+            const fileList = Array.from(e.target.files);
+            showToast(`⚡ ${fileList.length} ${fileList.length === 1 ? 'PDF' : 'PDFs'} received. Preparing for approval...`);
+            handleOpenUploadModal(fileList);
             e.target.value = '';
           }
         }}
@@ -1452,6 +1456,7 @@ export default function App() {
                 onRestoreSong={handleRestoreSong}
                 onPermanentDeleteSong={handlePermanentDeleteSong}
                 onEmptyTrash={handleEmptyTrash}
+                onSelectSong={handleOpenSongViewer}
               />
             )}
           </>
@@ -1574,9 +1579,19 @@ export default function App() {
 
       {/* Toast Banner for Randomizer / Alerts */}
       {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 px-4 py-2.5 rounded-xl text-xs font-black shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 border border-zinc-700/80 dark:border-zinc-300/80">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 px-4 py-2.5 rounded-xl text-xs font-black shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 border border-zinc-700/80 dark:border-zinc-300/80">
           {toastMessage}
         </div>
+      )}
+
+      {/* Global App Search Bar Sitting Right Above Bottom Navigation */}
+      {!activeSongForViewer && (
+        <GlobalSearchBar
+          allSongs={songs}
+          setlists={setlists}
+          onSelectSong={handleOpenSongViewer}
+          isDarkMode={isDarkMode}
+        />
       )}
 
       {/* Fixed Bottom Navigation Bar */}

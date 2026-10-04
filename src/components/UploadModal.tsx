@@ -112,7 +112,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   }, [initialFiles]);
 
-  const handleAddFiles = async (filesList: FileList | File[]) => {
+  const handleAddFiles = (filesList: FileList | File[]) => {
     const filesArray = Array.from(filesList);
     if (filesArray.length === 0) return;
 
@@ -131,23 +131,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMsg(null);
     }
 
-    setIsInitializingFiles(true);
-    setInitProgress({ current: 0, total: filesToAdd.length });
-
-    const chunkSize = 5;
-    let created: FileEntry[] = [];
-    for (let i = 0; i < filesToAdd.length; i += chunkSize) {
-      const chunk = filesToAdd.slice(i, i + chunkSize);
-      const chunkEntries = createEntriesFromFiles(chunk);
-      created = [...created, ...chunkEntries];
-      const processedSoFar = Math.min(filesToAdd.length, i + chunk.length);
-      setInitProgress({ current: processedSoFar, total: filesToAdd.length });
-      await new Promise((r) => setTimeout(r, 15));
-    }
+    // Instantly create file entries synchronously without artificial delay
+    const newEntries = createEntriesFromFiles(filesToAdd);
 
     setFileEntries((prev) => {
       const existingKeys = new Set(prev.map((e) => `${e.file.name}_${e.file.size}`));
-      const filtered = created.filter((e) => !existingKeys.has(`${e.file.name}_${e.file.size}`));
+      const filtered = newEntries.filter((e) => !existingKeys.has(`${e.file.name}_${e.file.size}`));
       return [...prev, ...filtered];
     });
 

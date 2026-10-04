@@ -20,6 +20,18 @@ body {
   color: inherit;
 }
 
+mark {
+  background-color: #e2e8f0;
+  color: #0f172a;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+html.dark mark {
+  background-color: #475569;
+  color: #f8fafc;
+}
+
 /* ==========================================================================
    Print Stylesheet - Option 3: Direct Print Formatting from the Active Viewer
    Hides dark app chrome, zoom bars, and nav footers, sending full-resolution
