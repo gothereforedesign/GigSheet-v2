@@ -42,6 +42,18 @@ import { GlobalSearchBar } from './components/GlobalSearchBar';
 import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
 import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
+import { auth, subscribeToAuth } from './lib/firebase';
+import {
+  subscribeUserSongs,
+  subscribeUserSetlists,
+  subscribeUserCategories,
+  saveSongToFirestore,
+  deleteSongFromFirestore,
+  saveSetlistToFirestore,
+  deleteSetlistFromFirestore,
+  saveCategoriesToFirestore,
+} from './lib/firestoreService';
+import { User } from 'firebase/auth';
 import { BUNDLED_SAMPLE_SONGS } from './lib/sampleSongs';
 
 const NAV_STATE_KEY = 'gig_sheet_nav_state';
@@ -187,7 +199,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Randomizer handler: picks a random PDF from current category, current setlist, or current section
+  // Randomizer handler: picks a random PDF from current category if in a category, otherwise randomizes everything
   const handleRandomizePdf = () => {
     const activeSection = (activeTab === 'technique' || activeTab === 'technique_routines') ? 'technique' : 'sheet_music';
     const isSetlistTab = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
@@ -211,7 +223,7 @@ export default function App() {
       contextLabel = `category "${selectedCategory}"`;
 
       availableSongs = songs.filter((s) => {
-        if (s.deletedAt) return false;
+        if (s.deletedAt || s.isSetlistDuplicate || s.setlistId) return false;
         const inSection = activeSection === 'technique' ? s.section === 'technique' : s.section !== 'technique';
         if (!inSection) return false;
 
@@ -219,12 +231,8 @@ export default function App() {
         return songCat === normCategory;
       });
     } else {
-      contextLabel = `${activeSection === 'technique' ? 'Technique' : 'Sheet Music'} section`;
-      availableSongs = songs.filter((s) => {
-        if (s.deletedAt) return false;
-        if (activeSection === 'technique') return s.section === 'technique';
-        return s.section !== 'technique';
-      });
+      contextLabel = 'library';
+      availableSongs = songs.filter((s) => !s.deletedAt && !s.isSetlistDuplicate && !s.setlistId);
     }
 
     if (availableSongs.length === 0) {
@@ -232,9 +240,20 @@ export default function App() {
       return;
     }
 
-    const randomIndex = Math.floor(Math.random() * availableSongs.length);
-    const randomSong = availableSongs[randomIndex];
-    handleOpenSongViewer(randomSong);
+    const pool =
+      availableSongs.length > 1 && activeSongForViewer
+        ? availableSongs.filter((s) => s.id !== activeSongForViewer.id)
+        : availableSongs;
+
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const randomSong = pool[randomIndex];
+
+    if (activeSongForViewer) {
+      setActiveSetlistContext(null);
+      setActiveSongForViewer(randomSong);
+    } else {
+      handleOpenSongViewer(randomSong);
+    }
   };
 
   // Load IndexedDB Data on Mount
@@ -434,6 +453,61 @@ export default function App() {
   };
 
   const uploadQueue = usePDFUploadQueue(loadSongs);
+
+  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
+
+  // Subscribe to Firebase Auth and real-time Cloud Firestore Data
+  useEffect(() => {
+    const unsubAuth = subscribeToAuth((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const userId = currentUser.uid;
+
+    // Real-time Firestore Songs Subscription
+    const unsubSongs = subscribeUserSongs(userId, (cloudSongs) => {
+      if (cloudSongs && cloudSongs.length >= 0) {
+        setSongs((prev) => {
+          // Merge local and cloud songs gracefully
+          const map = new Map<string, Song>();
+          prev.forEach((s) => map.set(s.id, s));
+          cloudSongs.forEach((s) => map.set(s.id, s));
+          return Array.from(map.values());
+        });
+      }
+    });
+
+    // Real-time Firestore Setlists Subscription
+    const unsubSetlists = subscribeUserSetlists(userId, (cloudSetlists) => {
+      if (cloudSetlists) {
+        setSetlists(cloudSetlists);
+      }
+    });
+
+    // Real-time Firestore Sheet Music Categories Subscription
+    const unsubSMCats = subscribeUserCategories(userId, 'sheet_music', ({ categories, colors }) => {
+      if (categories && categories.length > 0) setSheetMusicCategories(categories);
+      if (colors && Object.keys(colors).length > 0) setSheetMusicColors(colors);
+    });
+
+    // Real-time Firestore Technique Categories Subscription
+    const unsubTechCats = subscribeUserCategories(userId, 'technique', ({ categories, colors }) => {
+      if (categories && categories.length > 0) setTechniqueCategories(categories);
+      if (colors && Object.keys(colors).length > 0) setTechniqueColors(colors);
+    });
+
+    return () => {
+      unsubSongs();
+      unsubSetlists();
+      unsubSMCats();
+      unsubTechCats();
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -1294,6 +1368,7 @@ export default function App() {
         onClose={handleCloseSongViewer}
         onAddToSetlist={(s) => setSongForAddToSetlist(s)}
         onSaveSong={handleUpdateSong}
+        onRandomizePdf={handleRandomizePdf}
         navigation={navigationContext}
       />
     );
@@ -1424,6 +1499,7 @@ export default function App() {
                 onAddToSetlist={(song) => setSongForAddToSetlist(song)}
                 onOpenGenreManager={handleOpenCategoryManager}
                 onAddChart={() => handleOpenUploadModal()}
+                onRandomizePdf={handleRandomizePdf}
                 trashCount={trashedSongs.length}
                 onOpenTrash={() => handleSelectTab('trash')}
               />

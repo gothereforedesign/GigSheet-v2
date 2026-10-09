@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Bold, Check, Copy, Highlighter } from 'lucide-react';
+import { ArrowLeft, Bold, Check, Copy, Highlighter, Cloud } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { subscribeUserNotes, saveUserNotesToFirestore } from '../lib/firestoreService';
 
 interface NotesModalProps {
   isOpen: boolean;
   onClose: () => void;
   isDarkMode?: boolean;
 }
-
-const TITLE_STORAGE_KEY = 'gigsheet_user_notes_title';
-const CONTENT_STORAGE_KEY = 'gigsheet_user_notes_content';
 
 export const NotesModal: React.FC<NotesModalProps> = ({
   isOpen,
@@ -20,36 +19,55 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   const [isCopied, setIsCopied] = useState(false);
   const [isBoldActive, setIsBoldActive] = useState(false);
   const [isHighlightActive, setIsHighlightActive] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load initial title and content when modal opens
+  // Subscribe to real-time Cloud Firestore Notes when modal opens
   useEffect(() => {
-    if (isOpen) {
-      const savedTitle = localStorage.getItem(TITLE_STORAGE_KEY) || '';
-      const savedHtml = localStorage.getItem(CONTENT_STORAGE_KEY) || '';
-      setTitle(savedTitle);
+    if (!isOpen) return;
 
-      if (editorRef.current) {
-        editorRef.current.innerHTML = savedHtml;
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    const unsubscribe = subscribeUserNotes(userId, (notes) => {
+      setTitle(notes.title || '');
+      if (editorRef.current && editorRef.current.innerHTML !== notes.content) {
+        editorRef.current.innerHTML = notes.content || '';
       }
-    }
+    });
+
+    return () => unsubscribe();
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const persistNotesToCloud = (newTitle: string, newContent: string) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await saveUserNotesToFirestore(userId, newTitle, newContent);
+        triggerSaved();
+      } catch (err) {
+        console.warn('Failed to save notes to Firestore:', err);
+      }
+    }, 400);
+  };
 
   // Handle Title Change
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setTitle(val);
-    localStorage.setItem(TITLE_STORAGE_KEY, val);
-    triggerSaved();
+    const content = editorRef.current?.innerHTML || '';
+    persistNotesToCloud(val, content);
   };
 
   // Handle Content Input
   const handleInput = () => {
     if (editorRef.current) {
       const html = editorRef.current.innerHTML;
-      localStorage.setItem(CONTENT_STORAGE_KEY, html);
-      triggerSaved();
+      persistNotesToCloud(title, html);
     }
     checkSelectionState();
   };

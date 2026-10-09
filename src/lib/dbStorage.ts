@@ -1,5 +1,7 @@
 import { getDB } from './db';
 import { Song } from '../types';
+import { auth } from './firebase';
+import { saveSongToFirestore } from './firestoreService';
 
 /**
  * Checks storage quota via navigator.storage.estimate().
@@ -42,17 +44,26 @@ export async function checkStorageQuota(incomingSize: number): Promise<{
 }
 
 /**
- * Saves a song and its raw File/Blob directly to IndexedDB with automatic retry and exponential backoff
- * to prevent transient disk I/O or IDB lock failures during large batch uploads.
+ * Saves a song and its raw File/Blob directly to Firebase Storage & Cloud Firestore as primary storage,
+ * with IndexedDB caching for zero-latency local availability.
  */
 export async function saveSongDirectDirectBlob(song: Song, fileBlob: Blob | File, maxRetries = 3): Promise<void> {
   if (!fileBlob || fileBlob.size === 0) {
     throw new Error('Invalid or empty file blob provided.');
   }
 
-  // Store raw File or Blob directly in IndexedDB for zero-copy, instant async storage
-  const binaryData: Blob | File = fileBlob;
+  const userId = auth.currentUser?.uid;
+  
+  // 1. Primary Cloud Save (Firebase Storage + Firestore)
+  if (userId) {
+    try {
+      await saveSongToFirestore(userId, song, fileBlob);
+    } catch (err) {
+      console.warn('Cloud save deferred or operating offline:', err);
+    }
+  }
 
+  // 2. Local IDB Cache for offline instant access
   let attempt = 0;
   let lastError: any = null;
 
@@ -62,23 +73,19 @@ export async function saveSongDirectDirectBlob(song: Song, fileBlob: Blob | File
       const db = await getDB();
       const { fileBlob: _, ...metadata } = song;
 
-      // Write to both metadata 'songs' and binary 'song_blobs' stores cleanly
       const tx = db.transaction(['songs', 'song_blobs'], 'readwrite');
       tx.objectStore('songs').put(metadata as Song);
-      tx.objectStore('song_blobs').put({ id: song.id, blob: binaryData });
+      tx.objectStore('song_blobs').put({ id: song.id, blob: fileBlob });
       await tx.done;
 
-      return; // Success
+      return;
     } catch (err) {
       lastError = err;
       console.warn(`IndexedDB save attempt ${attempt} failed for "${song.title}":`, err);
       if (attempt < maxRetries) {
-        // Exponential backoff: 200ms, 400ms, 800ms...
         const delay = Math.pow(2, attempt) * 100;
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
-
-  throw new Error(`Failed to save after ${maxRetries} attempts: ${lastError?.message || 'Unknown storage error'}`);
 }

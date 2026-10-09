@@ -1,4 +1,6 @@
 import { syncCategoriesToCloud, fetchCategoriesFromCloud } from './firestoreSync';
+import { auth } from './firebase';
+import { saveCategoriesToFirestore } from './firestoreService';
 
 /**
  * Category storage and dynamic cascading color palette definitions.
@@ -199,9 +201,13 @@ export function saveStoredCategories(section: 'sheet_music' | 'technique', categ
     console.warn('Failed to save categories to localStorage:', e);
   }
 
-  // Non-blocking sync to cloud
   const colors = getStoredCategoryColors(section);
-  syncCategoriesToCloud(section, categories, colors).catch(() => {});
+  const userId = auth.currentUser?.uid;
+  if (userId) {
+    saveCategoriesToFirestore(userId, section, categories, colors).catch(() => {});
+  } else {
+    syncCategoriesToCloud(section, categories, colors).catch(() => {});
+  }
 }
 
 export function getStoredCategoryColors(section: 'sheet_music' | 'technique'): Record<string, CategoryColorKey> {
@@ -229,9 +235,13 @@ export function saveStoredCategoryColors(section: 'sheet_music' | 'technique', c
     console.warn('Failed to save category colors to localStorage:', e);
   }
 
-  // Non-blocking sync to cloud
   const categories = getStoredCategories(section);
-  syncCategoriesToCloud(section, categories, colors).catch(() => {});
+  const userId = auth.currentUser?.uid;
+  if (userId) {
+    saveCategoriesToFirestore(userId, section, categories, colors).catch(() => {});
+  } else {
+    syncCategoriesToCloud(section, categories, colors).catch(() => {});
+  }
 }
 
 /**

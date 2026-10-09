@@ -4,7 +4,7 @@ import { PdfSheetViewer } from './PdfSheetViewer';
 import { 
   X, ChevronLeft, ChevronRight, ListPlus,
   Loader2, ZoomIn, ZoomOut, RotateCcw,
-  Download, Check, Music, Upload
+  Download, Check, Music, Upload, Shuffle
 } from 'lucide-react';
 import { getSongById, saveSong } from '../lib/db';
 import { saveSongDirectDirectBlob } from '../lib/dbStorage';
@@ -17,6 +17,7 @@ interface SongViewerModalProps {
   onClose: () => void;
   onAddToSetlist?: (song: Song) => void;
   onSaveSong?: (song: Song) => void;
+  onRandomizePdf?: () => void;
   navigation?: {
     currentIndex: number;
     totalCount: number;
@@ -31,6 +32,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   onClose,
   onAddToSetlist,
   onSaveSong,
+  onRandomizePdf,
   navigation,
 }) => {
   const [song, setSong] = useState<Song>(initialSong);
@@ -333,8 +335,31 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           </div>
         </div>
 
-        {/* Item 2: Actions - +Setlist & Download */}
+        {/* Item 2: Actions - Randomize, +Setlist & Download */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {onRandomizePdf && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRandomizePdf();
+              }}
+              className={`p-2 rounded-md border transition-all cursor-pointer active:scale-95 shadow-lg flex items-center justify-center ${
+                isTechnique
+                  ? 'bg-purple-800 hover:bg-purple-900 text-purple-100 border-purple-700'
+                  : isSetlists
+                  ? 'bg-emerald-800 hover:bg-emerald-900 text-emerald-100 border-emerald-700'
+                  : isTrash
+                  ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
+                  : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
+              }`}
+              title="Randomize PDF"
+              aria-label="Randomize PDF"
+            >
+              <Shuffle className="w-3.5 h-3.5 stroke-[2.2]" />
+            </button>
+          )}
+
           {onAddToSetlist && (
             <button
               type="button"

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Music, Trash2, FolderEdit, Database, Sun, Moon, Plus, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Music, Trash2, FolderEdit, Database, Sun, Moon, Plus, SlidersHorizontal, ChevronDown, User as UserIcon, LogIn, LogOut, Cloud } from 'lucide-react';
 import { ActiveTab } from '../types';
+import { auth, loginWithGoogle, logoutUser, subscribeToAuth } from '../lib/firebase';
+import { User } from 'firebase/auth';
 
 interface HeaderProps {
   trashCount?: number;
@@ -24,7 +26,13 @@ export const Header: React.FC<HeaderProps> = ({
   onAddPdf,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(auth.currentUser);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsub = subscribeToAuth((u) => setUser(u));
+    return () => unsub();
+  }, []);
 
   const isTechnique = activeTab === 'technique';
   const isSetlists = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
@@ -170,7 +178,51 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Dropdown Menu Popover */}
             {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                {/* Account Status Header */}
+                <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800 mb-1 space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <Cloud className="w-3 h-3 text-sky-500" />
+                    <span>Cloud Storage Account</span>
+                  </div>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    {user?.email || (user?.isAnonymous ? 'Guest Account (Synced)' : 'Signed Out')}
+                  </p>
+                </div>
+
+                {/* Google Auth Toggle Button */}
+                {user && !user.isAnonymous ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsMenuOpen(false);
+                      await logoutUser();
+                    }}
+                    className="w-full px-3.5 py-2 text-left text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 stroke-[2]" />
+                    <span>Sign Out</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsMenuOpen(false);
+                      try {
+                        await loginWithGoogle();
+                      } catch (err) {
+                        console.warn('Google sign-in error:', err);
+                      }
+                    }}
+                    className="w-full px-3.5 py-2 text-left text-xs font-extrabold text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/60 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <LogIn className="w-4 h-4 stroke-[2] text-sky-600" />
+                    <span>Sign In with Google</span>
+                  </button>
+                )}
+
+                <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
                 {onOpenCategoryManager && (
                   <button
                     type="button"

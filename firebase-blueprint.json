@@ -2,7 +2,7 @@
   "entities": {
     "Song": {
       "title": "Song",
-      "description": "Sheet music or technique chart metadata",
+      "description": "Sheet music, technique chart, image, or audio metadata",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -15,47 +15,55 @@
         "genre": { "type": "string" },
         "section": { "type": "string" },
         "type": { "type": "string" },
+        "fileUrl": { "type": "string" },
         "favorite": { "type": "boolean" },
-        "dateAdded": { "type": "number" }
+        "dateAdded": { "type": "number" },
+        "dateModified": { "type": "number" },
+        "deletedAt": { "type": "number" }
       },
-      "required": ["id", "title", "genre", "section"]
-    },
-    "SongBlob": {
-      "title": "SongBlob",
-      "description": "Binary PDF or chart data stored in base64 chunks",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "blobData": { "type": "string" },
-        "chunks": { "type": "array" }
-      },
-      "required": ["id"]
+      "required": ["id", "title", "section"]
     },
     "Setlist": {
       "title": "Setlist",
-      "description": "Performance setlist",
+      "description": "Performance setlist or practice routine",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
         "description": { "type": "string" },
-        "dateCreated": { "type": "number" }
+        "items": { "type": "array" },
+        "type": { "type": "string" },
+        "dateCreated": { "type": "number" },
+        "dateModified": { "type": "number" }
       },
       "required": ["id", "name"]
+    },
+    "UserSetting": {
+      "title": "UserSetting",
+      "description": "User preferences, notes, and category configurations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "categories": { "type": "array" },
+        "colors": { "type": "object" },
+        "updatedAt": { "type": "number" }
+      }
     }
   },
   "firestore": {
-    "/songs/{songId}": {
+    "/users/{userId}/songs/{songId}": {
       "schema": { "$ref": "#/entities/Song" },
-      "description": "Collection of song charts and technique items"
+      "description": "User's collection of songs and charts"
     },
-    "/song_blobs/{songId}": {
-      "schema": { "$ref": "#/entities/SongBlob" },
-      "description": "Collection of binary PDF and image data"
-    },
-    "/setlists/{setlistId}": {
+    "/users/{userId}/setlists/{setlistId}": {
       "schema": { "$ref": "#/entities/Setlist" },
-      "description": "Collection of performance setlists"
+      "description": "User's setlists and practice routines"
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/UserSetting" },
+      "description": "User's notes, custom categories, and app preferences"
     }
   }
 }

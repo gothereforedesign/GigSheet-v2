@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Song, ViewFilterState } from '../types';
 import { 
-  Music, GraduationCap, Trash2, FolderEdit, ListPlus, ChevronLeft, FileText, LayoutList, LayoutGrid
+  Music, GraduationCap, Trash2, FolderEdit, ListPlus, ChevronLeft, FileText, LayoutList, LayoutGrid, Shuffle
 } from 'lucide-react';
 import { 
   CategoryColorKey, 
@@ -29,6 +29,7 @@ interface LibraryViewProps {
   onAddToSetlist?: (song: Song) => void;
   onOpenGenreManager?: () => void;
   onAddChart?: () => void;
+  onRandomizePdf?: () => void;
   trashCount?: number;
   onOpenTrash?: () => void;
 }
@@ -203,6 +204,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onAddToSetlist,
   onOpenGenreManager,
   onAddChart,
+  onRandomizePdf,
   trashCount,
   onOpenTrash,
 }) => {
@@ -406,6 +408,19 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Minimal Randomize Icon Button */}
+              {onRandomizePdf && (
+                <button
+                  type="button"
+                  onClick={onRandomizePdf}
+                  className="p-1.5 rounded-md bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                  title="Randomize Category"
+                  aria-label="Randomize Category"
+                >
+                  <Shuffle className="w-4 h-4 stroke-[2.2]" />
+                </button>
+              )}
+
               {/* View Toggle Button */}
               <button
                 type="button"
