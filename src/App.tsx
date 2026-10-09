@@ -180,6 +180,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialNavStateRef.current.selectedCategory);
   const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
   const [activeSongForViewer, setActiveSongForViewer] = useState<Song | null>(null);
+  const [openedViaRandomize, setOpenedViaRandomize] = useState<boolean>(false);
   const savedSongIdRef = useRef<string | null>(initialNavStateRef.current.activeSongId);
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
@@ -248,11 +249,12 @@ export default function App() {
     const randomIndex = Math.floor(Math.random() * pool.length);
     const randomSong = pool[randomIndex];
 
+    setOpenedViaRandomize(true);
     if (activeSongForViewer) {
       setActiveSetlistContext(null);
       setActiveSongForViewer(randomSong);
     } else {
-      handleOpenSongViewer(randomSong);
+      handleOpenSongViewer(randomSong, undefined, undefined, true);
     }
   };
 
@@ -375,6 +377,7 @@ export default function App() {
     if (!item) return;
     const song = songs.find((s) => s.id === item.songId);
     if (song) {
+      setOpenedViaRandomize(false);
       setActiveSetlistContext({ setlist, startIndex });
       setActiveSongForViewer(song);
     }
@@ -739,7 +742,8 @@ export default function App() {
     }
   };
 
-  const handleOpenSongViewer = (song: Song, contextSetlist?: Setlist, index?: number) => {
+  const handleOpenSongViewer = (song: Song, contextSetlist?: Setlist, index?: number, fromRandomize = false) => {
+    setOpenedViaRandomize(fromRandomize);
     if (contextSetlist) {
       setActiveSetlistContext({ setlist: contextSetlist, startIndex: index ?? 0 });
     } else {
@@ -750,6 +754,7 @@ export default function App() {
   };
 
   const handleCloseSongViewer = () => {
+    setOpenedViaRandomize(false);
     setActiveSetlistContext(null);
     goBackOrReset({ activeSongId: null });
   };
@@ -1336,6 +1341,7 @@ export default function App() {
           onNavigate: (newIdx: number) => {
             const nextSong = setlistSongs[newIdx];
             if (nextSong) {
+              setOpenedViaRandomize(false);
               setActiveSetlistContext({ setlist, startIndex: newIdx });
               setActiveSongForViewer(nextSong);
             }
@@ -1354,6 +1360,7 @@ export default function App() {
           onNavigate: (newIdx: number) => {
             const nextSong = songsList[newIdx];
             if (nextSong) {
+              setOpenedViaRandomize(false);
               setActiveSongForViewer(nextSong);
             }
           },
@@ -1368,7 +1375,7 @@ export default function App() {
         onClose={handleCloseSongViewer}
         onAddToSetlist={(s) => setSongForAddToSetlist(s)}
         onSaveSong={handleUpdateSong}
-        onRandomizePdf={handleRandomizePdf}
+        onRandomizePdf={openedViaRandomize ? handleRandomizePdf : undefined}
         navigation={navigationContext}
       />
     );
