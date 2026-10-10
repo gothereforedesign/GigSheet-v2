@@ -3,7 +3,7 @@ import { Song, ActiveTab } from '../types';
 import { PdfSheetViewer } from './PdfSheetViewer';
 import { 
   X, ChevronLeft, ChevronRight, ListPlus,
-  Loader2, ZoomIn, ZoomOut, RotateCcw,
+  Loader2, ZoomIn, ZoomOut,
   Download, Check, Music, Upload, Shuffle
 } from 'lucide-react';
 import { getSongById, saveSong } from '../lib/db';
@@ -335,31 +335,8 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           </div>
         </div>
 
-        {/* Item 2: Actions - Randomize, +Setlist & Download */}
+        {/* Item 2: Actions - +Setlist & Download */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {onRandomizePdf && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRandomizePdf();
-              }}
-              className={`p-2 rounded-md border transition-all cursor-pointer active:scale-95 shadow-lg flex items-center justify-center ${
-                isTechnique
-                  ? 'bg-purple-800 hover:bg-purple-900 text-purple-100 border-purple-700'
-                  : isSetlists
-                  ? 'bg-emerald-800 hover:bg-emerald-900 text-emerald-100 border-emerald-700'
-                  : isTrash
-                  ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
-                  : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
-              }`}
-              title="Randomize PDF"
-              aria-label="Randomize PDF"
-            >
-              <Shuffle className="w-3.5 h-3.5 stroke-[2.2]" />
-            </button>
-          )}
-
           {onAddToSetlist && (
             <button
               type="button"
@@ -507,7 +484,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
       </main>
 
       {/* Bottom Navigation & Performance Controls - Matches Section Palette */}
-      <footer className={`song-viewer-footer sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 py-2.5 sm:py-3 items-center justify-between gap-2 select-none min-h-[60px] w-full shrink-0 border-t backdrop-blur-md transition-all duration-200 ${
+      <footer className={`song-viewer-footer relative sticky bottom-0 inset-x-0 z-40 text-white px-3 sm:px-6 h-16 items-center justify-between gap-2 select-none w-full shrink-0 border-t backdrop-blur-md transition-all duration-200 ${
         isTechnique
           ? 'bg-[#18092b]/95 border-purple-900/60'
           : isSetlists
@@ -519,7 +496,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
         isLandscapeClean ? 'hidden' : 'flex'
       }`}>
         {/* Item 3: Zoom Controls */}
-        <div className={`flex items-center gap-1 p-1 rounded-md shadow-lg border shrink-0 ${
+        <div className={`flex items-center gap-0.5 sm:gap-1 p-1 rounded-md shadow-lg border shrink-0 ${
           isTechnique
             ? 'bg-[#130721] border-purple-800/80 text-purple-200'
             : isSetlists
@@ -531,7 +508,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.max(50, z - 5))}
-            className={`px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all ${
+            className={`px-2.5 sm:px-4 py-1.5 min-w-[36px] sm:min-w-[48px] h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all ${
               isTechnique
                 ? 'hover:bg-purple-900/50 hover:text-white'
                 : isSetlists
@@ -545,7 +522,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             <ZoomOut className="w-4 h-4 stroke-[2.5]" />
           </button>
           
-          <span className={`text-xs font-black tracking-wider px-1.5 min-w-[42px] text-center whitespace-nowrap ${
+          <span className={`text-[11px] sm:text-xs font-black tracking-wider px-1 sm:px-1.5 min-w-[38px] sm:min-w-[42px] text-center whitespace-nowrap ${
             isTechnique
               ? 'text-purple-300'
               : isSetlists
@@ -560,7 +537,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           <button
             type="button"
             onClick={() => updateZoom((z) => Math.min(300, z + 5))}
-            className={`px-3 sm:px-4 py-1.5 min-w-[42px] sm:min-w-[48px] h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all ${
+            className={`px-2.5 sm:px-4 py-1.5 min-w-[36px] sm:min-w-[48px] h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all ${
               isTechnique
                 ? 'hover:bg-purple-900/50 hover:text-white'
                 : isSetlists
@@ -573,34 +550,39 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           >
             <ZoomIn className="w-4 h-4 stroke-[2.5]" />
           </button>
-
-          {zoomLevel !== 100 && (
-            <button
-              type="button"
-              onClick={() => updateZoom(100)}
-              className={`px-2.5 py-1.5 h-9 flex items-center justify-center active:scale-95 rounded-sm cursor-pointer transition-all border-l ml-0.5 ${
-                isTechnique
-                  ? 'border-purple-800/60 hover:bg-purple-900/50 text-purple-300'
-                  : isSetlists
-                  ? 'border-emerald-800/60 hover:bg-emerald-900/50 text-emerald-300'
-                  : isTrash
-                  ? 'border-rose-800/60 hover:bg-rose-900/50 text-rose-300'
-                  : 'border-sky-800/60 hover:bg-[#0c4a6e]/50 text-sky-300'
-              }`}
-              title="Reset Zoom to 100%"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          )}
         </div>
+
+        {/* Center Action: Randomize Button (same bottom-center position as BottomNav) */}
+        {onRandomizePdf && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRandomizePdf();
+            }}
+            className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 p-3 rounded-2xl text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 ${
+              isTechnique
+                ? 'bg-purple-800 hover:bg-purple-900 text-white shadow-purple-900/20 border border-purple-700'
+                : isSetlists
+                ? 'bg-emerald-800 hover:bg-emerald-900 text-white shadow-emerald-900/20 border border-emerald-700'
+                : isTrash
+                ? 'bg-rose-800 hover:bg-rose-900 text-white shadow-rose-900/20 border border-rose-700'
+                : 'bg-[#0c4a6e] hover:bg-[#073652] text-white shadow-sky-900/20 border border-sky-700'
+            }`}
+            title="Pick Random Chart"
+            aria-label="Pick Random Chart"
+          >
+            <Shuffle className="w-5 h-5 stroke-[2.5]" />
+          </button>
+        )}
 
         {/* Item 4: Directory Navigation */}
         {navigation && navigation.totalCount > 1 ? (
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex - 1)}
               disabled={navigation.currentIndex <= 0}
-              className={`px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg font-extrabold text-xs shrink-0 border ${
+              className={`px-2.5 sm:px-5 py-1.5 h-9 min-w-[38px] sm:min-w-[70px] rounded-md active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg font-extrabold text-xs shrink-0 border ${
                 isTechnique
                   ? 'bg-[#130721] hover:bg-purple-900/50 border-purple-800/80 text-purple-200'
                   : isSetlists
@@ -615,7 +597,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Prev</span>
             </button>
 
-            <div className={`px-3 py-1.5 h-9 flex items-center justify-center border rounded-md text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg ${
+            <div className={`px-2 sm:px-3 py-1.5 h-9 flex items-center justify-center border rounded-md text-xs font-black tracking-wider text-center whitespace-nowrap shrink-0 shadow-lg ${
               isTechnique
                 ? 'bg-[#18092b] border-purple-800/80 text-purple-200'
                 : isSetlists
@@ -630,7 +612,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             <button
               onClick={() => navigation.onNavigate(navigation.currentIndex + 1)}
               disabled={navigation.currentIndex >= navigation.totalCount - 1}
-              className={`px-3.5 sm:px-5 py-1.5 h-9 min-w-[48px] sm:min-w-[70px] rounded-md active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg font-extrabold text-xs shrink-0 border ${
+              className={`px-2.5 sm:px-5 py-1.5 h-9 min-w-[38px] sm:min-w-[70px] rounded-md active:scale-95 disabled:opacity-25 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-lg font-extrabold text-xs shrink-0 border ${
                 isTechnique
                   ? 'bg-[#130721] hover:bg-purple-900/50 border-purple-800/80 text-purple-200'
                   : isSetlists

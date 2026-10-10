@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { pdfjsLib } from '../lib/pdfWorker';
-import { AlertCircle, Loader2, ZoomIn, ZoomOut, RotateCcw, ExternalLink } from 'lucide-react';
+import { AlertCircle, Loader2, ZoomIn, ZoomOut, ExternalLink } from 'lucide-react';
 
 interface PdfSheetViewerProps {
   pdfData: Blob | ArrayBuffer | Uint8Array | string;
@@ -513,17 +513,6 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
             >
               <ZoomIn className="w-4 h-4 stroke-[2.5]" />
             </button>
-
-            {zoomLevel !== 100 && (
-              <button
-                type="button"
-                onClick={() => updateZoom(100)}
-                className="px-2.5 py-1.5 h-9 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95 rounded-xl cursor-pointer transition-all border-l border-slate-800 ml-0.5"
-                title="Reset Zoom (100%)"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           {numPages > 1 && (
