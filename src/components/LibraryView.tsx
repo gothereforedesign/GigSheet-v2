@@ -163,10 +163,8 @@ const SongRow: React.FC<SongRowProps> = ({
             <button
               type="button"
               onClick={() => onAddToSetlist(song)}
-              className={`p-1.5 rounded-lg text-slate-400 dark:text-slate-500 active:scale-95 transition-all cursor-pointer ${
-                isTechnique ? 'hover:text-purple-900 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60' : 'hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-              title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
+              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 active:scale-95 transition-all cursor-pointer"
+              title="Add to Setlist"
             >
               <ListPlus className="w-4 h-4 stroke-[2]" />
             </button>

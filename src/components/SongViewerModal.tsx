@@ -350,11 +350,11 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
                   ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
                   : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
               }`}
-              title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
+              title="Add to Setlist"
             >
               <ListPlus className="w-3.5 h-3.5 stroke-[2.2]" />
               <span className="hidden sm:inline text-[11px] font-black">
-                {isTechnique ? '+ Routine' : '+ Setlist'}
+                + Setlist
               </span>
             </button>
           )}

@@ -199,23 +199,39 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Randomizer handler: picks a random PDF from current category if in a category, otherwise randomizes everything
+  // Helper to resolve a setlist item songId to its Song record (supports direct IDs and legacy duplicate IDs)
+  const resolveSongForSetlistItem = (itemSongId: string, songPool: Song[] = songs): Song | undefined => {
+    const direct = songPool.find((s) => s.id === itemSongId && !s.deletedAt);
+    if (direct) {
+      if (direct.originalSongId) {
+        const orig = songPool.find((s) => s.id === direct.originalSongId && !s.deletedAt);
+        if (orig) return orig;
+      }
+      return direct;
+    }
+    return songPool.find(
+      (s) =>
+        !s.deletedAt &&
+        (s.originalSongId === itemSongId || itemSongId.endsWith(`_${s.id}`))
+    );
+  };
+
+  // Randomizer handler: picks a random PDF from current category/setlist if inside one, otherwise randomizes everything
   const handleRandomizePdf = () => {
     const activeSection = (activeTab === 'technique' || activeTab === 'technique_routines') ? 'technique' : 'sheet_music';
     const isSetlistTab = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
 
     let availableSongs: Song[] = [];
     let contextLabel = '';
+    const activeSetId = selectedSetlistId || activeSetlistContext?.setlist.id || null;
 
-    if (isSetlistTab && selectedSetlistId) {
-      const activeSet = setlists.find((s) => s.id === selectedSetlistId);
+    if ((isSetlistTab && activeSetId) || activeSetlistContext) {
+      const activeSet = setlists.find((s) => s.id === activeSetId) || activeSetlistContext?.setlist;
       contextLabel = activeSet ? `setlist "${activeSet.name}"` : 'this setlist';
       if (activeSet && activeSet.items.length > 0) {
-        const setSongIds = new Set(activeSet.items.map((item) => item.songId));
-        availableSongs = songs.filter((s) => {
-          if (s.deletedAt) return false;
-          return setSongIds.has(s.id) || (s.originalSongId && setSongIds.has(s.originalSongId));
-        });
+        availableSongs = activeSet.items
+          .map((item) => resolveSongForSetlistItem(item.songId))
+          .filter((s): s is Song => Boolean(s));
       }
     } else if (!isSetlistTab && selectedCategory && selectedCategory !== 'ALL_SECTION_CHARTS') {
       const normCategory = selectedCategory.trim().toLowerCase();
@@ -248,11 +264,22 @@ export default function App() {
     const randomIndex = Math.floor(Math.random() * pool.length);
     const randomSong = pool[randomIndex];
 
+    const activeSet = activeSetId ? setlists.find((s) => s.id === activeSetId) : undefined;
     if (activeSongForViewer) {
-      setActiveSetlistContext(null);
+      if (activeSet) {
+        const idxInSet = activeSet.items.findIndex((item) => resolveSongForSetlistItem(item.songId)?.id === randomSong.id);
+        setActiveSetlistContext({ setlist: activeSet, startIndex: idxInSet !== -1 ? idxInSet : 0 });
+      } else {
+        setActiveSetlistContext(null);
+      }
       setActiveSongForViewer(randomSong);
     } else {
-      handleOpenSongViewer(randomSong);
+      if (activeSet) {
+        const idxInSet = activeSet.items.findIndex((item) => resolveSongForSetlistItem(item.songId)?.id === randomSong.id);
+        handleOpenSongViewer(randomSong, activeSet, idxInSet !== -1 ? idxInSet : 0);
+      } else {
+        handleOpenSongViewer(randomSong);
+      }
     }
   };
 
@@ -285,18 +312,25 @@ export default function App() {
       items: [],
       type: targetSection || (section === 'technique' ? 'technique' : 'sheet_music'),
     };
+    setSetlists((prev) => [...prev, newSetlist]);
     await saveSetlist(newSetlist);
     await loadSetlists();
+    showToast(`Created setlist "${name}"`);
     return newSetlist;
   };
 
   const handleUpdateSetlist = async (updatedSetlist: Setlist) => {
+    setSetlists((prev) => prev.map((s) => (s.id === updatedSetlist.id ? updatedSetlist : s)));
     await saveSetlist(updatedSetlist);
     await loadSetlists();
   };
 
   const handleDeleteSetlist = async (id: string) => {
     const setlist = setlists.find((s) => s.id === id);
+    setSetlists((prev) => prev.filter((s) => s.id !== id));
+    if (selectedSetlistId === id) {
+      setSelectedSetlistId(null);
+    }
     if (setlist) {
       for (const item of setlist.items) {
         const songRecord = songs.find((s) => s.id === item.songId);
@@ -311,121 +345,85 @@ export default function App() {
   };
 
   const handleAddSongToSetlist = async (setlist: Setlist, originalSong: Song) => {
-    // Check if setlist already has a duplicate of this song
+    const canonicalId = originalSong.originalSongId || originalSong.id;
     const alreadyInSetlist = setlist.items.some((item) => {
-      if (item.songId === originalSong.id) return true;
-      const s = songs.find((songItem) => songItem.id === item.songId);
-      return s?.originalSongId === originalSong.id;
+      if (item.songId === canonicalId || item.songId === originalSong.id) return true;
+      const resolved = resolveSongForSetlistItem(item.songId);
+      return resolved?.id === canonicalId || resolved?.id === originalSong.id;
     });
     if (alreadyInSetlist) return;
 
-    const fullSong = (await getSongById(originalSong.id)) || originalSong;
-    const duplicateId = `song_setlist_${setlist.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const duplicatedSong: Song = {
-      ...fullSong,
-      id: duplicateId,
-      originalSongId: originalSong.id,
-      setlistId: setlist.id,
-      isSetlistDuplicate: true,
-      section: setlist.type || originalSong.section || 'sheet_music',
-      dateAdded: Date.now(),
+    const updatedSetlist: Setlist = {
+      ...setlist,
+      items: [...setlist.items, { songId: canonicalId }],
       dateModified: Date.now(),
     };
 
-    if (fullSong.fileBlob) {
-      await saveSongDirectDirectBlob(duplicatedSong, fullSong.fileBlob as Blob);
-    } else {
-      await saveSong(duplicatedSong);
-    }
-
-    const updatedItems = [...setlist.items, { songId: duplicateId }];
-    await saveSetlist({
-      ...setlist,
-      items: updatedItems,
-      dateModified: Date.now(),
-    });
-
-    await loadSongs();
+    setSetlists((prev) => prev.map((s) => (s.id === setlist.id ? updatedSetlist : s)));
+    await saveSetlist(updatedSetlist);
     await loadSetlists();
+    showToast(`Added "${originalSong.title}" to "${setlist.name}"`);
   };
 
   const handleRemoveSongFromSetlist = async (setlist: Setlist, index: number) => {
     const itemToRemove = setlist.items[index];
     const newItems = setlist.items.filter((_, i) => i !== index);
-
-    await saveSetlist({
+    const updatedSetlist: Setlist = {
       ...setlist,
       items: newItems,
       dateModified: Date.now(),
-    });
+    };
+
+    setSetlists((prev) => prev.map((s) => (s.id === setlist.id ? updatedSetlist : s)));
+    await saveSetlist(updatedSetlist);
 
     if (itemToRemove) {
       const songRecord = songs.find((s) => s.id === itemToRemove.songId);
       if (songRecord && (songRecord.isSetlistDuplicate || songRecord.setlistId === setlist.id)) {
         await deleteSong(itemToRemove.songId);
+        await loadSongs();
       }
     }
 
-    await loadSongs();
     await loadSetlists();
   };
 
   const handleOpenSetlistPerformance = (setlist: Setlist, startIndex = 0) => {
-    const item = setlist.items[startIndex];
-    if (!item) return;
-    const song = songs.find((s) => s.id === item.songId);
-    if (song) {
-      setOpenedViaRandomize(false);
-      setActiveSetlistContext({ setlist, startIndex });
-      setActiveSongForViewer(song);
+    const validSongs = setlist.items
+      .map((item) => resolveSongForSetlistItem(item.songId))
+      .filter((s): s is Song => Boolean(s));
+    const targetSong = validSongs[startIndex] || validSongs[0];
+    if (targetSong) {
+      handleOpenSongViewer(targetSong, setlist, startIndex);
     }
   };
 
   const handleSaveSetlistsForSong = async (songId: string, updatedSetlistIds: string[]) => {
-    const songToDuplicate = songs.find((s) => s.id === songId);
-    if (!songToDuplicate) return;
+    const targetSong = songs.find((s) => s.id === songId);
+    if (!targetSong) return;
 
-    const targetSec = songToDuplicate.section || section;
-    const relevantSetlists = setlists.filter((s) => (s.type || 'sheet_music') === targetSec);
+    const canonicalId = targetSong.originalSongId || targetSong.id;
 
-    const fullSong = (await getSongById(songToDuplicate.id)) || songToDuplicate;
-
-    for (const setlist of relevantSetlists) {
+    for (const setlist of setlists) {
       const belongs = updatedSetlistIds.includes(setlist.id);
       const existingItemIndex = setlist.items.findIndex((item) => {
-        if (item.songId === songId) return true;
-        const s = songs.find((songItem) => songItem.id === item.songId);
-        return s?.originalSongId === songId;
+        if (item.songId === songId || item.songId === canonicalId) return true;
+        const resolved = resolveSongForSetlistItem(item.songId);
+        return resolved?.id === songId || resolved?.id === canonicalId;
       });
 
       if (belongs) {
         if (existingItemIndex === -1) {
-          const duplicateId = `song_setlist_${setlist.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-          const duplicatedSong: Song = {
-            ...fullSong,
-            id: duplicateId,
-            originalSongId: songToDuplicate.id,
-            setlistId: setlist.id,
-            isSetlistDuplicate: true,
-            section: setlist.type || songToDuplicate.section || 'sheet_music',
-            dateAdded: Date.now(),
-            dateModified: Date.now(),
-          };
-
-          if (fullSong.fileBlob) {
-            await saveSongDirectDirectBlob(duplicatedSong, fullSong.fileBlob as Blob);
-          } else {
-            await saveSong(duplicatedSong);
-          }
-
-          const newItems = [...setlist.items, { songId: duplicateId }];
-          await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+          const newItems = [...setlist.items, { songId: canonicalId }];
+          const updated = { ...setlist, items: newItems, dateModified: Date.now() };
+          await saveSetlist(updated);
         }
       } else {
         if (existingItemIndex !== -1) {
           const itemToRemove = setlist.items[existingItemIndex];
           const newItems = setlist.items.filter((_, i) => i !== existingItemIndex);
-          await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
+          const updated = { ...setlist, items: newItems, dateModified: Date.now() };
+          await saveSetlist(updated);
 
           if (itemToRemove) {
             const songRecord = songs.find((s) => s.id === itemToRemove.songId);
@@ -437,9 +435,9 @@ export default function App() {
       }
     }
 
-    await loadSongs();
     await loadSetlists();
     setSongForAddToSetlist(null);
+    showToast(`Updated setlists for "${targetSong.title}"`);
   };
 
   const handleOpenBackupModal = () => setIsBackupOpen(true);
@@ -485,8 +483,18 @@ export default function App() {
 
     // Real-time Firestore Setlists Subscription
     const unsubSetlists = subscribeUserSetlists(userId, (cloudSetlists) => {
-      if (cloudSetlists) {
-        setSetlists(cloudSetlists);
+      if (cloudSetlists && cloudSetlists.length > 0) {
+        setSetlists((prev) => {
+          const map = new Map<string, Setlist>();
+          prev.forEach((s) => map.set(s.id, s));
+          cloudSetlists.forEach((s) => {
+            const existing = map.get(s.id);
+            if (!existing || (s.dateModified || 0) >= (existing.dateModified || 0)) {
+              map.set(s.id, s);
+            }
+          });
+          return Array.from(map.values()).sort((a, b) => (a.dateCreated || 0) - (b.dateCreated || 0));
+        });
       }
     });
 
@@ -531,56 +539,6 @@ export default function App() {
         setSongs(loadedSongs);
         let loadedSetlists = await getAllSetlists();
         setSetlists(loadedSetlists);
-
-        // Auto-migrate any setlists referencing original songs to duplicated song copies
-        let migrationPerformed = false;
-        for (const setlist of loadedSetlists) {
-          let setlistChanged = false;
-          const newItems = [...setlist.items];
-
-          for (let i = 0; i < newItems.length; i++) {
-            const item = newItems[i];
-            const targetSong = loadedSongs.find((s) => s.id === item.songId);
-            if (targetSong && !targetSong.isSetlistDuplicate && !targetSong.setlistId) {
-              const duplicateId = `song_setlist_${setlist.id}_${targetSong.id}`;
-              let existingDuplicate = loadedSongs.find((s) => s.id === duplicateId);
-
-              if (!existingDuplicate) {
-                const fullSong = (await getSongById(targetSong.id)) || targetSong;
-                existingDuplicate = {
-                  ...fullSong,
-                  id: duplicateId,
-                  originalSongId: targetSong.id,
-                  setlistId: setlist.id,
-                  isSetlistDuplicate: true,
-                  section: setlist.type || targetSong.section || 'sheet_music',
-                  dateAdded: Date.now(),
-                  dateModified: Date.now(),
-                };
-                if (fullSong.fileBlob) {
-                  await saveSongDirectDirectBlob(existingDuplicate, fullSong.fileBlob as Blob);
-                } else {
-                  await saveSong(existingDuplicate);
-                }
-              }
-
-              newItems[i] = { ...item, songId: duplicateId };
-              setlistChanged = true;
-              migrationPerformed = true;
-            }
-          }
-
-          if (setlistChanged) {
-            await saveSetlist({ ...setlist, items: newItems, dateModified: Date.now() });
-          }
-        }
-
-        if (migrationPerformed) {
-          loadedSongs = await getAllSongs();
-          setSongs(loadedSongs);
-          loadedSetlists = await getAllSetlists();
-          setSetlists(loadedSetlists);
-        }
 
         // Restore active song viewer if saved across refresh
         if (savedSongIdRef.current) {
@@ -1086,21 +1044,21 @@ export default function App() {
   };
 
   const handleReorderSetlists = async (reorderedNames: string[]) => {
-    const targetSection = section;
-    const targetList = setlists.filter((s) => (s.type || 'sheet_music') === targetSection);
     const now = Date.now();
     
     const reordered: Setlist[] = [];
     reorderedNames.forEach((name, idx) => {
-      const s = targetList.find((item) => item.name === name);
+      const s = setlists.find((item) => item.name === name);
       if (s) {
         reordered.push({
           ...s,
           dateCreated: now - (reorderedNames.length - idx) * 1000,
+          dateModified: now,
         });
       }
     });
 
+    setSetlists(reordered);
     for (const s of reordered) {
       await saveSetlist(s);
     }
@@ -1318,9 +1276,10 @@ export default function App() {
 
     let navigationContext;
     if (activeSetlistContext) {
-      const { setlist, startIndex } = activeSetlistContext;
-      const setlistSongs = setlist.items
-        .map((item) => songs.find((s) => s.id === item.songId))
+      const { setlist: ctxSetlist, startIndex } = activeSetlistContext;
+      const liveSetlist = setlists.find((s) => s.id === ctxSetlist.id) || ctxSetlist;
+      const setlistSongs = liveSetlist.items
+        .map((item) => resolveSongForSetlistItem(item.songId))
         .filter((s): s is Song => Boolean(s));
 
       if (setlistSongs.length > 0) {
@@ -1333,11 +1292,11 @@ export default function App() {
         navigationContext = {
           currentIndex,
           totalCount: setlistSongs.length,
-          listName: setlist.name,
+          listName: liveSetlist.name,
           onNavigate: (newIdx: number) => {
             const nextSong = setlistSongs[newIdx];
             if (nextSong) {
-              setActiveSetlistContext({ setlist, startIndex: newIdx });
+              setActiveSetlistContext({ setlist: liveSetlist, startIndex: newIdx });
               setActiveSongForViewer(nextSong);
             }
           },
@@ -1453,8 +1412,8 @@ export default function App() {
         className="sr-only"
       />
 
-      {/* Top Header - Hidden when viewing inside a specific category or when viewing a PDF sheet */}
-      {!selectedCategory && !activeSongForViewer && (
+      {/* Top Header - Hidden when viewing inside a specific category, setlist, or when viewing a PDF sheet */}
+      {!selectedCategory && !selectedSetlistId && !activeSongForViewer && (
         <Header
           trashCount={trashedSongs.length}
           activeTab={activeTab}
@@ -1524,6 +1483,7 @@ export default function App() {
                 onSelectSong={handleOpenSongViewer}
                 onEditSong={handleOpenEditSong}
                 onOpenGenreManager={handleOpenCategoryManager}
+                onRandomizePdf={handleRandomizePdf}
               />
             )}
 
@@ -1640,7 +1600,7 @@ export default function App() {
       {songForAddToSetlist && (
         <AddToSetlistModal
           song={songForAddToSetlist}
-          setlists={setlists.filter((s) => (s.type || 'sheet_music') === (songForAddToSetlist.section || 'sheet_music'))}
+          setlists={setlists}
           onCreateSetlist={handleCreateSetlist}
           onSaveSetlistsForSong={handleSaveSetlistsForSong}
           onClose={() => setSongForAddToSetlist(null)}

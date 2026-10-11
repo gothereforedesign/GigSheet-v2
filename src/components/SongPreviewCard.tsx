@@ -149,10 +149,8 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
                   e.stopPropagation();
                   onAddToSetlist(song);
                 }}
-                className={`p-1 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 active:scale-90 cursor-pointer ${
-                  isTechnique ? 'hover:bg-purple-50 dark:hover:bg-purple-950/60 hover:text-purple-900 dark:hover:text-purple-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0c4a6e] dark:hover:text-sky-300'
-                }`}
-                title={isTechnique ? "Add to Practice Routine" : "Add to Performance Setlist"}
+                className="p-1 rounded-md text-slate-400 dark:text-slate-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 active:scale-90 cursor-pointer transition-colors"
+                title="Add to Setlist"
               >
                 <ListPlus className="w-3.5 h-3.5 stroke-[2]" />
               </button>

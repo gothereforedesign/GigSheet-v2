@@ -5,9 +5,8 @@ import {
   setDoc,
   deleteDoc,
   collection,
-  writeBatch,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { Song, Setlist } from '../types';
 
 const CHUNK_SIZE = 500000; // 500KB chunk size for base64 data to stay well within Firestore 1MB doc limit
@@ -167,6 +166,10 @@ export async function deleteSongFromCloud(id: string): Promise<void> {
 export async function syncSetlistToCloud(setlist: Setlist): Promise<void> {
   try {
     const cleanSetlist = JSON.parse(JSON.stringify(setlist));
+    const userId = auth.currentUser?.uid;
+    if (userId) {
+      await setDoc(doc(db, 'users', userId, 'setlists', setlist.id), cleanSetlist, { merge: true });
+    }
     await setDoc(doc(db, 'setlists', setlist.id), cleanSetlist, { merge: true });
   } catch (err) {
     console.warn(`Failed to sync setlist ${setlist.id} to Firestore cloud:`, err);
@@ -176,19 +179,40 @@ export async function syncSetlistToCloud(setlist: Setlist): Promise<void> {
 /**
  * Fetch setlists from Firestore Cloud
  */
-export async function fetchSetlistsFromCloud(): Promise<Setlist[]> {
+export async function fetchSetlistsFromCloud(): Promise<Setlist[] | null> {
   try {
+    const map = new Map<string, Setlist>();
+    const userId = auth.currentUser?.uid;
+
+    if (userId) {
+      try {
+        const userSnap = await getDocs(collection(db, 'users', userId, 'setlists'));
+        userSnap.forEach((docSnap) => {
+          if (docSnap.exists()) {
+            const sl = docSnap.data() as Setlist;
+            map.set(sl.id, sl);
+          }
+        });
+      } catch (e) {
+        // Ignore user subcollection error and check fallback
+      }
+    }
+
     const snapshot = await getDocs(collection(db, 'setlists'));
-    const setlists: Setlist[] = [];
     snapshot.forEach((docSnap) => {
       if (docSnap.exists()) {
-        setlists.push(docSnap.data() as Setlist);
+        const sl = docSnap.data() as Setlist;
+        const existing = map.get(sl.id);
+        if (!existing || (sl.dateModified || 0) > (existing.dateModified || 0)) {
+          map.set(sl.id, sl);
+        }
       }
     });
-    return setlists;
+
+    return Array.from(map.values());
   } catch (err) {
     console.warn('Failed to fetch setlists from Firestore cloud:', err);
-    return [];
+    return null;
   }
 }
 
@@ -197,7 +221,11 @@ export async function fetchSetlistsFromCloud(): Promise<Setlist[]> {
  */
 export async function deleteSetlistFromCloud(id: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, 'setlists', id));
+    const userId = auth.currentUser?.uid;
+    if (userId) {
+      await deleteDoc(doc(db, 'users', userId, 'setlists', id)).catch(() => {});
+    }
+    await deleteDoc(doc(db, 'setlists', id)).catch(() => {});
   } catch (err) {
     console.warn(`Failed to delete setlist ${id} from Firestore cloud:`, err);
   }

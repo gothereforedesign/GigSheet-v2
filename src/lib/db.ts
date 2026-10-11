@@ -192,12 +192,17 @@ export async function getSongById(id: string): Promise<Song | undefined> {
     return undefined;
   }
 
+  let resolvedContent = content;
+  if ((!resolvedContent || !resolvedContent.blob) && song.originalSongId) {
+    resolvedContent = await db.get('song_blobs', song.originalSongId);
+  }
+
   const sample = BUNDLED_SAMPLE_SONGS.find(
-    s => s.id === id || s.title.toLowerCase().trim() === song.title.toLowerCase().trim()
+    s => s.id === id || s.id === song.originalSongId || s.title.toLowerCase().trim() === song.title.toLowerCase().trim()
   );
 
-  if (content && content.blob) {
-    let raw = content.blob;
+  if (resolvedContent && resolvedContent.blob) {
+    let raw = resolvedContent.blob;
     if (raw instanceof Blob) {
       return { ...song, fileBlob: raw };
     }
@@ -274,7 +279,11 @@ export async function getSongById(id: string): Promise<Song | undefined> {
 
 export async function getSongBlob(id: string): Promise<Blob | ArrayBuffer | string | null> {
   const db = await getDB();
-  const content = await db.get('song_blobs', id);
+  let content = await db.get('song_blobs', id);
+  const song = await db.get('songs', id);
+  if ((!content || !content.blob) && song?.originalSongId) {
+    content = await db.get('song_blobs', song.originalSongId);
+  }
   if (content && content.blob) {
     let blob = content.blob;
     if (blob instanceof Blob) {
@@ -285,12 +294,17 @@ export async function getSongBlob(id: string): Promise<Blob | ArrayBuffer | stri
       return blob;
     }
   }
-  const song = await db.get('songs', id);
   if (song && song.fileUrl) {
     return song.fileUrl;
   }
+  if (song?.originalSongId) {
+    const origSong = await db.get('songs', song.originalSongId);
+    if (origSong && origSong.fileUrl) {
+      return origSong.fileUrl;
+    }
+  }
   const sample = BUNDLED_SAMPLE_SONGS.find(
-    s => s.id === id || (song && s.title.toLowerCase().trim() === song.title.toLowerCase().trim())
+    s => s.id === id || s.id === song?.originalSongId || (song && s.title.toLowerCase().trim() === song.title.toLowerCase().trim())
   );
   if (sample) {
     return sample.fileBlob || sample.fileUrl || null;
@@ -575,21 +589,15 @@ export async function getAllSetlists(): Promise<Setlist[]> {
   
   try {
     const cloudSetlists = await fetchSetlistsFromCloud();
-    if (cloudSetlists && Array.isArray(cloudSetlists)) {
+    if (cloudSetlists && Array.isArray(cloudSetlists) && cloudSetlists.length > 0) {
       const tx = db.transaction('setlists', 'readwrite');
       const store = tx.objectStore('setlists');
-      const localSetlists = await store.getAll();
-      const cloudIds = new Set(cloudSetlists.map((s) => s.id));
-
-      // Remove any local setlists deleted from Cloud
-      for (const local of localSetlists) {
-        if (!cloudIds.has(local.id)) {
-          store.delete(local.id);
-        }
-      }
 
       for (const sl of cloudSetlists) {
-        store.put(sl);
+        const existing = await store.get(sl.id);
+        if (!existing || (sl.dateModified || 0) >= (existing.dateModified || 0)) {
+          await store.put(sl);
+        }
       }
       await tx.done;
     }
@@ -598,7 +606,8 @@ export async function getAllSetlists(): Promise<Setlist[]> {
   }
 
   await seedInitialDataIfNeeded();
-  return db.getAll('setlists');
+  const all = await db.getAll('setlists');
+  return all.sort((a, b) => (a.dateCreated || 0) - (b.dateCreated || 0));
 }
 
 export async function getSetlistById(id: string): Promise<Setlist | undefined> {
