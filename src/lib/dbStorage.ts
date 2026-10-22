@@ -2,6 +2,7 @@ import { getDB } from './db';
 import { Song } from '../types';
 import { auth } from './firebase';
 import { saveSongToFirestore } from './firestoreService';
+import { syncSongToCloud } from './firestoreSync';
 
 /**
  * Checks storage quota via navigator.storage.estimate().
@@ -61,6 +62,16 @@ export async function saveSongDirectDirectBlob(song: Song, fileBlob: Blob | File
     } catch (err) {
       console.warn('Cloud save deferred or operating offline:', err);
     }
+  }
+
+  // Also sync to Firestore song_blobs & global songs collection non-blockingly
+  if (typeof fileBlob.arrayBuffer === 'function') {
+    fileBlob
+      .arrayBuffer()
+      .then((buf) => syncSongToCloud(song, buf))
+      .catch(() => {});
+  } else {
+    syncSongToCloud(song).catch(() => {});
   }
 
   // 2. Local IDB Cache for offline instant access

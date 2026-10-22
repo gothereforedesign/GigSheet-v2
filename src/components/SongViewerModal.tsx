@@ -14,6 +14,7 @@ import { downloadSongPdf } from '../lib/printEngine';
 interface SongViewerModalProps {
   song: Song;
   activeTab?: ActiveTab;
+  isSetlistMode?: boolean;
   onClose: () => void;
   onAddToSetlist?: (song: Song) => void;
   onSaveSong?: (song: Song) => void;
@@ -29,6 +30,7 @@ interface SongViewerModalProps {
 export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   song: initialSong,
   activeTab,
+  isSetlistMode = false,
   onClose,
   onAddToSetlist,
   onSaveSong,
@@ -84,11 +86,12 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
   // Derive Section Brand Styling based on where PDF is being viewed
   const viewerSection: 'sheet_music' | 'technique' | 'setlists' | 'trash' = (() => {
+    if (isSetlistMode) return 'setlists';
+    if (activeTab === 'trash' || song.deletedAt) return 'trash';
+    if (song.section === 'technique') return 'technique';
+    if (song.section === 'sheet_music') return 'sheet_music';
     if (activeTab === 'technique') return 'technique';
-    if (activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines') return 'setlists';
-    if (activeTab === 'trash') return 'trash';
-    if (activeTab === 'sheet_music') return 'sheet_music';
-    return song.section === 'technique' ? 'technique' : 'sheet_music';
+    return 'sheet_music';
   })();
 
   const isTechnique = viewerSection === 'technique';

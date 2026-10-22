@@ -202,12 +202,7 @@ export function saveStoredCategories(section: 'sheet_music' | 'technique', categ
   }
 
   const colors = getStoredCategoryColors(section);
-  const userId = auth.currentUser?.uid;
-  if (userId) {
-    saveCategoriesToFirestore(userId, section, categories, colors).catch(() => {});
-  } else {
-    syncCategoriesToCloud(section, categories, colors).catch(() => {});
-  }
+  syncCategoriesToCloud(section, categories, colors).catch(() => {});
 }
 
 export function getStoredCategoryColors(section: 'sheet_music' | 'technique'): Record<string, CategoryColorKey> {
@@ -236,12 +231,7 @@ export function saveStoredCategoryColors(section: 'sheet_music' | 'technique', c
   }
 
   const categories = getStoredCategories(section);
-  const userId = auth.currentUser?.uid;
-  if (userId) {
-    saveCategoriesToFirestore(userId, section, categories, colors).catch(() => {});
-  } else {
-    syncCategoriesToCloud(section, categories, colors).catch(() => {});
-  }
+  syncCategoriesToCloud(section, categories, colors).catch(() => {});
 }
 
 /**
@@ -254,11 +244,19 @@ export async function hydrateCategoriesFromCloud(section: 'sheet_music' | 'techn
   try {
     const cloudConfig = await fetchCategoriesFromCloud(section);
     if (cloudConfig) {
-      if (Array.isArray(cloudConfig.categories)) {
-        saveStoredCategories(section, cloudConfig.categories);
+      const catKey = section === 'technique' ? TECHNIQUE_CATEGORIES_KEY : SHEET_MUSIC_CATEGORIES_KEY;
+      const colorKey = section === 'technique' ? TECHNIQUE_COLORS_KEY : SHEET_MUSIC_COLORS_KEY;
+      const localCats = getStoredCategories(section);
+
+      if (Array.isArray(cloudConfig.categories) && (cloudConfig.categories.length > 0 || localCats.length === 0)) {
+        try {
+          localStorage.setItem(catKey, JSON.stringify(cloudConfig.categories));
+        } catch (e) {}
       }
-      if (cloudConfig.colors) {
-        saveStoredCategoryColors(section, cloudConfig.colors);
+      if (cloudConfig.colors && Object.keys(cloudConfig.colors).length > 0) {
+        try {
+          localStorage.setItem(colorKey, JSON.stringify(cloudConfig.colors));
+        } catch (e) {}
       }
     }
   } catch (err) {

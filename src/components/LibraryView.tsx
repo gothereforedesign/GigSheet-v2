@@ -247,10 +247,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       ? genres
       : (isTechnique ? DEFAULT_TECHNIQUE_CATEGORIES : DEFAULT_SHEET_MUSIC_CATEGORIES);
 
+    const defaultCat = isTechnique ? 'Scales' : 'Hymns';
     const result = [...baseList];
     if (songs && songs.length > 0) {
       songs.forEach((song) => {
-        const rawGenre = (song.genre || '').trim();
+        const rawGenre = (song.genre || defaultCat).trim();
         if (rawGenre && !result.some((c) => c.toLowerCase().trim() === rawGenre.toLowerCase())) {
           result.push(rawGenre);
         }
@@ -263,8 +264,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const filteredSongs = songs.filter((song) => {
     if (selectedCategory && selectedCategory !== 'ALL_SECTION_CHARTS') {
       const defaultCat = isTechnique ? 'Scales' : 'Hymns';
-      const songCategory = song.genre || defaultCat;
-      if (songCategory !== selectedCategory) return false;
+      const songCategory = (song.genre || defaultCat).trim().toLowerCase();
+      if (songCategory !== selectedCategory.trim().toLowerCase()) return false;
     }
     return true;
   });

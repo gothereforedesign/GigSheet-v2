@@ -48,8 +48,12 @@ export async function syncSongToCloud(
 
     // Sanitize metadata undefined values for Firestore
     const cleanMetadata = JSON.parse(JSON.stringify(metadata));
+    const userId = auth.currentUser?.uid;
 
-    // Save song metadata to Firestore 'songs' collection
+    // Save song metadata to both user-scoped and global 'songs' collections
+    if (userId) {
+      await setDoc(doc(db, 'users', userId, 'songs', song.id), cleanMetadata, { merge: true }).catch(() => {});
+    }
     await setDoc(doc(db, 'songs', song.id), cleanMetadata, { merge: true });
 
     // If binary data provided, sync to 'song_blobs'
@@ -134,14 +138,36 @@ export async function getSongBlobFromCloud(id: string): Promise<ArrayBuffer | nu
  */
 export async function fetchSongsFromCloud(): Promise<Song[]> {
   try {
+    const map = new Map<string, Song>();
+    const userId = auth.currentUser?.uid;
+
+    if (userId) {
+      try {
+        const userSnap = await getDocs(collection(db, 'users', userId, 'songs'));
+        userSnap.forEach((docSnap) => {
+          if (docSnap.exists()) {
+            const s = docSnap.data() as Song;
+            map.set(s.id, s);
+          }
+        });
+      } catch (e) {
+        // Ignore user subcollection error and check global fallback
+      }
+    }
+
     const snapshot = await getDocs(collection(db, 'songs'));
-    const songs: Song[] = [];
     snapshot.forEach((docSnap) => {
       if (docSnap.exists()) {
-        songs.push(docSnap.data() as Song);
+        const s = docSnap.data() as Song;
+        const existing = map.get(s.id);
+        const sTime = s.dateModified || s.dateAdded || 0;
+        const exTime = existing ? (existing.dateModified || existing.dateAdded || 0) : -1;
+        if (!existing || sTime >= exTime) {
+          map.set(s.id, s);
+        }
       }
     });
-    return songs;
+    return Array.from(map.values());
   } catch (err) {
     console.warn('Failed to fetch songs from Firestore cloud:', err);
     return [];
@@ -153,8 +179,12 @@ export async function fetchSongsFromCloud(): Promise<Song[]> {
  */
 export async function deleteSongFromCloud(id: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, 'songs', id));
-    await deleteDoc(doc(db, 'song_blobs', id));
+    const userId = auth.currentUser?.uid;
+    if (userId) {
+      await deleteDoc(doc(db, 'users', userId, 'songs', id)).catch(() => {});
+    }
+    await deleteDoc(doc(db, 'songs', id)).catch(() => {});
+    await deleteDoc(doc(db, 'song_blobs', id)).catch(() => {});
   } catch (err) {
     console.warn(`Failed to delete song ${id} from Firestore cloud:`, err);
   }
@@ -241,16 +271,17 @@ export async function syncCategoriesToCloud(
 ): Promise<void> {
   try {
     const docId = `categories_${section}`;
-    await setDoc(
-      doc(db, 'settings', docId),
-      {
-        section,
-        categories: categories || [],
-        colors: colors || {},
-        updatedAt: Date.now(),
-      },
-      { merge: true }
-    );
+    const payload = {
+      section,
+      categories: categories || [],
+      colors: colors || {},
+      updatedAt: Date.now(),
+    };
+    const userId = auth.currentUser?.uid;
+    if (userId) {
+      await setDoc(doc(db, 'users', userId, 'settings', docId), payload, { merge: true }).catch(() => {});
+    }
+    await setDoc(doc(db, 'settings', docId), payload, { merge: true });
   } catch (err) {
     console.warn(`Failed to sync ${section} categories to Firestore cloud:`, err);
   }
@@ -261,15 +292,34 @@ export async function syncCategoriesToCloud(
  */
 export async function fetchCategoriesFromCloud(
   section: 'sheet_music' | 'technique'
-): Promise<{ categories?: string[]; colors?: Record<string, string> } | null> {
+): Promise<{ categories?: string[]; colors?: Record<string, string>; updatedAt?: number } | null> {
   try {
     const docId = `categories_${section}`;
+    let bestData: any = null;
+
+    const userId = auth.currentUser?.uid;
+    if (userId) {
+      try {
+        const userSnap = await getDoc(doc(db, 'users', userId, 'settings', docId));
+        if (userSnap.exists()) {
+          bestData = userSnap.data();
+        }
+      } catch (e) {}
+    }
+
     const snap = await getDoc(doc(db, 'settings', docId));
     if (snap.exists()) {
-      const data = snap.data();
+      const globalData = snap.data();
+      if (!bestData || (globalData.updatedAt || 0) > (bestData.updatedAt || 0)) {
+        bestData = globalData;
+      }
+    }
+
+    if (bestData) {
       return {
-        categories: Array.isArray(data.categories) ? data.categories : undefined,
-        colors: data.colors && typeof data.colors === 'object' ? data.colors : undefined,
+        categories: Array.isArray(bestData.categories) ? bestData.categories : undefined,
+        colors: bestData.colors && typeof bestData.colors === 'object' ? bestData.colors : undefined,
+        updatedAt: bestData.updatedAt,
       };
     }
   } catch (err) {

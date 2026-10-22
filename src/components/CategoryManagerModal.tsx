@@ -88,6 +88,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const [confirmDeleteCat, setConfirmDeleteCat] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -95,10 +96,17 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const getCategoryCount = (categoryName: string) => {
     if (isSetlistsTab) {
       const match = setlists.find((s) => s.name === categoryName);
-      return match ? match.items.length : 0;
+      if (!match) return 0;
+      return match.items.filter((item) =>
+        songs.some(
+          (s) =>
+            !s.deletedAt &&
+            (s.id === item.songId || s.originalSongId === item.songId || item.songId.endsWith(`_${s.id}`))
+        )
+      ).length;
     }
     return songs.filter((s) => {
-      if (s.deletedAt) return false;
+      if (s.deletedAt || s.isSetlistDuplicate || s.setlistId) return false;
       if (isTechniqueTab && s.section !== 'technique') return false;
       if (!isTechniqueTab && s.section === 'technique') return false;
       const cat = (s.genre || (isTechniqueTab ? 'Scales' : 'Hymns')).trim();
@@ -176,22 +184,15 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   };
 
   const handleDelete = async (category: string) => {
-    const count = getCategoryCount(category);
-    if (count > 0) {
-      const confirmMsg = isSetlistsTab
-        ? `Delete "${category}"? It contains ${count} ${count === 1 ? 'chart' : 'charts'}.`
-        : `Delete "${category}"? ${count} ${count === 1 ? 'chart' : 'charts'} will be moved to Trash.`;
-      if (!window.confirm(confirmMsg)) {
-        return;
-      }
-    }
-
     setIsProcessing(true);
     setErrorMsg(null);
     try {
       await onDeleteCategory(category, activeTabSection);
       if (editingCategory === category) {
         setEditingCategory(null);
+      }
+      if (confirmDeleteCat === category) {
+        setConfirmDeleteCat(null);
       }
     } catch (err: any) {
       console.error('Failed to delete:', err);
@@ -392,25 +393,57 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
 
                     {/* Right Side: Rename & Delete Action Buttons */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleStartRename(cat)}
-                        disabled={isProcessing}
-                        className="p-2 rounded-lg text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                        title="Rename"
-                      >
-                        <Edit3 className="w-4 h-4 stroke-[2]" />
-                      </button>
+                      {confirmDeleteCat === cat ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(cat)}
+                            disabled={isProcessing}
+                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-wider cursor-pointer active:scale-95 transition-all"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteCat(null)}
+                            disabled={isProcessing}
+                            className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-[11px] font-bold cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmDeleteCat(null);
+                              handleStartRename(cat);
+                            }}
+                            disabled={isProcessing}
+                            className="p-2 rounded-lg text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                            title="Rename"
+                          >
+                            <Edit3 className="w-4 h-4 stroke-[2]" />
+                          </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(cat)}
-                        disabled={isProcessing}
-                        className="p-2 rounded-lg text-slate-400 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 stroke-[2]" />
-                      </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (count > 0) {
+                                setConfirmDeleteCat(cat);
+                              } else {
+                                handleDelete(cat);
+                              }
+                            }}
+                            disabled={isProcessing}
+                            className="p-2 rounded-lg text-slate-400 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 stroke-[2]" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </>
                 )}

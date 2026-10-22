@@ -9,6 +9,7 @@ import {
   syncSetlistToCloud,
   fetchSetlistsFromCloud,
   deleteSetlistFromCloud,
+  syncCategoriesToCloud,
 } from './firestoreSync';
 
 interface GigSheetDB extends DBSchema {
@@ -158,7 +159,12 @@ export async function getAllSongs(): Promise<Song[]> {
       const store = tx.objectStore('songs');
       for (const s of cloudSongs) {
         const { fileBlob, ...meta } = s;
-        store.put(meta as Song);
+        const existing = await store.get(s.id);
+        const sTime = s.dateModified || s.dateAdded || 0;
+        const exTime = existing ? (existing.dateModified || existing.dateAdded || 0) : -1;
+        if (!existing || sTime >= exTime) {
+          await store.put(meta as Song);
+        }
       }
       await tx.done;
       if (typeof window !== 'undefined') {
@@ -566,6 +572,7 @@ export async function toggleSongFavorite(id: string): Promise<boolean> {
   const song = await db.get('songs', id);
   if (song) {
     song.favorite = !song.favorite;
+    song.dateModified = Date.now();
     await db.put('songs', song);
     syncSongToCloud(song).catch(() => {});
     return song.favorite;
@@ -578,6 +585,7 @@ export async function updateSongLastPlayed(id: string): Promise<void> {
   const song = await db.get('songs', id);
   if (song) {
     song.lastPlayed = Date.now();
+    song.dateModified = Date.now();
     await db.put('songs', song);
     syncSongToCloud(song).catch(() => {});
   }
@@ -644,12 +652,33 @@ export async function setSetting<T>(key: string, value: T): Promise<void> {
 }
 
 /**
- * Completely resets and wipes all local databases, localStorage, sessionStorage, and caches
+ * Completely resets and wipes all local databases, cloud records, localStorage, sessionStorage, and caches
  * returning the application to a pristine factory state.
  */
 export async function resetEntireApp(): Promise<void> {
   try {
     const db = await getDB();
+    const allLocalSongs = await db.getAll('songs').catch(() => []);
+    const allLocalSetlists = await db.getAll('setlists').catch(() => []);
+    const cloudSongs = await fetchSongsFromCloud().catch(() => []);
+    const cloudSetlists = await fetchSetlistsFromCloud().catch(() => []);
+
+    const songIds = new Set<string>([
+      ...allLocalSongs.map((s) => s.id),
+      ...(cloudSongs || []).map((s) => s.id),
+    ]);
+    const setlistIds = new Set<string>([
+      ...allLocalSetlists.map((s) => s.id),
+      ...(cloudSetlists || []).map((s) => s.id),
+    ]);
+
+    await Promise.all([
+      ...Array.from(songIds).map((id) => deleteSongFromCloud(id).catch(() => {})),
+      ...Array.from(setlistIds).map((id) => deleteSetlistFromCloud(id).catch(() => {})),
+      syncCategoriesToCloud('sheet_music', [], {}).catch(() => {}),
+      syncCategoriesToCloud('technique', [], {}).catch(() => {}),
+    ]);
+
     db.close();
   } catch (err) {
     console.warn('Error closing IndexedDB instance:', err);

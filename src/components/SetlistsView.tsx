@@ -116,6 +116,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
   const [isRenamingActive, setIsRenamingActive] = useState<boolean>(false);
   const [renameText, setRenameText] = useState<string>('');
   const [renameDesc, setRenameDesc] = useState<string>('');
+  const [confirmingDeleteSetlist, setConfirmingDeleteSetlist] = useState<boolean>(false);
 
   // Add chart picker modal state
   const [showAddSongPicker, setShowAddSongPicker] = useState<boolean>(false);
@@ -383,6 +384,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                   type="button"
                   onClick={() => {
                     setIsRenamingActive(false);
+                    setConfirmingDeleteSetlist(false);
                     handleSetSelectedSetlistId(null);
                   }}
                   className="p-1.5 text-emerald-900 dark:text-emerald-100 bg-white/90 dark:bg-emerald-900/80 hover:bg-white dark:hover:bg-emerald-800 border border-emerald-200 dark:border-emerald-700 rounded-md cursor-pointer active:scale-95 shadow-2xs shrink-0"
@@ -487,12 +489,7 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 {/* Delete Setlist Button */}
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (window.confirm(`Delete setlist "${activeSetlist.name}"? Your charts will remain safely in your library.`)) {
-                      await onDeleteSetlist(activeSetlist.id);
-                      handleSetSelectedSetlistId(null);
-                    }
-                  }}
+                  onClick={() => setConfirmingDeleteSetlist((prev) => !prev)}
                   className="p-1.5 rounded-md bg-white/90 dark:bg-emerald-900/80 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-emerald-800 dark:text-emerald-300 hover:text-rose-600 dark:hover:text-rose-400 border border-emerald-200 dark:border-emerald-700 hover:border-rose-200 dark:hover:border-rose-800 cursor-pointer active:scale-95 shadow-2xs transition-colors"
                   title="Delete Setlist"
                 >
@@ -500,6 +497,35 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Inline Delete Confirmation Banner */}
+            {confirmingDeleteSetlist && (
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/70 rounded-lg border border-rose-300 dark:border-rose-800 flex items-center justify-between gap-3 shadow-xs">
+                <p className="text-xs font-bold text-rose-900 dark:text-rose-200">
+                  Delete setlist <span className="font-black">"{activeSetlist.name}"</span>? Your PDF charts will remain safely in your library.
+                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDeleteSetlist(false)}
+                    className="px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setConfirmingDeleteSetlist(false);
+                      await onDeleteSetlist(activeSetlist.id);
+                      handleSetSelectedSetlistId(null);
+                    }}
+                    className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-xs font-black uppercase tracking-wider cursor-pointer shadow-2xs"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Inline Rename / Edit Description Bar */}
             {isRenamingActive ? (

@@ -37,7 +37,6 @@ import { UploadModal } from './components/UploadModal';
 import { EditSongModal } from './components/EditSongModal';
 import { CategoryManagerModal } from './components/CategoryManagerModal';
 import { BackupModal } from './components/BackupModal';
-import { NotesModal } from './components/NotesModal';
 import { GlobalSearchBar } from './components/GlobalSearchBar';
 import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
@@ -61,6 +60,7 @@ const NAV_STATE_KEY = 'gig_sheet_nav_state';
 interface NavState {
   activeTab: ActiveTab;
   selectedCategory: string | null;
+  selectedSetlistId?: string | null;
   activeSongId: string | null;
 }
 
@@ -68,6 +68,7 @@ const getInitialNavState = (): NavState => {
   let navState: NavState = {
     activeTab: 'sheet_music',
     selectedCategory: null,
+    selectedSetlistId: null,
     activeSongId: null,
   };
 
@@ -81,6 +82,9 @@ const getInitialNavState = (): NavState => {
         }
         if (typeof parsed.selectedCategory === 'string' || parsed.selectedCategory === null) {
           navState.selectedCategory = parsed.selectedCategory;
+        }
+        if (typeof parsed.selectedSetlistId === 'string' || parsed.selectedSetlistId === null) {
+          navState.selectedSetlistId = parsed.selectedSetlistId;
         }
         if (typeof parsed.activeSongId === 'string' || parsed.activeSongId === null) {
           navState.activeSongId = parsed.activeSongId;
@@ -99,7 +103,11 @@ const getInitialNavState = (): NavState => {
         if (['sheet_music', 'sheet_music_setlists', 'technique', 'technique_routines', 'trash'].includes(tabPart)) {
           navState.activeTab = tabPart;
           if (parts.length > 1 && parts[1].trim()) {
-            navState.selectedCategory = parts[1].trim();
+            if (tabPart === 'sheet_music_setlists' || tabPart === 'technique_routines') {
+              navState.selectedSetlistId = parts[1].trim();
+            } else {
+              navState.selectedCategory = parts[1].trim();
+            }
           }
         }
       }
@@ -178,14 +186,13 @@ export default function App() {
 
   // Modal / Viewer Overlay State
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialNavStateRef.current.selectedCategory);
-  const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
+  const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(initialNavStateRef.current.selectedSetlistId || null);
   const [activeSongForViewer, setActiveSongForViewer] = useState<Song | null>(null);
   const savedSongIdRef = useRef<string | null>(initialNavStateRef.current.activeSongId);
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState<boolean>(false);
   const [isBackupOpen, setIsBackupOpen] = useState<boolean>(false);
-  const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [initialFilesForUpload, setInitialFilesForUpload] = useState<File[] | null>(null);
   const [songToEdit, setSongToEdit] = useState<Song | null>(null);
@@ -470,12 +477,19 @@ export default function App() {
 
     // Real-time Firestore Songs Subscription
     const unsubSongs = subscribeUserSongs(userId, (cloudSongs) => {
-      if (cloudSongs && cloudSongs.length >= 0) {
+      if (cloudSongs && cloudSongs.length > 0) {
         setSongs((prev) => {
-          // Merge local and cloud songs gracefully
+          // Merge local and cloud songs using dateModified / dateAdded so newer local edits win
           const map = new Map<string, Song>();
           prev.forEach((s) => map.set(s.id, s));
-          cloudSongs.forEach((s) => map.set(s.id, s));
+          cloudSongs.forEach((s) => {
+            const existing = map.get(s.id);
+            const sTime = s.dateModified || s.dateAdded || 0;
+            const exTime = existing ? (existing.dateModified || existing.dateAdded || 0) : -1;
+            if (!existing || sTime >= exTime) {
+              map.set(s.id, s);
+            }
+          });
           return Array.from(map.values());
         });
       }
@@ -634,6 +648,7 @@ export default function App() {
     depth: number;
     activeTab: ActiveTab;
     selectedCategory: string | null;
+    selectedSetlistId?: string | null;
     activeSongId: string | null;
     isUploadOpen: boolean;
     isCategoryManagerOpen: boolean;
@@ -647,6 +662,7 @@ export default function App() {
 
     const nextTab = overrides.activeTab ?? activeTab;
     const nextCategory = overrides.selectedCategory !== undefined ? overrides.selectedCategory : selectedCategory;
+    const nextSetlistId = overrides.selectedSetlistId !== undefined ? overrides.selectedSetlistId : selectedSetlistId;
     const nextSongId = overrides.activeSongId !== undefined ? overrides.activeSongId : (activeSongForViewer ? activeSongForViewer.id : null);
     const nextUploadOpen = overrides.isUploadOpen !== undefined ? overrides.isUploadOpen : isUploadOpen;
     const nextCategoryManagerOpen = overrides.isCategoryManagerOpen !== undefined ? overrides.isCategoryManagerOpen : isCategoryManagerOpen;
@@ -656,6 +672,7 @@ export default function App() {
       depth: newDepth,
       activeTab: nextTab,
       selectedCategory: nextCategory,
+      selectedSetlistId: nextSetlistId,
       activeSongId: nextSongId,
       isUploadOpen: nextUploadOpen,
       isCategoryManagerOpen: nextCategoryManagerOpen,
@@ -667,6 +684,8 @@ export default function App() {
       newHash = `#song=${encodeURIComponent(nextSongId)}`;
     } else if (nextCategory) {
       newHash = `#${nextTab}/${encodeURIComponent(nextCategory)}`;
+    } else if (nextSetlistId) {
+      newHash = `#${nextTab}/${encodeURIComponent(nextSetlistId)}`;
     } else if (nextUploadOpen) {
       newHash = `#${nextTab}/upload`;
     }
@@ -680,6 +699,7 @@ export default function App() {
       window.history.back();
     } else {
       if (resetState.selectedCategory !== undefined) setSelectedCategory(resetState.selectedCategory);
+      if (resetState.selectedSetlistId !== undefined) setSelectedSetlistId(resetState.selectedSetlistId);
       if (resetState.activeSongId !== undefined) setActiveSongForViewer(null);
       if (resetState.isUploadOpen !== undefined) setIsUploadOpen(false);
       if (resetState.isCategoryManagerOpen !== undefined) setIsCategoryManagerOpen(false);
@@ -695,6 +715,17 @@ export default function App() {
       pushNavState({ selectedCategory: cat });
     } else {
       goBackOrReset({ selectedCategory: null });
+    }
+  };
+
+  const handleSelectSetlist = (id: string | null) => {
+    if (id === selectedSetlistId) return;
+    if (id !== null) {
+      setSelectedSetlistId(id);
+      pushNavState({ selectedSetlistId: id });
+    } else {
+      setSelectedSetlistId(null);
+      goBackOrReset({ selectedSetlistId: null });
     }
   };
 
@@ -769,13 +800,14 @@ export default function App() {
   // Initialize History baseline on mount
   useEffect(() => {
     const nav = initialNavStateRef.current;
-    const isSubLevel = !!(nav.selectedCategory || nav.activeSongId || nav.activeTab === 'trash');
+    const isSubLevel = !!(nav.selectedCategory || nav.selectedSetlistId || nav.activeSongId || nav.activeTab === 'trash');
 
     const rootTab = nav.activeTab === 'trash' ? 'sheet_music' : nav.activeTab;
     const rootState: NavHistoryState = {
       depth: 0,
       activeTab: rootTab,
       selectedCategory: null,
+      selectedSetlistId: null,
       activeSongId: null,
       isUploadOpen: false,
       isCategoryManagerOpen: false,
@@ -790,12 +822,15 @@ export default function App() {
         subHash = `#song=${encodeURIComponent(nav.activeSongId)}`;
       } else if (nav.selectedCategory) {
         subHash = `#${nav.activeTab}/${encodeURIComponent(nav.selectedCategory)}`;
+      } else if (nav.selectedSetlistId) {
+        subHash = `#${nav.activeTab}/${encodeURIComponent(nav.selectedSetlistId)}`;
       }
 
       const subState: NavHistoryState = {
         depth: 1,
         activeTab: nav.activeTab,
         selectedCategory: nav.selectedCategory,
+        selectedSetlistId: nav.selectedSetlistId || null,
         activeSongId: nav.activeSongId,
         isUploadOpen: false,
         isCategoryManagerOpen: false,
@@ -814,6 +849,7 @@ export default function App() {
       if (state) {
         setActiveTab(state.activeTab || 'sheet_music');
         setSelectedCategory(state.selectedCategory ?? null);
+        setSelectedSetlistId(state.selectedSetlistId ?? null);
         setIsUploadOpen(!!state.isUploadOpen);
         setIsCategoryManagerOpen(!!state.isCategoryManagerOpen);
 
@@ -822,6 +858,7 @@ export default function App() {
           setActiveSongForViewer(found || null);
         } else {
           setActiveSongForViewer(null);
+          setActiveSetlistContext(null);
         }
 
         if (state.songToEditId) {
@@ -833,7 +870,9 @@ export default function App() {
       } else {
         // Popped to root baseline
         setSelectedCategory(null);
+        setSelectedSetlistId(null);
         setActiveSongForViewer(null);
+        setActiveSetlistContext(null);
         setIsUploadOpen(false);
         setIsCategoryManagerOpen(false);
         setSongToEdit(null);
@@ -853,6 +892,7 @@ export default function App() {
     const navState: NavState = {
       activeTab,
       selectedCategory,
+      selectedSetlistId,
       activeSongId: activeSongForViewer ? activeSongForViewer.id : null,
     };
 
@@ -861,7 +901,7 @@ export default function App() {
     } catch (e) {
       console.warn('Failed to save nav state to localStorage:', e);
     }
-  }, [activeTab, selectedCategory, activeSongForViewer, isLoading]);
+  }, [activeTab, selectedCategory, selectedSetlistId, activeSongForViewer, isLoading]);
 
   // Bottom Tab Select Handler
   const handleSelectTab = (tab: ActiveTab) => {
@@ -939,7 +979,8 @@ export default function App() {
   const handleSoftDeleteSong = async (id: string) => {
     const target = songs.find((s) => s.id === id);
     if (target) {
-      const updatedSong: Song = { ...target, deletedAt: Date.now() };
+      const now = Date.now();
+      const updatedSong: Song = { ...target, deletedAt: now, dateModified: now };
       await saveSong(updatedSong);
       const updated = await getAllSongs();
       setSongs(updated);
@@ -950,8 +991,21 @@ export default function App() {
   const handleRestoreSong = async (id: string) => {
     const target = songs.find((s) => s.id === id);
     if (target) {
-      const updatedSong: Song = { ...target };
+      const songSec: 'sheet_music' | 'technique' = target.section === 'technique' ? 'technique' : 'sheet_music';
+      const fallbackCat = songSec === 'technique'
+        ? (techniqueCategories[0] || 'Scales')
+        : (sheetMusicCategories[0] || 'Hymns');
+      const restoredGenre = (target.genre || fallbackCat).trim();
+
+      const updatedSong: Song = {
+        ...target,
+        genre: restoredGenre,
+        section: songSec,
+        dateModified: Date.now(),
+      };
       delete updatedSong.deletedAt;
+
+      handleAddCategory(restoredGenre, undefined, songSec);
       await saveSong(updatedSong);
       const updated = await getAllSongs();
       setSongs(updated);
@@ -987,9 +1041,16 @@ export default function App() {
   };
 
   const handleUpdateSong = async (updatedSong: Song) => {
-    await saveSong(updatedSong);
+    const songSec = updatedSong.section === 'technique' ? 'technique' : 'sheet_music';
+    if (updatedSong.genre) {
+      handleAddCategory(updatedSong.genre, undefined, songSec);
+    }
+    await saveSong({ ...updatedSong, dateModified: Date.now() });
     const updated = await getAllSongs();
     setSongs(updated);
+    if (activeSongForViewer?.id === updatedSong.id) {
+      setActiveSongForViewer((prev) => (prev ? { ...prev, ...updatedSong } : null));
+    }
     setSongToEdit(null);
   };
 
@@ -1228,10 +1289,16 @@ export default function App() {
   });
   const trashedSongs = songs.filter((s) => !!s.deletedAt);
 
-  // Filter Logic for Viewer Navigation Context (Restricted to active category)
+  // Filter Logic for Viewer Navigation Context (Restricted to active category or song's category)
   const getFilteredSongsForViewer = (activeSong: Song) => {
-    const isTech = section === 'technique';
+    const isTech = selectedCategory ? section === 'technique' : activeSong.section === 'technique';
     const defaultCat = isTech ? 'Scales' : 'Hymns';
+
+    const poolSongs = activeSongs.filter((s) => {
+      if (s.isSetlistDuplicate || s.setlistId) return false;
+      const songSec = s.section || 'sheet_music';
+      return isTech ? songSec === 'technique' : songSec !== 'technique';
+    });
 
     // Determine target category
     let targetCat: string | null = selectedCategory;
@@ -1242,16 +1309,16 @@ export default function App() {
     if (targetCat === 'ALL_SECTION_CHARTS') {
       return {
         categoryName: isTech ? 'All Technique Charts' : 'All Sheet Music Charts',
-        songsList: [...sectionSongs].sort((a, b) =>
+        songsList: [...poolSongs].sort((a, b) =>
           a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
         ),
       };
     }
 
-    // Filter sectionSongs by target category
-    const categorySongs = sectionSongs.filter((s) => {
-      const sCat = s.genre || defaultCat;
-      return sCat === targetCat;
+    // Filter poolSongs by target category
+    const categorySongs = poolSongs.filter((s) => {
+      const sCat = (s.genre || defaultCat).trim().toLowerCase();
+      return sCat === targetCat!.trim().toLowerCase();
     });
 
     // Ensure activeSong is present in the list
@@ -1325,6 +1392,7 @@ export default function App() {
       <SongViewerModal
         song={activeSongForViewer}
         activeTab={activeTab}
+        isSetlistMode={Boolean(activeSetlistContext)}
         onClose={handleCloseSongViewer}
         onAddToSetlist={(s) => setSongForAddToSetlist(s)}
         onSaveSong={handleUpdateSong}
@@ -1473,7 +1541,7 @@ export default function App() {
                 genreColors={currentCategoryColors}
                 isDarkMode={isDarkMode}
                 selectedSetlistId={selectedSetlistId}
-                onSelectSetlistId={(id) => setSelectedSetlistId(id)}
+                onSelectSetlistId={handleSelectSetlist}
                 onCreateSetlist={handleCreateSetlist}
                 onUpdateSetlist={handleUpdateSetlist}
                 onDeleteSetlist={handleDeleteSetlist}
@@ -1560,6 +1628,8 @@ export default function App() {
           <EditSongModal
             song={songToEdit}
             genres={currentCategories}
+            sheetMusicCategories={sheetMusicCategories}
+            techniqueCategories={techniqueCategories}
             onSave={handleUpdateSong}
             onClose={handleCloseEditSong}
           />
@@ -1607,13 +1677,6 @@ export default function App() {
         />
       )}
 
-      {/* Minimal Notes Modal */}
-      <NotesModal
-        isOpen={isNotesOpen}
-        onClose={() => setIsNotesOpen(false)}
-        isDarkMode={isDarkMode}
-      />
-
       {/* Toast Banner for Randomizer / Alerts */}
       {toastMessage && (
         <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 px-4 py-2.5 rounded-xl text-xs font-black shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 border border-zinc-700/80 dark:border-zinc-300/80">
@@ -1636,12 +1699,10 @@ export default function App() {
         activeTab={activeTab}
         selectedCategory={selectedCategory}
         hasActiveViewer={!!activeSongForViewer}
-        isNotesOpen={isNotesOpen}
         onSelectTab={handleSelectTab}
         onOpenCategoryManager={handleOpenCategoryManager}
         onAddPdf={() => handleOpenUploadModal()}
         onRandomizePdf={handleRandomizePdf}
-        onToggleNotes={() => setIsNotesOpen((prev) => !prev)}
       />
     </div>
   );

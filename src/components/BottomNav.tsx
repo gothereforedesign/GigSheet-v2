@@ -1,25 +1,21 @@
 import React from 'react';
-import { Music2, GraduationCap, ListMusic, Shuffle, FileText } from 'lucide-react';
+import { Music2, GraduationCap, ListMusic, Shuffle } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface BottomNavProps {
   activeTab: ActiveTab;
   selectedCategory?: string | null;
   hasActiveViewer?: boolean;
-  isNotesOpen?: boolean;
   onSelectTab: (tab: ActiveTab) => void;
   onOpenCategoryManager?: () => void;
   onAddPdf?: () => void;
   onRandomizePdf?: () => void;
-  onToggleNotes?: () => void;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
-  isNotesOpen = false,
   onSelectTab,
   onRandomizePdf,
-  onToggleNotes,
 }) => {
   const isSheetMusicActive = activeTab === 'sheet_music';
   const isTechniqueActive = activeTab === 'technique';
@@ -40,7 +36,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-lg select-none">
       <div className="max-w-md mx-auto flex items-center justify-between h-16 px-3 gap-2">
-        {/* LEFT SECTION (1fr): Section 1 - Sheets (Blue Sheet Music Note & Purple Graduation Cap icon buttons) */}
+        {/* LEFT SECTION (1fr): Sheet Music & Technique */}
         <div className="flex-1 grid grid-cols-2 gap-1.5 bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px]">
           {/* Blue Button: Sheet Music Note Icon */}
           <button
@@ -90,13 +86,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <Shuffle className="w-5 h-5 stroke-[2.5]" />
         </button>
 
-        {/* RIGHT SECTION (1fr): Section 2 - Practice Setlists & Notes Icon Buttons */}
-        <div className="flex-1 grid grid-cols-2 gap-1.5 bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px]">
-          {/* Emerald Green Button: Practice Setlists Icon */}
+        {/* RIGHT SECTION (1fr): Practice Setlists */}
+        <div className="flex-1 bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px] flex items-center justify-center">
           <button
             type="button"
             onClick={handleSetlistsClick}
-            className={`flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+            className={`w-full h-full flex items-center justify-center rounded-xl transition-all cursor-pointer ${
               isSetlistsActive
                 ? 'bg-emerald-800 dark:bg-emerald-700 text-white font-black shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
@@ -105,21 +100,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             aria-label="Practice Setlists"
           >
             <ListMusic className={`w-5 h-5 ${isSetlistsActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          </button>
-
-          {/* Notes Feature Button to the Right of Setlists Button */}
-          <button
-            type="button"
-            onClick={onToggleNotes}
-            className={`flex items-center justify-center rounded-xl transition-all cursor-pointer ${
-              isNotesOpen
-                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-black shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-slate-700/60'
-            }`}
-            title="Notes"
-            aria-label="Notes"
-          >
-            <FileText className={`w-5 h-5 ${isNotesOpen ? 'stroke-[2.5]' : 'stroke-2'}`} />
           </button>
         </div>
       </div>
