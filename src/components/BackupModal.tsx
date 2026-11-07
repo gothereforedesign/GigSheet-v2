@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Download, Upload, Database, CheckCircle2, AlertCircle, X, Loader2, Link as LinkIcon, Globe } from 'lucide-react';
+import { Download, Upload, Database, CheckCircle2, AlertCircle, X, Loader2, Link as LinkIcon, Globe, FileText } from 'lucide-react';
 import { exportLibraryData, importLibraryData } from '../lib/backup';
-import { saveSongsBatch } from '../lib/db';
+import { getAllSongs, saveSongsBatch } from '../lib/db';
 import { Song } from '../types';
 
 interface BackupModalProps {
@@ -12,6 +12,7 @@ interface BackupModalProps {
 export const BackupModal: React.FC<BackupModalProps> = ({ onClose, onLibraryReload }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isDownloadingTitles, setIsDownloadingTitles] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [importProgress, setImportProgress] = useState<{ processed: number; total: number } | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -20,6 +21,47 @@ export const BackupModal: React.FC<BackupModalProps> = ({ onClose, onLibraryRelo
   // External Google Sheets / CSV URL Sync state
   const [externalUrl, setExternalUrl] = useState('');
   const [isSyncingUrl, setIsSyncingUrl] = useState(false);
+
+  const handleDownloadTitles = async () => {
+    setIsDownloadingTitles(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    try {
+      const allSongs = await getAllSongs();
+      // Filter out deleted charts in trash
+      const activeSongs = allSongs.filter((s) => !s.deletedAt);
+      if (activeSongs.length === 0) {
+        throw new Error('No files found in your library to export.');
+      }
+
+      // Collect titles, falling back to fileName if title is empty
+      const titles = activeSongs
+        .map((s) => s.title?.trim() || s.fileName?.replace(/\.[^/.]+$/, '').trim() || 'Untitled')
+        .filter((t) => Boolean(t))
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+      const textContent = titles.join('\n');
+      const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+      const dateStr = new Date().toISOString().split('T')[0];
+      const fileName = `GigSheet_File_Titles_${dateStr}.txt`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setSuccessMsg(`Successfully downloaded ${titles.length} file titles (${fileName})!`);
+    } catch (err: any) {
+      console.error('Error downloading file titles:', err);
+      setErrorMsg(err.message || 'Failed to download file titles.');
+    } finally {
+      setIsDownloadingTitles(false);
+    }
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -221,7 +263,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ onClose, onLibraryRelo
               />
               <button
                 type="submit"
-                disabled={isSyncingUrl || isExporting || isImporting}
+                disabled={isSyncingUrl || isExporting || isImporting || isDownloadingTitles}
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50"
               >
                 {isSyncingUrl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LinkIcon className="w-3.5 h-3.5" />}
@@ -230,11 +272,38 @@ export const BackupModal: React.FC<BackupModalProps> = ({ onClose, onLibraryRelo
             </form>
           </div>
 
+          {/* Download Titles of All Files Button */}
+          <button
+            type="button"
+            onClick={handleDownloadTitles}
+            disabled={isExporting || isImporting || isSyncingUrl || isDownloadingTitles}
+            className="w-full text-left border border-zinc-700/80 dark:border-zinc-700 hover:border-zinc-500 hover:bg-zinc-850 dark:hover:bg-zinc-750 transition-all rounded-xl bg-zinc-800/90 dark:bg-zinc-800 p-4 flex items-center justify-between gap-3 shadow-md cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none group text-white"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 bg-zinc-950 dark:bg-zinc-900 text-white rounded-xl shadow-2xs shrink-0 group-hover:scale-105 transition-transform border border-zinc-700">
+                {isDownloadingTitles ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-zinc-300" />
+                ) : (
+                  <FileText className="w-4 h-4 stroke-[2.2] text-zinc-100" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-black uppercase tracking-wider text-zinc-100 truncate">
+                  {isDownloadingTitles ? 'Gathering Titles...' : 'Download File Titles (.txt)'}
+                </h3>
+                <p className="text-[10px] text-zinc-400 font-medium mt-0.5">
+                  Export an alphabetical list of all sheet music & song titles
+                </p>
+              </div>
+            </div>
+            <Download className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors shrink-0" />
+          </button>
+
           {/* Neutral Charcoal Container: Download App Contents */}
           <button
             type="button"
             onClick={handleExport}
-            disabled={isExporting || isImporting || isSyncingUrl}
+            disabled={isExporting || isImporting || isSyncingUrl || isDownloadingTitles}
             className="w-full text-left border border-zinc-800 dark:border-zinc-700 hover:border-black dark:hover:border-zinc-500 hover:bg-zinc-950 dark:hover:bg-zinc-850 transition-all rounded-xl bg-zinc-900 dark:bg-zinc-800 p-4 flex items-center justify-between gap-3 shadow-md cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none group text-white"
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -262,7 +331,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ onClose, onLibraryRelo
           {/* Neutral Slate Container: Upload App Content File */}
           <label
             className={`w-full text-left border border-slate-700 dark:border-slate-600 hover:border-slate-500 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all rounded-xl bg-slate-800/90 dark:bg-slate-800 p-4 flex items-center justify-between gap-3 shadow-md cursor-pointer active:scale-[0.99] group text-white ${
-              isImporting || isExporting || isSyncingUrl ? 'opacity-50 pointer-events-none' : ''
+              isImporting || isExporting || isSyncingUrl || isDownloadingTitles ? 'opacity-50 pointer-events-none' : ''
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -293,7 +362,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ onClose, onLibraryRelo
               type="file"
               accept=".json,application/json"
               onChange={handleImportFileChange}
-              disabled={isImporting || isExporting || isSyncingUrl}
+              disabled={isImporting || isExporting || isSyncingUrl || isDownloadingTitles}
               className="hidden"
             />
           </label>
