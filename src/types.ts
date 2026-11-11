@@ -84,7 +84,7 @@ export interface Setlist {
   type?: 'sheet_music' | 'technique';
 }
 
-export type ActiveTab = 'sheet_music' | 'sheet_music_setlists' | 'technique' | 'technique_routines' | 'trash';
+export type ActiveTab = 'sheet_music' | 'sheet_music_setlists' | 'technique' | 'technique_routines' | 'trash' | 'chord_gen';
 
 export interface ViewFilterState {
   searchQuery: string;

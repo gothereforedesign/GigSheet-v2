@@ -40,6 +40,7 @@ import { BackupModal } from './components/BackupModal';
 import { GlobalSearchBar } from './components/GlobalSearchBar';
 import { BottomDrawer } from './components/BottomDrawer';
 import { UploadProgressWidget } from './components/UploadProgressWidget';
+import { ChordGeneratorView } from './components/ChordGeneratorView';
 import { usePDFUploadQueue } from './hooks/usePDFUploadQueue';
 import { auth, subscribeToAuth } from './lib/firebase';
 import {
@@ -77,7 +78,7 @@ const getInitialNavState = (): NavState => {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed && typeof parsed === 'object') {
-        if (['sheet_music', 'sheet_music_setlists', 'technique', 'technique_routines', 'trash'].includes(parsed.activeTab)) {
+        if (['sheet_music', 'sheet_music_setlists', 'technique', 'technique_routines', 'trash', 'chord_gen'].includes(parsed.activeTab)) {
           navState.activeTab = parsed.activeTab as ActiveTab;
         }
         if (typeof parsed.selectedCategory === 'string' || parsed.selectedCategory === null) {
@@ -100,7 +101,7 @@ const getInitialNavState = (): NavState => {
       } else {
         const parts = hashContent.split('/');
         const tabPart = parts[0].toLowerCase() as ActiveTab;
-        if (['sheet_music', 'sheet_music_setlists', 'technique', 'technique_routines', 'trash'].includes(tabPart)) {
+        if (['sheet_music', 'sheet_music_setlists', 'technique', 'technique_routines', 'trash', 'chord_gen'].includes(tabPart)) {
           navState.activeTab = tabPart;
           if (parts.length > 1 && parts[1].trim()) {
             if (tabPart === 'sheet_music_setlists' || tabPart === 'technique_routines') {
@@ -1413,6 +1414,7 @@ export default function App() {
           return 'bg-[#18092b] text-slate-100';
         case 'sheet_music_setlists':
         case 'technique_routines':
+        case 'chord_gen':
           return 'bg-black text-slate-100';
         case 'trash':
           return 'bg-[#1c0d11] text-slate-100';
@@ -1428,6 +1430,8 @@ export default function App() {
         case 'sheet_music_setlists':
         case 'technique_routines':
           return 'bg-zinc-100/90 text-slate-900';
+        case 'chord_gen':
+          return 'bg-amber-50/70 text-slate-900';
         case 'trash':
           return 'bg-rose-50/60 text-slate-900';
         default:
@@ -1562,6 +1566,16 @@ export default function App() {
                 onPermanentDeleteSong={handlePermanentDeleteSong}
                 onEmptyTrash={handleEmptyTrash}
                 onSelectSong={handleOpenSongViewer}
+              />
+            )}
+
+            {activeTab === 'chord_gen' && (
+              <ChordGeneratorView
+                isDarkMode={isDarkMode}
+                onSongAdded={async () => {
+                  await handleLibraryReload();
+                }}
+                onNavigateTab={(tab) => handleSelectTab(tab)}
               />
             )}
           </>

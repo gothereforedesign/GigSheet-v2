@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music2, GraduationCap, ListMusic, Shuffle } from 'lucide-react';
+import { Music2, GraduationCap, ListMusic, Shuffle, FileEdit } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface BottomNavProps {
@@ -19,89 +19,87 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   const isSheetMusicActive = activeTab === 'sheet_music';
   const isTechniqueActive = activeTab === 'technique';
+  const isChordGenActive = activeTab === 'chord_gen';
   const isSetlistsActive = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
-
-  const handleSheetMusicClick = () => {
-    onSelectTab('sheet_music');
-  };
-
-  const handleTechniqueClick = () => {
-    onSelectTab('technique');
-  };
-
-  const handleSetlistsClick = () => {
-    onSelectTab('sheet_music_setlists');
-  };
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-lg select-none">
-      <div className="max-w-md mx-auto flex items-center justify-between h-16 px-3 gap-2">
-        {/* LEFT SECTION (1fr): Sheet Music & Technique */}
-        <div className="flex-1 grid grid-cols-2 gap-1.5 bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px]">
-          {/* Blue Button: Sheet Music Note Icon */}
-          <button
-            type="button"
-            onClick={handleSheetMusicClick}
-            className={`flex items-center justify-center rounded-xl transition-all cursor-pointer ${
-              isSheetMusicActive
-                ? 'bg-[#0c4a6e] dark:bg-sky-700 text-white font-black shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
-            }`}
-            title="Sheet Music Directory"
-            aria-label="Sheet Music"
-          >
-            <Music2 className={`w-5 h-5 ${isSheetMusicActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          </button>
+      <div className="max-w-xl mx-auto flex items-center justify-between h-16 px-2 sm:px-4 gap-1.5 sm:gap-2">
+        {/* Slot 1: Sheet Music */}
+        <button
+          type="button"
+          onClick={() => onSelectTab('sheet_music')}
+          className={`flex-1 h-12 flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer ${
+            isSheetMusicActive
+              ? 'bg-[#0c4a6e] dark:bg-sky-700 text-white font-black shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+          title="Sheet Music Directory"
+          aria-label="Sheet Music"
+        >
+          <Music2 className={`w-4 h-4 sm:w-5 sm:h-5 ${isSheetMusicActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">Charts</span>
+        </button>
 
-          {/* Purple Button: Graduation Cap Icon */}
-          <button
-            type="button"
-            onClick={handleTechniqueClick}
-            className={`flex items-center justify-center rounded-xl transition-all cursor-pointer ${
-              isTechniqueActive
-                ? 'bg-purple-800 dark:bg-purple-700 text-white font-black shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
-            }`}
-            title="Technique Directory"
-            aria-label="Technique"
-          >
-            <GraduationCap className={`w-5 h-5 ${isTechniqueActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          </button>
-        </div>
+        {/* Slot 2: Technique */}
+        <button
+          type="button"
+          onClick={() => onSelectTab('technique')}
+          className={`flex-1 h-12 flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer ${
+            isTechniqueActive
+              ? 'bg-purple-800 dark:bg-purple-700 text-white font-black shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+          title="Technique Directory"
+          aria-label="Technique"
+        >
+          <GraduationCap className={`w-4 h-4 sm:w-5 sm:h-5 ${isTechniqueActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">Tech</span>
+        </button>
 
-        {/* CENTER ACTION: Randomizer Button */}
+        {/* Slot 3: Randomize Button */}
         <button
           type="button"
           onClick={onRandomizePdf}
-          className={`p-3 rounded-2xl text-white transition-all cursor-pointer active:scale-95 shadow-md flex items-center justify-center shrink-0 mx-0.5 ${
-            isTechniqueActive
-              ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600 text-white shadow-purple-900/20'
-              : isSetlistsActive
-              ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white shadow-emerald-900/20'
-              : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600 shadow-sky-900/20'
-          }`}
+          className="flex-1 h-12 flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-600 text-white shadow-xs active:scale-95"
           title="Pick Random Chart"
           aria-label="Pick Random Chart"
         >
-          <Shuffle className="w-5 h-5 stroke-[2.5]" />
+          <Shuffle className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">Random</span>
         </button>
 
-        {/* RIGHT SECTION (1fr): Practice Setlists */}
-        <div className="flex-1 bg-slate-100/90 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 h-[48px] flex items-center justify-center">
-          <button
-            type="button"
-            onClick={handleSetlistsClick}
-            className={`w-full h-full flex items-center justify-center rounded-xl transition-all cursor-pointer ${
-              isSetlistsActive
-                ? 'bg-emerald-800 dark:bg-emerald-700 text-white font-black shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
-            }`}
-            title="Practice Setlists"
-            aria-label="Practice Setlists"
-          >
-            <ListMusic className={`w-5 h-5 ${isSetlistsActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          </button>
-        </div>
+        {/* Slot 4: Chord Generator View */}
+        <button
+          type="button"
+          onClick={() => onSelectTab('chord_gen')}
+          className={`flex-1 h-12 flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer ${
+            isChordGenActive
+              ? 'bg-amber-700 dark:bg-amber-600 text-white font-black shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+          title="Chord Chart Generator"
+          aria-label="Chord Generator"
+        >
+          <FileEdit className={`w-4 h-4 sm:w-5 sm:h-5 ${isChordGenActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">Chord Gen</span>
+        </button>
+
+        {/* Slot 5: Setlists */}
+        <button
+          type="button"
+          onClick={() => onSelectTab('sheet_music_setlists')}
+          className={`flex-1 h-12 flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer ${
+            isSetlistsActive
+              ? 'bg-emerald-800 dark:bg-emerald-700 text-white font-black shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+          title="Practice Setlists"
+          aria-label="Practice Setlists"
+        >
+          <ListMusic className={`w-4 h-4 sm:w-5 sm:h-5 ${isSetlistsActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">Sets</span>
+        </button>
       </div>
     </nav>
   );
