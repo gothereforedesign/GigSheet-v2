@@ -295,7 +295,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   key={entry.id}
                   className={`p-3 rounded-md border flex items-center gap-3 transition-all ${
                     isCompleted
-                      ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/80 text-emerald-900 dark:text-emerald-200'
+                      ? 'bg-blue-50/60 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/80 text-blue-900 dark:text-blue-200'
                       : isCurrent
                       ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-700 ring-2 ring-sky-100 dark:ring-sky-900/60 text-sky-900 dark:text-sky-200'
                       : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 opacity-60'
@@ -303,7 +303,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 >
                   <div className="shrink-0">
                     {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     ) : isCurrent ? (
                       <Loader2 className="w-5 h-5 text-sky-600 dark:text-sky-400 animate-spin" />
                     ) : (
@@ -322,7 +322,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   </div>
                   <div className="text-[11px] font-black shrink-0">
                     {isCompleted ? (
-                      <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-sm">Saved</span>
+                      <span className="text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950 px-2 py-0.5 rounded-sm">Saved</span>
                     ) : isCurrent ? (
                       <span className="text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-950 px-2 py-0.5 rounded-sm">Uploading...</span>
                     ) : (
@@ -479,13 +479,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           <div className="p-3 bg-slate-100 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-800 rounded-lg space-y-1.5 shadow-2xs">
             <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-zinc-100">
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>{fileEntries.length} {fileEntries.length === 1 ? 'PDF' : 'PDFs'} Initialized & Ready for Review</span>
               </div>
-              <span className="text-[10px] font-mono font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">100% Prepared</span>
+              <span className="text-[10px] font-mono font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">100% Prepared</span>
             </div>
             <div className="w-full h-1.5 bg-slate-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full w-full animate-in fade-in duration-300" />
+              <div className="h-full bg-blue-500 rounded-full w-full animate-in fade-in duration-300" />
             </div>
           </div>
 
@@ -554,7 +554,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               onClick={handleSaveAll}
               className={`flex-1 py-3.5 rounded-md font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 whitespace-nowrap text-white ${
                 section === 'technique'
-                  ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600 shadow-purple-900/20'
+                  ? 'bg-blue-800 hover:bg-blue-900 dark:bg-blue-700 dark:hover:bg-blue-600 shadow-blue-900/20'
                   : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
               }`}
             >

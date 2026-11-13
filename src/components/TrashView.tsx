@@ -174,7 +174,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
                     type="button"
                     onClick={(e) => handleRestore(e, song)}
                     disabled={isRestoring}
-                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap disabled:opacity-60"
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap disabled:opacity-60"
                     title="Restore song to library"
                   >
                     {isRestoring ? (

@@ -112,7 +112,7 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
         className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-sm overflow-hidden shadow-2xs hover:shadow-md cursor-pointer group flex flex-col active:scale-[0.98] ${
           isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         } ${
-          isTechnique ? 'hover:border-purple-400 dark:hover:border-purple-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
+          isTechnique ? 'hover:border-blue-400 dark:hover:border-blue-500' : 'hover:border-sky-400 dark:hover:border-sky-500'
         }`}
       >
         {/* Lazy Thumbnail Container */}
@@ -130,7 +130,7 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
         <div className="px-2.5 py-1 bg-white dark:bg-slate-900 flex items-center justify-between gap-1.5 min-h-[28px] shrink-0">
           <div className="min-w-0 flex-1">
             <h3 className={`text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-tight ${
-              isTechnique ? 'group-hover:text-purple-900 dark:group-hover:text-purple-300' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
+              isTechnique ? 'group-hover:text-blue-900 dark:group-hover:text-blue-300' : 'group-hover:text-[#0c4a6e] dark:group-hover:text-sky-300'
             }`}>
               {song.title}
             </h3>
@@ -149,7 +149,7 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
                   e.stopPropagation();
                   onAddToSetlist(song);
                 }}
-                className="p-1 rounded-md text-slate-400 dark:text-slate-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 active:scale-90 cursor-pointer transition-colors"
+                className="p-1 rounded-md text-slate-400 dark:text-slate-500 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-700 dark:hover:text-blue-300 active:scale-90 cursor-pointer transition-colors"
                 title="Add to Setlist"
               >
                 <ListPlus className="w-3.5 h-3.5 stroke-[2]" />
@@ -163,7 +163,7 @@ export const SongPreviewCard: React.FC<SongPreviewCardProps> = ({
                 onEditSong(song);
               }}
               className={`p-1 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 active:scale-90 cursor-pointer ${
-                isTechnique ? 'hover:bg-purple-50 dark:hover:bg-purple-950/60 hover:text-purple-900 dark:hover:text-purple-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0c4a6e] dark:hover:text-sky-300'
+                isTechnique ? 'hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-900 dark:hover:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0c4a6e] dark:hover:text-sky-300'
               }`}
               title="Edit Chart Info"
             >

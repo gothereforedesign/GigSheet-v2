@@ -55,7 +55,7 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
           <h3 className={`text-sm font-black uppercase tracking-wider ${
             section === 'technique'
-              ? 'text-purple-900 dark:text-purple-300'
+              ? 'text-blue-900 dark:text-blue-300'
               : section === 'setlist'
               ? 'text-zinc-900 dark:text-zinc-100'
               : section === 'trash'

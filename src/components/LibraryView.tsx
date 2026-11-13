@@ -163,7 +163,7 @@ const SongRow: React.FC<SongRowProps> = ({
             <button
               type="button"
               onClick={() => onAddToSetlist(song)}
-              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 active:scale-95 transition-all cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/60 active:scale-95 transition-all cursor-pointer"
               title="Add to Setlist"
             >
               <ListPlus className="w-4 h-4 stroke-[2]" />
@@ -174,7 +174,7 @@ const SongRow: React.FC<SongRowProps> = ({
             type="button"
             onClick={() => onEditSong(song)}
             className={`p-1.5 rounded-lg text-slate-400 dark:text-slate-500 active:scale-95 transition-all cursor-pointer ${
-              isTechnique ? 'hover:text-purple-900 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60' : 'hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              isTechnique ? 'hover:text-blue-900 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/60' : 'hover:text-[#0c4a6e] dark:hover:text-sky-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
             title="Edit Chart Info"
           >
@@ -459,7 +459,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <div className="p-8 sm:p-10 text-center bg-slate-50/80 dark:bg-slate-850/80 rounded-lg border border-slate-200/60 dark:border-slate-800 space-y-3 shadow-2xs">
               <div className={`w-10 h-10 rounded-md mx-auto flex items-center justify-center border ${
                 isTechnique
-                  ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-100 dark:border-purple-800 text-purple-900 dark:text-purple-300'
+                  ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-100 dark:border-blue-800 text-blue-900 dark:text-blue-300'
                   : 'bg-sky-50 dark:bg-sky-950/60 border-sky-100 dark:border-sky-800 text-[#0c4a6e] dark:text-sky-300'
               }`}>
                 <Music className="w-5 h-5" />
@@ -477,7 +477,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 onClick={onAddChart || (() => handleSetSelectedCategory(null))}
                 className={`mt-1 px-4 py-2 text-white text-xs font-black uppercase tracking-wider rounded-md cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
                   isTechnique
-                    ? 'bg-purple-900 hover:bg-purple-950 dark:bg-purple-700 dark:hover:bg-purple-600'
+                    ? 'bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-600'
                     : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600'
                 }`}
               >

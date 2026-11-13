@@ -70,7 +70,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
           ) : errorCount > 0 ? (
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
           ) : (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
           )}
           <span className="text-xs font-black truncate tracking-wide">{headerText}</span>
         </div>
@@ -147,7 +147,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
 
                     <div className="shrink-0 flex items-center gap-1">
                       {isCompleted && (
-                        <span className="text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-xs flex items-center gap-1">
+                        <span className="text-[10px] font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-xs flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Done
                         </span>
                       )}
@@ -189,7 +189,7 @@ export const UploadProgressWidget: React.FC<UploadProgressWidgetProps> = ({
                     <div
                       className={`h-full transition-all duration-300 rounded-full ${
                         isCompleted
-                          ? 'bg-emerald-500'
+                          ? 'bg-blue-500'
                           : isError
                           ? 'bg-rose-500'
                           : 'bg-sky-600'

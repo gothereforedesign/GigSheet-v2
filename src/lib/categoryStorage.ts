@@ -63,32 +63,19 @@ export function getCascadingCategoryPalette(
   let r: number, g: number, b: number;
   let borderR: number, borderG: number, borderB: number;
 
-  if (section === 'setlists') {
-    // Green spectrum: from Vibrant Emerald Green (#10b981) to Deep Dark Forest Green (#022c22)
-    // Start (t=0.0): rgb(16, 185, 129) -> #10b981
-    // End (t=1.0):   rgb(2, 44, 34)    -> #022c22
-    r = Math.round(16 + t * (2 - 16));
-    g = Math.round(185 + t * (44 - 185));
-    b = Math.round(129 + t * (34 - 129));
-
-    borderR = Math.min(255, Math.round(r * 1.2 + 15));
-    borderG = Math.min(255, Math.round(g * 1.25 + 20));
-    borderB = Math.min(255, Math.round(b * 1.2 + 15));
-  } else if (section === 'technique') {
-    // Purple spectrum: from Vibrant Lavender Purple (#a855f7) to Deep Royal Purple (#3b0764)
-    // Start (t=0.0): rgb(168, 85, 247) -> #a855f7
-    // End (t=1.0):   rgb(59, 7, 100)   -> #3b0764
-    r = Math.round(168 + t * (59 - 168));
-    g = Math.round(85 + t * (7 - 85));
-    b = Math.round(247 + t * (100 - 247));
-
-    borderR = Math.min(255, Math.round(r * 1.15 + 20));
-    borderG = Math.min(255, Math.round(g * 1.2 + 15));
-    borderB = Math.min(255, Math.round(b * 1.15 + 25));
-  } else {
+  if (section === 'setlists' || section === 'sheet_music') {
     // Blue spectrum: from Vibrant Sky Azure (lightest blue) to Deep Midnight Navy (darkest blue)
     // Start (t=0.0): rgb(2, 132, 199)  -> #0284c7
     // End (t=1.0):   rgb(8, 28, 48)    -> #081c30
+    r = Math.round(2 + t * (8 - 2));
+    g = Math.round(132 + t * (28 - 132));
+    b = Math.round(199 + t * (48 - 199));
+
+    borderR = Math.min(255, Math.round(r * 1.1 + 15));
+    borderG = Math.min(255, Math.round(g * 1.15 + 20));
+    borderB = Math.min(255, Math.round(b * 1.1 + 25));
+  } else {
+    // Fallback blue spectrum
     r = Math.round(2 + t * (8 - 2));
     g = Math.round(132 + t * (28 - 132));
     b = Math.round(199 + t * (48 - 199));
@@ -123,9 +110,9 @@ export function getCascadingCategoryPalette(
     lightContainerBorder,
     darkContainerBg,
     darkContainerBorder,
-    badgeBg: section === 'setlists' ? 'bg-emerald-500/20' : section === 'technique' ? 'bg-purple-500/20' : 'bg-sky-500/20',
-    badgeText: section === 'setlists' ? 'text-emerald-100' : section === 'technique' ? 'text-purple-100' : 'text-sky-100',
-    badgeBorder: section === 'setlists' ? 'border-emerald-400/40' : section === 'technique' ? 'border-purple-400/40' : 'border-sky-400/40',
+    badgeBg: 'bg-sky-500/20',
+    badgeText: 'text-sky-100',
+    badgeBorder: 'border-sky-400/40',
     cardBg: '',
     cardBorder: '',
     cardHover: 'hover:brightness-110',
@@ -150,7 +137,7 @@ export const BLUE_PALETTES: Record<string, CategoryColorPalette> = {
 export const PURPLE_PALETTES: Record<string, CategoryColorPalette> = {
   violet: getCascadingCategoryPalette(0, 6, 'technique'),
   lavender: getCascadingCategoryPalette(1, 6, 'technique'),
-  deep_purple: getCascadingCategoryPalette(2, 6, 'technique'),
+  deep_blue: getCascadingCategoryPalette(2, 6, 'technique'),
   plum: getCascadingCategoryPalette(3, 6, 'technique'),
   mulberry: getCascadingCategoryPalette(4, 6, 'technique'),
   orchid: getCascadingCategoryPalette(5, 6, 'technique'),

@@ -67,7 +67,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
 
       <div
         ref={containerRef}
-        className={`fixed bottom-[70px] inset-x-0 pointer-events-none px-3 select-none transition-all duration-200 ${
+        className={`fixed bottom-[72px] inset-x-0 pointer-events-none px-3 select-none transition-all duration-200 ${
           isOpen ? 'z-50' : 'z-20'
         }`}
       >

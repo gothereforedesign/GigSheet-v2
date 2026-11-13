@@ -228,8 +228,8 @@ export const BackupModal: React.FC<BackupModalProps> = ({ onClose, onLibraryRelo
         {/* Content Body */}
         <div className="p-5 space-y-4 overflow-y-auto">
           {successMsg && (
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-xl flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 text-xs font-bold rounded-xl flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}

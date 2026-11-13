@@ -48,11 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
     ? 'Trash Bin'
     : 'Sheet Music Directory';
 
-  const headerBgClass = isTrash
-    ? 'bg-rose-50/90 dark:bg-[#1a090d]/95 border-rose-200/80 dark:border-rose-900/60'
-    : isSetlists
-    ? 'bg-[#FFFFFF] dark:bg-[#222226] border-slate-300 dark:border-[rgba(255,255,255,0.1)]'
-    : 'bg-[#FFFFFF] dark:bg-[#222226] border-slate-300 dark:border-[rgba(255,255,255,0.1)]';
+  const headerBgClass = 'bg-[#FFFFFF] dark:bg-[#222226] border-slate-300 dark:border-[rgba(255,255,255,0.1)]';
 
   // Click Outside Listener to close menus
   useEffect(() => {
@@ -82,11 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2.5 shrink-0 cursor-pointer group"
           title="Return to Homescreen"
         >
-          <div className={`p-1.5 text-white rounded-xl shadow-xs transition-colors group-hover:scale-105 ${
-            isTrash
-              ? 'bg-rose-800 dark:bg-rose-700'
-              : 'bg-[#2563EB] dark:bg-[#3B82F6]'
-          }`}>
+          <div className="p-1.5 text-white rounded-xl shadow-xs transition-colors group-hover:scale-105 bg-[#2563EB] dark:bg-[#3B82F6]">
             <Music className="w-4 h-4 stroke-[2.5]" />
           </div>
           <div>
@@ -137,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   className="w-full px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-200 dark:border-[rgba(255,255,255,0.06)]"
                 >
-                  <FileText className="w-4 h-4 stroke-[2.2] text-amber-500" />
+                  <FileText className="w-4 h-4 stroke-[2.2] text-blue-500" />
                   <span>Create Chord Chart</span>
                 </button>
               </div>
@@ -154,7 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-label="Toggle theme"
             >
               {isDarkMode ? (
-                <Sun className="w-4 h-4 stroke-[2.2] text-amber-400" />
+                <Sun className="w-4 h-4 stroke-[2.2] text-blue-400" />
               ) : (
                 <Moon className="w-4 h-4 stroke-[2.2] text-slate-600" />
               )}

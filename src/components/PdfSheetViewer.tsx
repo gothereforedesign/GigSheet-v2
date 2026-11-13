@@ -137,7 +137,7 @@ const PdfPage: React.FC<PdfPageProps> = React.memo(({
 
       {!isRendered && (
         <div className="no-print absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 text-slate-300 p-4 space-y-2">
-          <Loader2 className={`w-6 h-6 animate-spin ${isTechnique ? 'text-purple-400' : 'text-sky-400'}`} />
+          <Loader2 className={`w-6 h-6 animate-spin ${isTechnique ? 'text-blue-400' : 'text-sky-400'}`} />
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
             Page {pageNumber}
           </span>
@@ -165,17 +165,17 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
   const isTrashSection = viewerSection === 'trash';
 
   const accentColorClass = isTechSection
-    ? 'text-purple-400'
+    ? 'text-blue-400'
     : isSetlistsSection
-    ? 'text-emerald-400'
+    ? 'text-blue-400'
     : isTrashSection
     ? 'text-rose-400'
     : 'text-sky-400';
 
   const accentBtnClass = isTechSection
-    ? 'bg-purple-600 hover:bg-purple-500'
+    ? 'bg-blue-600 hover:bg-blue-500'
     : isSetlistsSection
-    ? 'bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600'
+    ? 'bg-blue-700 hover:bg-blue-600 text-white border border-blue-600'
     : isTrashSection
     ? 'bg-rose-700 hover:bg-rose-600'
     : 'bg-sky-600 hover:bg-sky-500';
@@ -447,7 +447,7 @@ export const PdfSheetViewer: React.FC<PdfSheetViewerProps> = ({
                   <button
                     type="button"
                     onClick={() => setUseNativeViewer(true)}
-                    className={`px-4 py-2 ${isTechnique ? 'bg-purple-600 hover:bg-purple-500' : 'bg-sky-600 hover:bg-sky-500'} text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md`}
+                    className={`px-4 py-2 ${isTechnique ? 'bg-blue-600 hover:bg-blue-500' : 'bg-sky-600 hover:bg-sky-500'} text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md`}
                   >
                     Use Embedded Browser Viewer
                   </button>
