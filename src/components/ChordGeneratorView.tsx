@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { FileText, Download, PlusCircle, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { FileText, Download, PlusCircle, CheckCircle2, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
-import { Song, MusicKey, TimeSignature } from '../types';
+import { Song } from '../types';
 import { saveSong } from '../lib/db';
 import { getStoredCategories } from '../lib/categoryStorage';
 
@@ -10,13 +10,6 @@ interface ChordGeneratorViewProps {
   onSongAdded: () => Promise<void>;
   onNavigateTab: (tab: 'sheet_music') => void;
 }
-
-const MUSICAL_KEYS: MusicKey[] = [
-  'Cmaj', 'Cmin', 'Dbmaj', 'Dbmin', 'Dmaj', 'Dmin', 'Ebmaj', 'Ebmin', 'Emaj', 'Emin', 'Fmaj', 'Fmin',
-  'F#maj', 'F#min', 'Gmaj', 'Gmin', 'Abmaj', 'Abmin', 'Amaj', 'Amin', 'Bbmaj', 'Bbmin', 'Bmaj', 'Bmin'
-];
-
-const TIME_SIGNATURES: TimeSignature[] = ['4/4', '3/4', '6/8', '2/4', '5/4', '7/8', '12/8'];
 
 const DEFAULT_CHART_TEMPLATE = `[Verse 1]
 | C . . . | Am . . . | F . . . | G . . . |
@@ -32,10 +25,6 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
   onNavigateTab,
 }) => {
   const [title, setTitle] = useState('');
-  const [artist, setArtist] = useState('');
-  const [key, setKey] = useState<string>('Cmaj');
-  const [timeSig, setTimeSig] = useState<TimeSignature>('4/4');
-  const [tempo, setTempo] = useState<number>(120);
   
   const sheetCategories = getStoredCategories('sheet_music');
   const [category, setCategory] = useState<string>(sheetCategories[0] || 'Standard');
@@ -75,34 +64,26 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
     const margin = 15;
     let cursorY = 20;
 
+    // Title
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(22);
     doc.setTextColor(15, 23, 42);
-    doc.text(title.trim() || 'Untitled Chord Chart', margin, cursorY);
+    doc.text(title.trim() || 'Untitled Chart', margin, cursorY);
 
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(11);
+    // Category badge
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    if (artist.trim()) {
-      doc.text(`Artist: ${artist.trim()}`, pageWidth - margin, cursorY, { align: 'right' });
-    }
+    doc.text(`CATEGORY: ${category}`, pageWidth - margin, cursorY, { align: 'right' });
 
     cursorY += 8;
     doc.setLineWidth(0.6);
     doc.setDrawColor(203, 213, 225);
     doc.line(margin, cursorY, pageWidth - margin, cursorY);
 
-    cursorY += 8;
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(15, 23, 42);
-    
-    const metaText = `KEY: ${key}   |   TIME: ${timeSig}   |   BPM: ${tempo}   |   CATEGORY: ${category}`;
-    doc.text(metaText, margin, cursorY);
-
-    cursorY += 10;
+    cursorY += 12;
     doc.setFont('Courier', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setTextColor(30, 41, 59);
 
     const lines = content.split('\n');
@@ -114,18 +95,18 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
 
       const line = lines[i];
       if (line.trim().startsWith('[') && line.trim().endsWith(']')) {
-        cursorY += 5;
+        cursorY += 6;
         doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(12, 74, 110);
+        doc.setFontSize(12);
+        doc.setTextColor(29, 78, 216); // Subcategory Blue
         doc.text(line.trim(), margin, cursorY);
         doc.setFont('Courier', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(11);
         doc.setTextColor(30, 41, 59);
-        cursorY += 6;
+        cursorY += 7;
       } else {
         doc.text(line || ' ', margin, cursorY);
-        cursorY += 6;
+        cursorY += 7;
       }
     }
 
@@ -143,7 +124,7 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
 
   const handleDownloadPdf = () => {
     if (!title.trim()) {
-      setErrorMsg('Please enter a Song Title before downloading.');
+      setErrorMsg('Please enter a song name before downloading.');
       return;
     }
     setErrorMsg(null);
@@ -155,12 +136,12 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${title.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase()}_chord_chart.pdf`;
+      a.download = `${title.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase()}_chart.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setSuccessMsg('Chord chart PDF downloaded successfully!');
+      setSuccessMsg('PDF downloaded successfully!');
     } catch (err: any) {
       console.error('PDF generation error:', err);
       setErrorMsg(err.message || 'Failed to generate PDF.');
@@ -171,7 +152,7 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
 
   const handleAddDirectToApp = async () => {
     if (!title.trim()) {
-      setErrorMsg('Please enter a Song Title before adding to app.');
+      setErrorMsg('Please enter a song name before adding to app.');
       return;
     }
     setErrorMsg(null);
@@ -183,10 +164,7 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
       const newSong: Song = {
         id: `chord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         title: title.trim(),
-        artist: artist.trim() || 'Lead Sheet',
-        key,
-        tempo: Number(tempo) || 120,
-        timeSignature: timeSig,
+        artist: 'Lead Sheet',
         genre: category,
         section: 'sheet_music',
         type: 'pdf',
@@ -197,12 +175,12 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
 
       await saveSong(newSong);
       await onSongAdded();
-      setSuccessMsg('Chord chart added successfully to your library!');
+      setSuccessMsg('Chart added successfully to your library!');
       setTimeout(() => {
         onNavigateTab('sheet_music');
       }, 800);
     } catch (err: any) {
-      console.error('Error adding chord chart to app:', err);
+      console.error('Error adding chart to app:', err);
       setErrorMsg(err.message || 'Failed to save chart to library.');
     } finally {
       setIsGenerating(false);
@@ -210,32 +188,44 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8 pb-32 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-5">
+    <div className="w-full min-h-screen px-4 sm:px-8 py-6 pb-32 flex flex-col space-y-5">
+      {/* Top Header & Actions Bar with Back Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-[rgba(255,255,255,0.1)] pb-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-amber-600 dark:bg-amber-700 text-white rounded-2xl shadow-md">
-            <FileText className="w-6 h-6 stroke-[2.2]" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
-              Chord Chart Creator
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium mt-0.5">
-              Draft & compile professional lead sheets instantly
-            </p>
+          <button
+            type="button"
+            onClick={() => onNavigateTab('sheet_music')}
+            className="p-2 rounded-xl bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] text-slate-700 dark:text-[#F3F4F6] transition-all cursor-pointer shadow-xs flex items-center gap-1.5 text-xs font-bold"
+            title="Back to Charts"
+          >
+            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-[#2563EB] dark:bg-[#3B82F6] text-white rounded-xl shadow-xs">
+              <FileText className="w-4 h-4 stroke-[2.2]" />
+            </div>
+            <div>
+              <h1 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900 dark:text-[#F3F4F6]">
+                Chord Chart Editor
+              </h1>
+              <p className="text-[11px] text-slate-600 dark:text-[#A0A0A0] font-medium">
+                Create new lead sheet PDF
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Top Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleDownloadPdf}
             disabled={isGenerating || !title.trim()}
-            className="px-4 py-2.5 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-zinc-100 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-50"
+            className="px-4 py-2 bg-white dark:bg-[#222226] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-slate-800 dark:text-[#F3F4F6] text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
           >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-[#2563EB] dark:text-[#3B82F6]" />}
             <span>Download PDF</span>
           </button>
 
@@ -243,7 +233,7 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
             type="button"
             onClick={handleAddDirectToApp}
             disabled={isGenerating || !title.trim()}
-            className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md disabled:opacity-50"
+            className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 dark:bg-[#3B82F6] dark:hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50"
           >
             {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
             <span>Add to Library</span>
@@ -252,103 +242,44 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
       </div>
 
       {successMsg && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-2xl flex items-center gap-3 shadow-sm">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-bold rounded-2xl flex items-center gap-3 shadow-sm">
-          <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+        <div className="p-3 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs">
+          <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Main Form Container - Full Screen Width */}
-      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {/* Ultra-minimal Fullpage Inputs & Editor Layout */}
+      <div className="flex-1 flex flex-col space-y-3 pb-24">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-2">
-              Song Title *
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-[#A0A0A0] mb-0.5">
+              Song Name *
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Amazing Grace / All Blues"
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-2xl text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-amber-500 transition-colors"
+              placeholder="e.g., Amazing Grace"
+              className="w-full px-3 py-2 bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-xl text-xs font-semibold text-slate-900 dark:text-[#F3F4F6] outline-none focus:border-[#2563EB] dark:focus:border-[#3B82F6] shadow-xs"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-2">
-              Composer / Artist
-            </label>
-            <input
-              type="text"
-              value={artist}
-              onChange={(e) => setArtist(e.target.value)}
-              placeholder="e.g., Traditional / Miles Davis"
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-2xl text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-amber-500 transition-colors"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-2">
-              Key
-            </label>
-            <select
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              className="w-full px-3.5 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500 cursor-pointer"
-            >
-              {MUSICAL_KEYS.map((k) => (
-                <option key={k} value={k}>{k}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-2">
-              Time Signature
-            </label>
-            <select
-              value={timeSig}
-              onChange={(e) => setTimeSig(e.target.value as TimeSignature)}
-              className="w-full px-3.5 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500 cursor-pointer"
-            >
-              {TIME_SIGNATURES.map((ts) => (
-                <option key={ts} value={ts}>{ts}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-2">
-              Tempo (BPM)
-            </label>
-            <input
-              type="number"
-              value={tempo}
-              onChange={(e) => setTempo(parseInt(e.target.value, 10) || 120)}
-              min={40}
-              max={300}
-              className="w-full px-3.5 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-[#A0A0A0] mb-0.5">
               Category
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3.5 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500 cursor-pointer"
+              className="w-full px-3 py-2 bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-xl text-xs font-semibold text-slate-900 dark:text-[#F3F4F6] outline-none focus:border-[#2563EB] dark:focus:border-[#3B82F6] cursor-pointer shadow-xs"
             >
               {sheetCategories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -357,107 +288,83 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
           </div>
         </div>
 
-        {/* Quick Insert Toolbar */}
-        <div className="space-y-2 pt-2">
-          <div className="flex items-center justify-between">
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300">
-              Chord Progression & Sections Editor
-            </label>
-            <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium hidden sm:inline">
-              Tap buttons below to quickly insert barlines and headers
-            </span>
-          </div>
+        {/* Full-Page Textarea Editor taking maximum vertical height */}
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full flex-1 min-h-[55vh] sm:min-h-[65vh] p-4 bg-white dark:bg-[#222226] text-[#1D4ED8] dark:text-[#60A5FA] font-mono text-xs sm:text-sm rounded-2xl border border-slate-300 dark:border-[rgba(255,255,255,0.1)] outline-none focus:border-[#2563EB] dark:focus:border-[#3B82F6] leading-relaxed shadow-sm resize-y pb-24"
+          placeholder="Type chord progression here..."
+        />
+      </div>
 
-          <div className="flex flex-wrap items-center gap-2 pb-1">
-            <button
-              type="button"
-              onClick={() => insertTextAtCursor('\n[Verse 1]\n')}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              + [Verse]
-            </button>
-            <button
-              type="button"
-              onClick={() => insertTextAtCursor('\n[Chorus]\n')}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              + [Chorus]
-            </button>
-            <button
-              type="button"
-              onClick={() => insertTextAtCursor('\n[Bridge]\n')}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              + [Bridge]
-            </button>
-            <button
-              type="button"
-              onClick={() => insertTextAtCursor(' | ')}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              | Bar
-            </button>
-            <button
-              type="button"
-              onClick={() => insertTextAtCursor(' / ')}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              / Slash
-            </button>
-            <button
-              type="button"
-              onClick={() => insertTextAtCursor('||: ')}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              ||: Repeat Start
-            </button>
-            <button
-              type="button"
-              onClick={() => insertTextAtCursor(' :||')}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              :|| Repeat End
-            </button>
-          </div>
-
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={14}
-            className="w-full p-5 bg-zinc-950 text-amber-300 font-mono text-sm rounded-2xl border border-zinc-700 dark:border-zinc-700 outline-none focus:border-amber-500 leading-relaxed resize-y shadow-inner"
-            placeholder="Type your chords and lyrics here..."
-          />
-        </div>
-
-        {/* Bottom Action Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-zinc-800">
-          <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-            Generated PDFs format cleanly with professional bar lines, key signatures, and typography.
-          </p>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={handleDownloadPdf}
-              disabled={isGenerating || !title.trim()}
-              className="flex-1 sm:flex-none px-6 py-3 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-600 text-slate-800 dark:text-white text-xs font-black uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-            >
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
-              <span>Download PDF</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleAddDirectToApp}
-              disabled={isGenerating || !title.trim()}
-              className="flex-1 sm:flex-none px-7 py-3 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white text-xs font-black uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
-            >
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
-              <span>Add to Library</span>
-            </button>
-          </div>
-        </div>
+      {/* Compact Custom Quick-Insert Keyboard Toolbar Pinned Right Above Bottom Navigation */}
+      <div className="fixed bottom-[56px] inset-x-0 z-30 bg-white/95 dark:bg-[#222226]/95 backdrop-blur-md border-t border-slate-300 dark:border-[rgba(255,255,255,0.1)] px-3 py-2 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap shadow-2xl scrollbar-none">
+        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-[#A0A0A0] shrink-0 mr-1">Insert:</span>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor('\n[Verse 1]\n')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-[#1D4ED8] dark:text-[#60A5FA] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          [Verse]
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor('\n[Chorus]\n')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-[#1D4ED8] dark:text-[#60A5FA] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          [Chorus]
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor('\n[Bridge]\n')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-[#1D4ED8] dark:text-[#60A5FA] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          [Bridge]
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor('\n[Intro]\n')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-[#1D4ED8] dark:text-[#60A5FA] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          [Intro]
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor('\n[Outro]\n')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-[#1D4ED8] dark:text-[#60A5FA] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          [Outro]
+        </button>
+        <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-0.5 shrink-0" />
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor(' | ')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-slate-800 dark:text-[#F3F4F6] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          | Bar
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor(' / ')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-slate-800 dark:text-[#F3F4F6] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          / Slash
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor('||: ')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-[#1D4ED8] dark:text-[#60A5FA] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          ||: Repeat Start
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTextAtCursor(' :||')}
+          className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-[#1D4ED8] dark:text-[#60A5FA] text-[11px] font-bold rounded-lg cursor-pointer shadow-xs shrink-0 active:scale-95 transition-all"
+        >
+          :|| Repeat End
+        </button>
       </div>
     </div>
   );

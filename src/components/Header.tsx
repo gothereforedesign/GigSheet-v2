@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Music, Trash2, FolderEdit, Database, Sun, Moon, Plus, SlidersHorizontal, ChevronDown, User as UserIcon, LogIn, LogOut, Cloud } from 'lucide-react';
+import { Music, Trash2, FolderEdit, Database, Sun, Moon, Plus, SlidersHorizontal, ChevronDown, LogIn, LogOut, Cloud, FileText, Upload } from 'lucide-react';
 import { ActiveTab } from '../types';
 import { auth, loginWithGoogle, logoutUser, subscribeToAuth } from '../lib/firebase';
 import { User } from 'firebase/auth';
@@ -26,39 +26,42 @@ export const Header: React.FC<HeaderProps> = ({
   onAddPdf,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const menuRef = useRef<HTMLDivElement>(null);
+  const addMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsub = subscribeToAuth((u) => setUser(u));
     return () => unsub();
   }, []);
 
-  const isTechnique = activeTab === 'technique';
-  const isSetlists = activeTab === 'sheet_music_setlists' || activeTab === 'technique_routines';
+  const isSetlists = activeTab === 'sheet_music_setlists';
   const isTrash = activeTab === 'trash';
+  const isChordGen = activeTab === 'chord_gen';
 
-  const subtitle = isSetlists
-    ? (activeTab === 'technique_routines' ? 'Practice Routines' : 'Practice Setlists')
-    : isTechnique
-    ? 'Technique Directory'
+  const subtitle = isChordGen
+    ? 'Chord Chart Creator'
+    : isSetlists
+    ? 'Practice Setlists'
     : isTrash
     ? 'Trash Bin'
     : 'Sheet Music Directory';
 
   const headerBgClass = isTrash
     ? 'bg-rose-50/90 dark:bg-[#1a090d]/95 border-rose-200/80 dark:border-rose-900/60'
-    : isTechnique
-    ? 'bg-purple-50/90 dark:bg-[#18092b]/95 border-purple-200/80 dark:border-purple-900/60'
     : isSetlists
-    ? 'bg-emerald-50/90 dark:bg-[#042116]/95 border-emerald-200/80 dark:border-emerald-900/60'
-    : 'bg-[#f0f7fc]/90 dark:bg-[#071d2c]/95 border-sky-200/80 dark:border-sky-900/60';
+    ? 'bg-[#FFFFFF] dark:bg-[#222226] border-slate-300 dark:border-[rgba(255,255,255,0.1)]'
+    : 'bg-[#FFFFFF] dark:bg-[#222226] border-slate-300 dark:border-[rgba(255,255,255,0.1)]';
 
-  // Click Outside Listener to close menu
+  // Click Outside Listener to close menus
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
+      }
+      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
+        setIsAddMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -79,38 +82,18 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2.5 shrink-0 cursor-pointer group"
           title="Return to Homescreen"
         >
-          <div className={`p-1.5 text-white rounded-md shadow-2xs transition-colors group-hover:scale-105 ${
+          <div className={`p-1.5 text-white rounded-xl shadow-xs transition-colors group-hover:scale-105 ${
             isTrash
               ? 'bg-rose-800 dark:bg-rose-700'
-              : isSetlists
-              ? 'bg-emerald-800 dark:bg-emerald-700 shadow-2xs'
-              : isTechnique
-              ? 'bg-purple-800 dark:bg-purple-700 text-white shadow-2xs'
-              : 'bg-[#0c4a6e] dark:bg-sky-700'
+              : 'bg-[#2563EB] dark:bg-[#3B82F6]'
           }`}>
             <Music className="w-4 h-4 stroke-[2.5]" />
           </div>
           <div>
-            <h1 className={`text-base sm:text-lg font-black uppercase tracking-wider leading-none transition-colors ${
-              isTrash
-                ? 'text-rose-950 dark:text-rose-200'
-                : isSetlists
-                ? 'text-emerald-950 dark:text-emerald-200'
-                : isTechnique
-                ? 'text-purple-950 dark:text-purple-200'
-                : 'text-[#0c4a6e] dark:text-sky-300'
-            }`}>
+            <h1 className="text-base sm:text-lg font-black uppercase tracking-wider leading-none text-slate-900 dark:text-[#F3F4F6]">
               GigSheet
             </h1>
-            <p className={`text-[9px] uppercase tracking-widest mt-0.5 transition-colors font-extrabold ${
-              isTrash
-                ? 'text-rose-700 dark:text-rose-400'
-                : isSetlists
-                ? 'text-emerald-700 dark:text-emerald-400'
-                : isTechnique
-                ? 'text-purple-700 dark:text-purple-400'
-                : 'text-sky-700 dark:text-sky-400'
-            }`}>
+            <p className="text-[9px] uppercase tracking-widest mt-0.5 font-extrabold text-[#2563EB] dark:text-[#3B82F6]">
               {subtitle}
             </p>
           </div>
@@ -118,36 +101,60 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Consolidated Action Buttons */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Primary Action: PDF Upload Button */}
-          {onAddPdf && (
+          {/* Primary Action: Add Menu Popover (+ Button) */}
+          <div className="relative" ref={addMenuRef}>
             <button
               type="button"
-              onClick={onAddPdf}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer active:scale-95 shadow-sm ${
-                isTechnique
-                  ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700'
-                  : isSetlists
-                  ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700'
-                  : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700'
-              }`}
-              title="Add New PDF Chart"
+              onClick={() => setIsAddMenuOpen((prev) => !prev)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-[#2563EB] hover:bg-blue-700 dark:bg-[#3B82F6] dark:hover:bg-blue-600 transition-all cursor-pointer active:scale-95 shadow-md"
+              title="Add Chart or Chord Sheet"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>PDF</span>
+              <span className="hidden sm:inline">Add</span>
+              <ChevronDown className={`w-3 h-3 stroke-[2.5] transition-transform duration-200 ${isAddMenuOpen ? 'rotate-180' : ''}`} />
             </button>
-          )}
+
+            {/* Add Action Popover */}
+            {isAddMenuOpen && (
+              <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddMenuOpen(false);
+                    if (onAddPdf) onAddPdf();
+                  }}
+                  className="w-full px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Upload className="w-4 h-4 stroke-[2.2] text-[#2563EB] dark:text-[#3B82F6]" />
+                  <span>Upload PDF / Charts</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddMenuOpen(false);
+                    if (onSelectTab) onSelectTab('chord_gen');
+                  }}
+                  className="w-full px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-200 dark:border-[rgba(255,255,255,0.06)]"
+                >
+                  <FileText className="w-4 h-4 stroke-[2.2] text-amber-500" />
+                  <span>Create Chord Chart</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Quick Action: Light / Dark Mode Toggle */}
           {onToggleDarkMode && (
             <button
               type="button"
               onClick={onToggleDarkMode}
-              className="p-2 rounded-lg border border-slate-200/90 dark:border-slate-700 transition-all cursor-pointer active:scale-95 bg-white/80 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs"
+              className="p-2 rounded-xl border border-slate-300 dark:border-[rgba(255,255,255,0.1)] transition-all cursor-pointer active:scale-95 bg-white hover:bg-slate-200/70 dark:bg-[#222226] dark:hover:bg-[rgba(255,255,255,0.04)] text-slate-700 dark:text-[#F3F4F6] shadow-xs"
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
               aria-label="Toggle theme"
             >
               {isDarkMode ? (
-                <Sun className="w-4 h-4 stroke-[2.2] text-sky-400" />
+                <Sun className="w-4 h-4 stroke-[2.2] text-amber-400" />
               ) : (
                 <Moon className="w-4 h-4 stroke-[2.2] text-slate-600" />
               )}
@@ -159,10 +166,10 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer active:scale-95 ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 ${
                 isMenuOpen
-                  ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white'
-                  : 'bg-white/80 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs'
+                  ? 'bg-slate-200 dark:bg-zinc-700 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-white'
+                  : 'bg-white hover:bg-slate-200/70 dark:bg-[#222226] dark:hover:bg-[rgba(255,255,255,0.04)] border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-slate-700 dark:text-[#F3F4F6] shadow-xs'
               }`}
               title="Library Management Options"
             >
@@ -178,14 +185,14 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Dropdown Menu Popover */}
             {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                 {/* Account Status Header */}
-                <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800 mb-1 space-y-0.5">
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    <Cloud className="w-3 h-3 text-sky-500" />
+                <div className="px-3.5 py-2 border-b border-slate-200 dark:border-[rgba(255,255,255,0.08)] mb-1 space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-[#A0A0A0]">
+                    <Cloud className="w-3 h-3 text-[#2563EB] dark:text-[#3B82F6]" />
                     <span>Cloud Storage Account</span>
                   </div>
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                  <p className="text-xs font-bold text-slate-800 dark:text-[#F3F4F6] truncate">
                     {user?.email || (user?.isAnonymous ? 'Guest Account (Synced)' : 'Signed Out')}
                   </p>
                 </div>
@@ -214,14 +221,14 @@ export const Header: React.FC<HeaderProps> = ({
                         console.warn('Google sign-in error:', err);
                       }
                     }}
-                    className="w-full px-3.5 py-2 text-left text-xs font-extrabold text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/60 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left text-xs font-extrabold text-[#2563EB] dark:text-[#3B82F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer"
                   >
-                    <LogIn className="w-4 h-4 stroke-[2] text-sky-600" />
+                    <LogIn className="w-4 h-4 stroke-[2] text-[#2563EB] dark:text-[#3B82F6]" />
                     <span>Sign In with Google</span>
                   </button>
                 )}
 
-                <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                <div className="my-1 border-t border-slate-200 dark:border-[rgba(255,255,255,0.08)]" />
 
                 {onOpenCategoryManager && (
                   <button
@@ -230,9 +237,9 @@ export const Header: React.FC<HeaderProps> = ({
                       setIsMenuOpen(false);
                       onOpenCategoryManager();
                     }}
-                    className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer"
                   >
-                    <FolderEdit className="w-4 h-4 stroke-[2] text-slate-500 dark:text-slate-400" />
+                    <FolderEdit className="w-4 h-4 stroke-[2] text-slate-500 dark:text-[#A0A0A0]" />
                     <span>Edit Categories</span>
                   </button>
                 )}
@@ -244,9 +251,9 @@ export const Header: React.FC<HeaderProps> = ({
                       setIsMenuOpen(false);
                       onOpenBackupModal();
                     }}
-                    className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer"
                   >
-                    <Database className="w-4 h-4 stroke-[2] text-slate-500 dark:text-slate-400" />
+                    <Database className="w-4 h-4 stroke-[2] text-slate-500 dark:text-[#A0A0A0]" />
                     <span>Backup & Transfer</span>
                   </button>
                 )}
@@ -261,7 +268,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className={`w-full px-3.5 py-2 text-left text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
                       activeTab === 'trash'
                         ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
-                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        : 'text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)]'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">

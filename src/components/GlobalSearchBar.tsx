@@ -67,7 +67,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
 
       <div
         ref={containerRef}
-        className={`fixed bottom-[68px] inset-x-0 pointer-events-none px-3 select-none transition-all duration-200 ${
+        className={`fixed bottom-[70px] inset-x-0 pointer-events-none px-3 select-none transition-all duration-200 ${
           isOpen ? 'z-50' : 'z-20'
         }`}
       >
@@ -87,10 +87,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
                 </div>
               ) : (
                 matchingSongs.map((song) => {
-                  const isTech = song.section === 'technique';
-                  const sectionBadgeClass = isTech
-                    ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-800'
-                    : 'bg-sky-100 dark:bg-sky-950/80 text-[#0c4a6e] dark:text-sky-300 border-sky-300 dark:border-sky-800';
+                  const songCategory = song.genre || 'Hymns';
 
                   return (
                     <div
@@ -99,10 +96,8 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
                       className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/90 cursor-pointer flex items-center justify-between gap-2.5 transition-colors group border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className={`p-1.5 rounded-lg shrink-0 ${
-                          isTech ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300' : 'bg-sky-100 dark:bg-sky-950 text-[#0c4a6e] dark:text-sky-300'
-                        }`}>
-                          {isTech ? <GraduationCap className="w-4 h-4 stroke-[2]" /> : <Music className="w-4 h-4 stroke-[2]" />}
+                        <div className="p-1.5 rounded-lg shrink-0 bg-blue-50 dark:bg-blue-950 text-[#2563EB] dark:text-[#3B82F6]">
+                          <Music className="w-4 h-4 stroke-[2]" />
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -118,9 +113,9 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Section badge only - category name on right cut per user request */}
-                        <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xs border ${sectionBadgeClass}`}>
-                          {isTech ? 'Technique' : 'Sheet Music'}
+                        {/* Category tag badge on the immediate right of file/song name */}
+                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs border bg-blue-50 dark:bg-blue-950/80 text-[#1D4ED8] dark:text-[#60A5FA] border-blue-200 dark:border-blue-800 truncate max-w-[120px]">
+                          {songCategory}
                         </span>
                       </div>
                     </div>

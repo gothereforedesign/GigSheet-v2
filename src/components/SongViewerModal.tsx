@@ -84,21 +84,15 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
     }
   };
 
-  // Derive Section Brand Styling based on where PDF is being viewed
-  const viewerSection: 'sheet_music' | 'technique' | 'setlists' | 'trash' = (() => {
+  const viewerSection: 'sheet_music' | 'setlists' | 'trash' = (() => {
     if (isSetlistMode) return 'setlists';
     if (activeTab === 'trash' || song.deletedAt) return 'trash';
-    if (song.section === 'technique') return 'technique';
-    if (song.section === 'sheet_music') return 'sheet_music';
-    if (activeTab === 'technique') return 'technique';
     return 'sheet_music';
   })();
 
-  const isTechnique = viewerSection === 'technique';
   const isSetlists = viewerSection === 'setlists';
   const isTrash = viewerSection === 'trash';
-
-  const section = isTechnique ? 'technique' : 'sheet_music';
+  const isTechnique = false;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

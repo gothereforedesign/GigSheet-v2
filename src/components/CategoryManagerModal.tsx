@@ -1,30 +1,27 @@
 import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, Check, X, ChevronUp, ChevronDown, Music, GraduationCap, ListMusic } from 'lucide-react';
+import { Plus, Edit3, Trash2, Check, X, ChevronUp, ChevronDown, Music, ListMusic } from 'lucide-react';
 import { Song, Setlist } from '../types';
 
 interface CategoryManagerModalProps {
-  section: 'sheet_music' | 'technique';
+  section: 'sheet_music';
   isSetlistMode?: boolean;
   categories: string[];
   sheetMusicCategories?: string[];
-  techniqueCategories?: string[];
   setlists?: Setlist[];
   categoryColors?: Record<string, any>;
   songs: Song[];
-  onAddCategory: (newCategory: string, color?: any, targetSection?: 'sheet_music' | 'technique' | 'setlists') => void;
-  onRenameCategory: (oldCategory: string, newCategory: string, targetSection?: 'sheet_music' | 'technique' | 'setlists') => Promise<void> | void;
-  onReorderCategories?: (reordered: string[], targetSection?: 'sheet_music' | 'technique' | 'setlists') => void;
+  onAddCategory: (newCategory: string, color?: any, targetSection?: 'sheet_music' | 'setlists') => void;
+  onRenameCategory: (oldCategory: string, newCategory: string, targetSection?: 'sheet_music' | 'setlists') => Promise<void> | void;
+  onReorderCategories?: (reordered: string[], targetSection?: 'sheet_music' | 'setlists') => void;
   onUpdateCategoryColor?: (category: string, color: any) => void;
-  onDeleteCategory: (categoryToDelete: string, targetSection?: 'sheet_music' | 'technique' | 'setlists') => Promise<void> | void;
+  onDeleteCategory: (categoryToDelete: string, targetSection?: 'sheet_music' | 'setlists') => Promise<void> | void;
   onClose: () => void;
 }
 
 export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
-  section: initialSection,
   isSetlistMode = false,
   categories: initialCategories,
   sheetMusicCategories = [],
-  techniqueCategories = [],
   setlists = [],
   songs = [],
   onAddCategory,
@@ -33,33 +30,23 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   onDeleteCategory,
   onClose,
 }) => {
-  // Modal section view tab state: 'sheet_music' | 'technique' | 'setlists'
-  const [activeTabSection, setActiveTabSection] = useState<'sheet_music' | 'technique' | 'setlists'>(() => {
+  const [activeTabSection, setActiveTabSection] = useState<'sheet_music' | 'setlists'>(() => {
     if (isSetlistMode) return 'setlists';
-    return initialSection === 'technique' ? 'technique' : 'sheet_music';
+    return 'sheet_music';
   });
 
   const isSetlistsTab = activeTabSection === 'setlists';
-  const isTechniqueTab = activeTabSection === 'technique';
   const isSheetMusicTab = activeTabSection === 'sheet_music';
 
-  // Extract unique categories from songs for the active section if not in setlists tab
   const activeCategories: string[] = React.useMemo(() => {
     if (isSetlistsTab) {
       return setlists.map((s) => s.name);
     }
     
-    const baseList = isTechniqueTab
-      ? (techniqueCategories.length > 0 ? techniqueCategories : initialCategories)
-      : (sheetMusicCategories.length > 0 ? sheetMusicCategories : initialCategories);
+    const baseList = sheetMusicCategories.length > 0 ? sheetMusicCategories : initialCategories;
 
-    // Extract any unique categories present in NON-DELETED songs for this section
     const songsCategories = songs
-      .filter((s) => {
-        if (s.deletedAt) return false;
-        if (isTechniqueTab) return s.section === 'technique';
-        return s.section !== 'technique';
-      })
+      .filter((s) => !s.deletedAt)
       .map((s) => (s.genre || '').trim())
       .filter(Boolean) as string[];
 
@@ -75,14 +62,9 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
     });
 
     return Array.from(normalizedMap.values());
-  }, [isSetlistsTab, isTechniqueTab, setlists, techniqueCategories, sheetMusicCategories, initialCategories, songs]);
+  }, [isSetlistsTab, setlists, sheetMusicCategories, initialCategories, songs]);
 
-  const sectionLabel = isSetlistsTab
-    ? 'Practice Setlists'
-    : isTechniqueTab
-    ? 'Technique Categories'
-    : 'Sheet Music Categories';
-
+  const sectionLabel = isSetlistsTab ? 'Practice Setlists' : 'Sheet Music Categories';
   const singularLabel = isSetlistsTab ? 'setlist' : 'category';
 
   const [newCategoryInput, setNewCategoryInput] = useState('');
@@ -92,322 +74,261 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Calculate chart count per category or setlist
   const getCategoryCount = (categoryName: string) => {
     if (isSetlistsTab) {
       const match = setlists.find((s) => s.name === categoryName);
       if (!match) return 0;
-      return match.items.filter((item) =>
-        songs.some(
-          (s) =>
-            !s.deletedAt &&
-            (s.id === item.songId || s.originalSongId === item.songId || item.songId.endsWith(`_${s.id}`))
-        )
-      ).length;
+      return match.items.filter((item) => {
+        const found = songs.find((s) => s.id === item.songId);
+        return found && !found.deletedAt;
+      }).length;
     }
+    const defaultCat = 'Hymns';
     return songs.filter((s) => {
       if (s.deletedAt || s.isSetlistDuplicate || s.setlistId) return false;
-      if (isTechniqueTab && s.section !== 'technique') return false;
-      if (!isTechniqueTab && s.section === 'technique') return false;
-      const cat = (s.genre || (isTechniqueTab ? 'Scales' : 'Hymns')).trim();
-      return cat.toLowerCase() === categoryName.trim().toLowerCase();
+      const sCat = (s.genre || defaultCat).trim().toLowerCase();
+      return sCat === categoryName.trim().toLowerCase();
     }).length;
   };
 
-  const handleAdd = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
     const trimmed = newCategoryInput.trim();
     if (!trimmed) return;
 
-    if (activeCategories.some((g) => g.toLowerCase() === trimmed.toLowerCase())) {
-      setErrorMsg(`"${trimmed}" already exists.`);
+    if (activeCategories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      setErrorMsg(`A ${singularLabel} named "${trimmed}" already exists.`);
       return;
     }
 
+    setErrorMsg(null);
     onAddCategory(trimmed, undefined, activeTabSection);
     setNewCategoryInput('');
+  };
+
+  const handleStartEdit = (cat: string) => {
+    setEditingCategory(cat);
+    setEditingText(cat);
     setErrorMsg(null);
   };
 
-  const handleStartRename = (category: string) => {
-    setEditingCategory(category);
-    setEditingText(category);
-    setErrorMsg(null);
-  };
-
-  const handleSaveRename = async (oldCategory: string) => {
+  const handleSaveEdit = async (oldCat: string) => {
     const trimmed = editingText.trim();
-    if (!trimmed) {
-      setErrorMsg(`${singularLabel} name cannot be empty.`);
-      return;
-    }
+    if (!trimmed) return;
 
-    if (trimmed === oldCategory) {
-      setEditingCategory(null);
-      return;
-    }
-
-    if (activeCategories.some((g) => g.toLowerCase() === trimmed.toLowerCase() && g !== oldCategory)) {
-      setErrorMsg(`"${trimmed}" already exists.`);
+    if (trimmed.toLowerCase() !== oldCat.toLowerCase() && activeCategories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      setErrorMsg(`A ${singularLabel} named "${trimmed}" already exists.`);
       return;
     }
 
     setIsProcessing(true);
     setErrorMsg(null);
     try {
-      await onRenameCategory(oldCategory, trimmed, activeTabSection);
+      await onRenameCategory(oldCat, trimmed, activeTabSection);
       setEditingCategory(null);
+      setEditingText('');
     } catch (err: any) {
-      console.error('Failed to rename:', err);
-      setErrorMsg(`Failed to update ${singularLabel} name.`);
+      setErrorMsg(err.message || 'Failed to rename.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleMoveUp = (index: number) => {
-    if (index <= 0 || !onReorderCategories) return;
-    const reordered = [...activeCategories];
-    const temp = reordered[index - 1];
-    reordered[index - 1] = reordered[index];
-    reordered[index] = temp;
-    onReorderCategories(reordered, activeTabSection);
-  };
-
-  const handleMoveDown = (index: number) => {
-    if (index >= activeCategories.length - 1 || !onReorderCategories) return;
-    const reordered = [...activeCategories];
-    const temp = reordered[index + 1];
-    reordered[index + 1] = reordered[index];
-    reordered[index] = temp;
-    onReorderCategories(reordered, activeTabSection);
-  };
-
-  const handleDelete = async (category: string) => {
+  const handleDelete = async (cat: string) => {
     setIsProcessing(true);
     setErrorMsg(null);
     try {
-      await onDeleteCategory(category, activeTabSection);
-      if (editingCategory === category) {
-        setEditingCategory(null);
-      }
-      if (confirmDeleteCat === category) {
-        setConfirmDeleteCat(null);
-      }
+      await onDeleteCategory(cat, activeTabSection);
+      setConfirmDeleteCat(null);
     } catch (err: any) {
-      console.error('Failed to delete:', err);
-      setErrorMsg(`Failed to delete ${singularLabel}.`);
+      setErrorMsg(err.message || 'Failed to delete.');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleMove = (index: number, direction: 'up' | 'down') => {
+    if (onReorderCategories) {
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= activeCategories.length) return;
+      const copy = [...activeCategories];
+      const [removed] = copy.splice(index, 1);
+      copy.splice(newIndex, 0, removed);
+      onReorderCategories(copy, activeTabSection);
     }
   };
 
   return (
-    <div className="space-y-4 select-none">
-      {/* SECTION TABS FOR ALL THREE SECTIONS */}
-      <div className="flex items-center justify-between gap-1 p-1 bg-slate-100 dark:bg-zinc-800/90 rounded-xl border border-slate-200 dark:border-zinc-700/80">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTabSection('sheet_music');
-            setErrorMsg(null);
-            setEditingCategory(null);
-          }}
-          className={`flex-1 py-2 px-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            isSheetMusicTab
-              ? 'bg-[#0c4a6e] dark:bg-sky-700 text-white shadow-xs'
-              : 'text-slate-600 dark:text-zinc-400 hover:text-[#0c4a6e] dark:hover:text-sky-300'
-          }`}
-        >
-          <Music className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span className="truncate">Sheet Music</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTabSection('technique');
-            setErrorMsg(null);
-            setEditingCategory(null);
-          }}
-          className={`flex-1 py-2 px-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            isTechniqueTab
-              ? 'bg-purple-800 dark:bg-purple-700 text-white shadow-xs'
-              : 'text-slate-600 dark:text-zinc-400 hover:text-purple-700 dark:hover:text-purple-300'
-          }`}
-        >
-          <GraduationCap className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span className="truncate">Technique</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTabSection('setlists');
-            setErrorMsg(null);
-            setEditingCategory(null);
-          }}
-          className={`flex-1 py-2 px-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            isSetlistsTab
-              ? 'bg-emerald-800 dark:bg-emerald-700 text-white shadow-xs'
-              : 'text-slate-600 dark:text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-300'
-          }`}
-        >
-          <ListMusic className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span className="truncate">Set Lists</span>
-        </button>
-      </div>
-
-      {/* Header - Item count */}
-      <div className="border-b border-slate-200 dark:border-zinc-800 pb-2.5 flex items-center justify-between">
-        <h2 className="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight">
-          {sectionLabel}
-        </h2>
-        <span className="text-xs font-mono font-bold text-slate-500 dark:text-zinc-400">
-          {activeCategories.length} {activeCategories.length === 1 ? 'Item' : 'Items'}
-        </span>
-      </div>
-
-      {errorMsg && (
-        <div className="p-2.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 rounded-xl text-xs font-bold text-rose-700 dark:text-rose-300">
-          {errorMsg}
-        </div>
-      )}
-
-      {/* Add New Category Form */}
-      <form onSubmit={handleAdd} className="flex items-center gap-2">
-        <input
-          type="text"
-          value={newCategoryInput}
-          onChange={(e) => setNewCategoryInput(e.target.value)}
-          placeholder={`Add new ${singularLabel}...`}
-          className="flex-1 px-3.5 py-2.5 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs sm:text-sm font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-500 placeholder:text-slate-400 dark:placeholder:text-zinc-500 shadow-2xs"
-        />
-        <button
-          type="submit"
-          disabled={!newCategoryInput.trim() || isProcessing}
-          className={`px-4 py-2.5 rounded-xl font-extrabold text-xs uppercase tracking-wider cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 disabled:opacity-40 transition-all shadow-md text-white ${
-            isTechniqueTab
-              ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700'
-              : isSetlistsTab
-              ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700'
-              : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700'
-          }`}
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Add</span>
-        </button>
-      </form>
-
-      {/* Reorder & Edit List */}
-      <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 no-scrollbar">
-        {activeCategories.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-400 dark:text-zinc-500 border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl font-medium">
-            No {singularLabel}s added yet. Type a name above to create one.
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-[rgba(255,255,255,0.08)] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-[#2563EB] dark:bg-[#3B82F6] text-white rounded-xl shadow-xs">
+              {isSetlistsTab ? <ListMusic className="w-4 h-4 stroke-[2.2]" /> : <Music className="w-4 h-4 stroke-[2.2]" />}
+            </div>
+            <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-[#F3F4F6]">
+              {sectionLabel}
+            </h2>
           </div>
-        ) : (
-          activeCategories.map((cat, index) => {
-            const isEditing = editingCategory === cat;
-            const count = getCategoryCount(cat);
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-            return (
-              <div
-                key={cat}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if ((e.key === 'Delete' || e.key === 'Backspace') && !isEditing) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDelete(cat);
-                  }
-                }}
-                className="p-3 sm:p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800/90 bg-slate-50 dark:bg-zinc-900/90 flex items-center justify-between gap-3 shadow-2xs hover:border-slate-300 dark:hover:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-400 transition-all"
-              >
-                {isEditing ? (
-                  <div className="flex items-center gap-2 w-full">
-                    <input
-                      type="text"
-                      value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveRename(cat);
-                        if (e.key === 'Escape') setEditingCategory(null);
-                      }}
-                      autoFocus
-                      className="flex-1 px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-500 rounded-lg text-xs sm:text-sm font-bold text-slate-900 dark:text-zinc-100 outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleSaveRename(cat)}
-                      disabled={isProcessing}
-                      className="p-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg cursor-pointer active:scale-95 transition-all shadow-xs"
-                      title="Save name"
-                    >
-                      <Check className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingCategory(null)}
-                      disabled={isProcessing}
-                      className="p-2 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 rounded-lg cursor-pointer active:scale-95 transition-all"
-                      title="Cancel"
-                    >
-                      <X className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {/* Left Side: Order Arrows + Name + Count */}
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {onReorderCategories && activeCategories.length > 1 && (
-                        <div className="flex items-center bg-slate-200/80 dark:bg-zinc-800 rounded-lg p-0.5 border border-slate-300/60 dark:border-zinc-700/80 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleMoveUp(index)}
-                            disabled={index === 0 || isProcessing}
-                            className="p-1.5 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-20 rounded-md cursor-pointer transition-colors"
-                            title="Move Up"
-                          >
-                            <ChevronUp className="w-4 h-4 stroke-[2.5]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveDown(index)}
-                            disabled={index === activeCategories.length - 1 || isProcessing}
-                            className="p-1.5 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-20 rounded-md cursor-pointer transition-colors"
-                            title="Move Down"
-                          >
-                            <ChevronDown className="w-4 h-4 stroke-[2.5]" />
-                          </button>
-                        </div>
-                      )}
+        {/* Navigation Tabs */}
+        <div className="grid grid-cols-2 p-2 bg-slate-100 dark:bg-black border-b border-slate-200 dark:border-[rgba(255,255,255,0.08)] gap-1">
+          <button
+            type="button"
+            onClick={() => { setActiveTabSection('sheet_music'); setEditingCategory(null); setErrorMsg(null); }}
+            className={`py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              isSheetMusicTab
+                ? 'bg-white dark:bg-[#222226] text-[#2563EB] dark:text-[#3B82F6] shadow-xs'
+                : 'text-slate-600 dark:text-[#A0A0A0] hover:text-slate-900'
+            }`}
+          >
+            <Music className="w-3.5 h-3.5 stroke-[2.2]" />
+            <span>Categories</span>
+          </button>
 
-                      <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-zinc-100 truncate">
-                        {cat}
-                      </span>
+          <button
+            type="button"
+            onClick={() => { setActiveTabSection('setlists'); setEditingCategory(null); setErrorMsg(null); }}
+            className={`py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              isSetlistsTab
+                ? 'bg-white dark:bg-[#222226] text-[#2563EB] dark:text-[#3B82F6] shadow-xs'
+                : 'text-slate-600 dark:text-[#A0A0A0] hover:text-slate-900'
+            }`}
+          >
+            <ListMusic className="w-3.5 h-3.5 stroke-[2.2]" />
+            <span>Setlists</span>
+          </button>
+        </div>
 
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-300/60 dark:border-zinc-700/80 shrink-0">
-                        {count} {count === 1 ? 'chart' : 'charts'}
-                      </span>
+        {/* Content Body */}
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
+          {errorMsg && (
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-bold rounded-xl">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Add Form */}
+          <form onSubmit={handleAdd} className="flex gap-2">
+            <input
+              type="text"
+              value={newCategoryInput}
+              onChange={(e) => setNewCategoryInput(e.target.value)}
+              placeholder={`New ${singularLabel} name...`}
+              className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-black border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-xl text-xs font-semibold text-slate-900 dark:text-[#F3F4F6] outline-none focus:border-[#2563EB] dark:focus:border-[#3B82F6]"
+            />
+            <button
+              type="submit"
+              disabled={!newCategoryInput.trim()}
+              className="px-4 py-2.5 bg-[#2563EB] hover:bg-blue-700 dark:bg-[#3B82F6] dark:hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50 shrink-0"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Add</span>
+            </button>
+          </form>
+
+          {/* List */}
+          <div className="space-y-2">
+            {activeCategories.map((cat, idx) => {
+              const count = getCategoryCount(cat);
+              const isEditing = editingCategory === cat;
+              const isConfirmingDelete = confirmDeleteCat === cat;
+
+              return (
+                <div
+                  key={cat}
+                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black border border-slate-200 dark:border-[rgba(255,255,255,0.08)] rounded-xl transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                    <div className="flex flex-col gap-0.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleMove(idx, 'up')}
+                        disabled={idx === 0}
+                        className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 cursor-pointer"
+                        title="Move Up"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMove(idx, 'down')}
+                        disabled={idx === activeCategories.length - 1}
+                        className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 cursor-pointer"
+                        title="Move Down"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </button>
                     </div>
 
-                    {/* Right Side: Rename & Delete Action Buttons */}
+                    {isEditing ? (
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                        <input
+                          type="text"
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-[#222226] border border-[#2563EB] dark:border-[#3B82F6] rounded-lg text-xs font-bold text-slate-900 dark:text-white outline-none"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(cat);
+                            if (e.key === 'Escape') setEditingCategory(null);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveEdit(cat)}
+                          disabled={isProcessing}
+                          className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
+                          title="Save"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategory(null)}
+                          className="p-1.5 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 rounded-lg cursor-pointer"
+                          title="Cancel"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-[#F3F4F6] truncate">
+                          {cat}
+                        </span>
+                        <span className="px-2 py-0.5 bg-slate-200/70 dark:bg-[#222226] text-slate-600 dark:text-[#A0A0A0] text-[10px] font-mono font-bold rounded-md shrink-0 ml-2">
+                          {count} {count === 1 ? 'chart' : 'charts'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {!isEditing && (
                     <div className="flex items-center gap-1 shrink-0">
-                      {confirmDeleteCat === cat ? (
-                        <div className="flex items-center gap-1.5">
+                      {isConfirmingDelete ? (
+                        <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/80 p-1 rounded-xl border border-rose-200 dark:border-rose-800">
                           <button
                             type="button"
                             onClick={() => handleDelete(cat)}
                             disabled={isProcessing}
-                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-wider cursor-pointer active:scale-95 transition-all"
+                            className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg cursor-pointer"
                           >
                             Delete
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteCat(null)}
-                            disabled={isProcessing}
-                            className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-[11px] font-bold cursor-pointer"
+                            className="px-2 py-1 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold rounded-lg cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -416,58 +337,46 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                         <>
                           <button
                             type="button"
-                            onClick={() => {
-                              setConfirmDeleteCat(null);
-                              handleStartRename(cat);
-                            }}
-                            disabled={isProcessing}
-                            className="p-2 rounded-lg text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                            onClick={() => handleStartEdit(cat)}
+                            className="p-1.5 text-slate-400 hover:text-[#2563EB] dark:hover:text-[#3B82F6] rounded-lg transition-colors cursor-pointer"
                             title="Rename"
                           >
-                            <Edit3 className="w-4 h-4 stroke-[2]" />
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
-
                           <button
                             type="button"
-                            onClick={() => {
-                              if (count > 0) {
-                                setConfirmDeleteCat(cat);
-                              } else {
-                                handleDelete(cat);
-                              }
-                            }}
-                            disabled={isProcessing}
-                            className="p-2 rounded-lg text-slate-400 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            onClick={() => setConfirmDeleteCat(cat)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4 stroke-[2]" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
                     </div>
-                  </>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
+                  )}
+                </div>
+              );
+            })}
 
-      {/* Footer controls */}
-      <div className="flex items-center justify-end border-t border-slate-200 dark:border-zinc-800 pt-3">
-        <button
-          type="button"
-          onClick={onClose}
-          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer active:scale-95 shadow-md transition-all ${
-            isTechniqueTab
-              ? 'bg-purple-800 hover:bg-purple-900 dark:bg-purple-700 dark:hover:bg-purple-600 text-white'
-              : isSetlistsTab
-              ? 'bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white'
-              : 'bg-[#0c4a6e] hover:bg-[#073652] dark:bg-sky-700 dark:hover:bg-sky-600 text-white'
-          }`}
-        >
-          Done
-        </button>
+            {activeCategories.length === 0 && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-6">
+                No {singularLabel}s found. Add one above.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 bg-slate-50 dark:bg-black border-t border-slate-200 dark:border-[rgba(255,255,255,0.08)] flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 dark:bg-[#3B82F6] dark:hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-xs"
+          >
+            Done
+          </button>
+        </div>
       </div>
     </div>
   );
