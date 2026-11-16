@@ -260,11 +260,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
   return (
     <div 
       className={`song-viewer-modal fixed inset-0 z-50 flex flex-col w-screen h-screen overflow-hidden select-none ${
-        isTechnique
-          ? 'bg-[#130d1d] text-blue-100'
-          : isSetlists
-          ? 'bg-[#022c22] text-blue-100'
-          : isTrash
+        isTrash
           ? 'bg-[#120508] text-rose-100'
           : 'bg-[#030d17] text-sky-100'
       } ${isLandscapeClean ? 'landscape-clean' : ''}`}
@@ -272,11 +268,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
     >
       {/* Top Header Bar - Matches Active Section Palette */}
       <header className={`song-viewer-header sticky top-0 z-50 text-white px-3 sm:px-6 py-3 flex items-center justify-between gap-3 shrink-0 min-h-[60px] border-b backdrop-blur-md transition-all duration-200 ${
-        isTechnique
-          ? 'bg-[#18092b]/95 border-blue-900/60'
-          : isSetlists
-          ? 'bg-[#064e3b]/95 border-blue-900/60'
-          : isTrash
+        isTrash
           ? 'bg-[#1f0a0f]/95 border-rose-900/60'
           : 'bg-[#071d2c]/95 border-sky-900/60'
       } ${
@@ -306,11 +298,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           </button>
 
           <div className={`flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-md border shadow-lg ${
-            isTechnique
-              ? 'bg-blue-950/40 border-blue-800/80'
-              : isSetlists
-              ? 'bg-blue-950/40 border-blue-800/80'
-              : isTrash
+            isTrash
               ? 'bg-rose-950/40 border-rose-800/80'
               : 'bg-[#0c4a6e]/30 border-sky-800/80'
           }`}>
@@ -319,15 +307,11 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             </h3>
 
             <span className={`hidden md:inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs shrink-0 shadow-2xs ${
-              isTechnique
-                ? 'bg-blue-950/90 text-blue-200 border border-blue-800'
-                : isSetlists
-                ? 'bg-blue-950/90 text-blue-200 border border-blue-800'
-                : isTrash
+              isTrash
                 ? 'bg-rose-950/90 text-rose-200 border border-rose-800'
                 : 'bg-sky-950/90 text-sky-200 border border-sky-800'
             }`}>
-              {navigation?.listName || song.genre || (isTechnique ? 'Scales' : 'Hymns')}
+              {navigation?.listName || song.genre || 'Hymns'}
             </span>
           </div>
         </div>
@@ -339,11 +323,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
               type="button"
               onClick={() => onAddToSetlist(song)}
               className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border transition-all cursor-pointer active:scale-95 shadow-lg ${
-                isTechnique
-                  ? 'bg-blue-800 hover:bg-blue-900 text-blue-100 border-blue-700'
-                  : isSetlists
-                  ? 'bg-blue-800 hover:bg-blue-900 text-blue-100 border-blue-700'
-                  : isTrash
+                isTrash
                   ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
                   : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
               }`}
@@ -361,11 +341,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
             onClick={handleDownload}
             disabled={isDownloading}
             className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border cursor-pointer active:scale-95 transition-all shadow-lg ${
-              isTechnique
-                ? 'bg-blue-800 hover:bg-blue-900 text-blue-100 border-blue-700'
-                : isSetlists
-                ? 'bg-blue-800 hover:bg-blue-900 text-blue-100 border-blue-700'
-                : isTrash
+              isTrash
                 ? 'bg-rose-800 hover:bg-rose-900 text-rose-100 border-rose-700'
                 : 'bg-[#0c4a6e] hover:bg-[#073652] text-sky-100 border-sky-700'
             } disabled:opacity-60`}
@@ -373,13 +349,13 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
           >
             {isDownloading ? (
               <Loader2 className={`w-3.5 h-3.5 animate-spin ${
-                isTechnique ? 'text-blue-300' : isSetlists ? 'text-blue-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
+                isTrash ? 'text-rose-300' : 'text-sky-300'
               }`} />
             ) : downloadSuccess ? (
               <Check className="w-3.5 h-3.5 text-blue-400 stroke-[2.5]" />
             ) : (
               <Download className={`w-3.5 h-3.5 stroke-[2.2] ${
-                isTechnique ? 'text-blue-300' : isSetlists ? 'text-blue-300' : isTrash ? 'text-rose-300' : 'text-sky-300'
+                isTrash ? 'text-rose-300' : 'text-sky-300'
               }`} />
             )}
             <span className="text-[11px] font-black">
@@ -391,7 +367,7 @@ export const SongViewerModal: React.FC<SongViewerModalProps> = ({
 
       {/* Main Sheet Music Viewing Canvas */}
       <main className={`song-viewer-main flex-1 w-full relative overflow-hidden flex flex-col ${
-        isTechnique ? 'bg-[#130d1d]' : isSetlists ? 'bg-[#022c22]' : isTrash ? 'bg-[#120508]' : 'bg-[#030d17]'
+        isTrash ? 'bg-[#120508]' : 'bg-[#030d17]'
       }`}>
         <input 
           type="file" 

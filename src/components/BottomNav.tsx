@@ -29,8 +29,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           onClick={() => onSelectTab('sheet_music')}
           className={`flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl transition-all cursor-pointer font-black text-xs uppercase tracking-wider ${
             isSheetMusicActive
-              ? 'bg-[#2563EB] dark:bg-[#3B82F6] text-white shadow-md'
-              : 'text-slate-600 dark:text-[#A0A0A0] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)]'
+              ? 'bg-[#0284c7] text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-200/70'
           }`}
           title="Sheet Music Directory"
           aria-label="Sheet Music"
@@ -43,7 +43,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <button
           type="button"
           onClick={onRandomizePdf}
-          className="w-12 h-12 flex items-center justify-center rounded-2xl bg-[#2563EB] hover:bg-blue-700 dark:bg-[#3B82F6] dark:hover:bg-blue-600 text-white shadow-lg transition-all cursor-pointer active:scale-95 shrink-0"
+          className="w-12 h-12 flex items-center justify-center rounded-2xl bg-[#0284c7] hover:bg-sky-700 text-white shadow-lg transition-all cursor-pointer active:scale-95 shrink-0"
           title="Pick Random Chart"
           aria-label="Pick Random Chart"
         >
@@ -56,8 +56,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           onClick={() => onSelectTab('sheet_music_setlists')}
           className={`flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl transition-all cursor-pointer font-black text-xs uppercase tracking-wider ${
             isSetlistsActive
-              ? 'bg-[#2563EB] dark:bg-[#3B82F6] text-white shadow-md'
-              : 'text-slate-600 dark:text-[#A0A0A0] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)]'
+              ? 'bg-[#0284c7] text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-200/70'
           }`}
           title="Practice Setlists"
           aria-label="Practice Setlists"

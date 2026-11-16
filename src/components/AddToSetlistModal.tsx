@@ -6,7 +6,7 @@ interface AddToSetlistModalProps {
   song: Song;
   setlists: Setlist[];
   onSaveSetlistsForSong: (songId: string, updatedSetlistIds: string[]) => Promise<void>;
-  onCreateSetlist: (name: string, description?: string, section?: 'sheet_music' | 'technique') => Promise<Setlist | undefined>;
+  onCreateSetlist: (name: string, description?: string, section?: 'sheet_music') => Promise<Setlist | undefined>;
   onClose: () => void;
 }
 
@@ -17,17 +17,11 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
   onCreateSetlist,
   onClose,
 }) => {
-  const targetSection: 'sheet_music' | 'technique' = song.section === 'technique' ? 'technique' : 'sheet_music';
-
-  // Show all setlists so any chart can be added to any setlist
-  const allSetlists = setlists;
-
-  // Initial selected setlist IDs containing this song (or its originalSongId)
   const [selectedSetlistIds, setSelectedSetlistIds] = useState<string[]>(() => {
     const targetIds = new Set<string>([song.id]);
     if (song.originalSongId) targetIds.add(song.originalSongId);
 
-    return allSetlists
+    return setlists
       .filter((s) =>
         s.items.some(
           (item) =>
@@ -40,7 +34,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
   });
 
   const [newSetName, setNewSetName] = useState<string>('');
-  const [isCreatingInline, setIsCreatingInline] = useState<boolean>(() => allSetlists.length === 0);
+  const [isCreatingInline, setIsCreatingInline] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const toggleSetlistSelection = (setlistId: string) => {
@@ -56,7 +50,7 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
     if (!newSetName.trim()) return;
 
     try {
-      const created = await onCreateSetlist(newSetName.trim(), undefined, targetSection);
+      const created = await onCreateSetlist(newSetName.trim(), undefined, 'sheet_music');
       if (created) {
         setSelectedSetlistIds((prev) => (prev.includes(created.id) ? prev : [...prev, created.id]));
       }
@@ -80,83 +74,52 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 pt-4 sm:pt-8 md:pt-12 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md max-h-[82vh] sm:max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 flex flex-col">
-        {/* Header - Signature Emerald Green Setlists Theme */}
-        <div className="px-5 py-4 flex items-center justify-between text-white bg-blue-800 dark:bg-blue-900 border-b border-blue-700 dark:border-blue-800">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <ListMusic className="w-5 h-5 shrink-0 text-blue-200" />
-            <div className="min-w-0">
-              <h3 className="text-sm font-black uppercase tracking-wider truncate leading-tight text-white">
-                Add to Setlist
-              </h3>
-              <p className="text-[11px] font-medium text-blue-100/90 truncate mt-0.5">
-                "{song.title}"
-              </p>
-            </div>
-          </div>
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+        {/* Minimal Header */}
+        <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white truncate">
+            Add to Setlist
+          </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* List of Setlists */}
-        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-          {allSetlists.length === 0 && !isCreatingInline ? (
-            <div className="text-center py-6 px-4 bg-blue-50/60 dark:bg-blue-950/30 border border-dashed border-blue-200 dark:border-blue-800 rounded-xl space-y-2.5">
-              <p className="text-xs font-bold text-blue-950 dark:text-blue-200">
-                No setlists created yet.
-              </p>
-              <button
-                type="button"
-                onClick={() => setIsCreatingInline(true)}
-                className="text-xs font-black uppercase tracking-wider px-3.5 py-2 rounded-lg text-white bg-blue-800 hover:bg-blue-900 dark:bg-blue-700 dark:hover:bg-blue-600 transition-all cursor-pointer"
-              >
-                + Create First Setlist
-              </button>
+        {/* Minimal Setlist List */}
+        <div className="p-3 space-y-2 max-h-[50vh] overflow-y-auto">
+          {setlists.length === 0 && !isCreatingInline ? (
+            <div className="text-center py-4 text-xs font-bold text-slate-400">
+              No setlists yet.
             </div>
           ) : (
-            <div className="space-y-1.5">
-              {allSetlists.map((setlist) => {
+            <div className="space-y-1">
+              {setlists.map((setlist) => {
                 const isChecked = selectedSetlistIds.includes(setlist.id);
                 return (
                   <button
                     key={setlist.id}
                     type="button"
                     onClick={() => toggleSetlistSelection(setlist.id)}
-                    className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
+                    className={`w-full text-left p-2.5 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
                       isChecked
-                        ? 'bg-blue-50 dark:bg-blue-950/70 border-blue-400 dark:border-blue-600 text-blue-950 dark:text-blue-100 shadow-2xs font-black'
-                        : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 text-slate-700 dark:text-slate-200 font-bold'
+                        ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-600 text-slate-900 dark:text-white font-black text-xs'
+                        : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs'
                     }`}
                   >
-                    <div className="min-w-0 pr-2">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs truncate">{setlist.name}</p>
-                        <span className="text-[10px] font-mono tabular-nums text-blue-700 dark:text-blue-400 font-bold shrink-0">
-                          · {setlist.items.length}
-                        </span>
-                      </div>
-                      {setlist.description && (
-                        <p className="text-[10px] text-slate-400 dark:text-slate-400 font-normal line-clamp-1">
-                          {setlist.description}
-                        </p>
-                      )}
-                    </div>
-
+                    <span className="truncate pr-2">{setlist.name}</span>
                     <div
-                      className={`w-5 h-5 rounded-md flex items-center justify-center border shrink-0 transition-all ${
+                      className={`w-4 h-4 rounded-md flex items-center justify-center border shrink-0 ${
                         isChecked
-                          ? 'bg-blue-800 dark:bg-blue-600 border-blue-800 dark:border-blue-600 text-white'
-                          : 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800'
+                          ? 'bg-[#0284c7] border-[#0284c7] text-white'
+                          : 'border-slate-300 dark:border-slate-600'
                       }`}
                     >
-                      {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
                   </button>
                 );
@@ -164,73 +127,63 @@ export const AddToSetlistModal: React.FC<AddToSetlistModalProps> = ({
             </div>
           )}
 
-          {/* Inline Create Form */}
+          {/* Inline Create */}
           {isCreatingInline ? (
             <form onSubmit={handleCreateAndSelect} className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-400">
-                New Setlist Name
-              </span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  autoFocus
-                  required
-                  placeholder="e.g. Friday Gig Set"
-                  value={newSetName}
-                  onChange={(e) => setNewSetName(e.target.value)}
-                  className="flex-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold outline-none text-slate-800 dark:text-slate-100 focus:border-blue-500"
-                />
+              <input
+                type="text"
+                autoFocus
+                required
+                placeholder="Setlist name..."
+                value={newSetName}
+                onChange={(e) => setNewSetName(e.target.value)}
+                className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-[#0284c7]"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingInline(false)}
+                  className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  className="px-3 py-2 text-white rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer bg-blue-800 hover:bg-blue-900 dark:bg-blue-700 dark:hover:bg-blue-600"
+                  className="px-3 py-1.5 text-white rounded-xl text-xs font-black uppercase tracking-wider bg-[#0284c7] hover:bg-sky-700 cursor-pointer"
                 >
                   Create
                 </button>
-                {allSetlists.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setIsCreatingInline(false)}
-                    className="px-2 py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                )}
               </div>
             </form>
           ) : (
             <button
               type="button"
               onClick={() => setIsCreatingInline(true)}
-              className="w-full text-left py-2 px-1 text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-colors text-blue-700 dark:text-blue-400 hover:text-blue-950 dark:hover:text-blue-200"
+              className="w-full text-center py-2 text-xs font-extrabold text-[#0284c7] hover:underline cursor-pointer flex items-center justify-center gap-1"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Create New Setlist</span>
+              <span>New Setlist</span>
             </button>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 max-w-[200px] leading-tight">
-            Chart category & location remain unchanged in library.
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleDone}
-              disabled={isSubmitting}
-              className="px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-md bg-blue-800 hover:bg-blue-900 dark:bg-blue-700 dark:hover:bg-blue-600"
-            >
-              {isSubmitting ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+        {/* Minimal Footer */}
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleDone}
+            disabled={isSubmitting}
+            className="px-4 py-1.5 text-white rounded-xl text-xs font-black uppercase tracking-wider bg-[#0284c7] hover:bg-sky-700 cursor-pointer shadow-md disabled:opacity-50"
+          >
+            {isSubmitting ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </div>
     </div>

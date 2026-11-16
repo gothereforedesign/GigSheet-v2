@@ -302,26 +302,6 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
-                {onOpenGenreManager && (
-                  <button
-                    type="button"
-                    onClick={onOpenGenreManager}
-                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 hover:bg-blue-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 text-xs font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs whitespace-nowrap"
-                    title="Reorder, Rename, or Delete Setlists"
-                  >
-                    <FolderEdit className="w-3.5 h-3.5 stroke-[2] text-blue-700 dark:text-blue-400" />
-                    <span>Edit</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setIsCreating(true)}
-                  className="px-3 py-1.5 rounded-lg bg-blue-800 hover:bg-blue-900 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-sm whitespace-nowrap"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>New Setlist</span>
-                </button>
               </div>
             </div>
 
@@ -363,16 +343,16 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
           </div>
         )
       ) : (
-        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED SETLIST - EMERALD GREEN PALETTE */
+        /* VIEW 2: CHARTS LIST OR PREVIEW GRID INSIDE SELECTED SETLIST - BLUE PALETTE */
         activeSetlist && (
           <div
             style={{
               backgroundColor: isDarkMode
-                ? 'rgba(6, 78, 59, 0.35)'
-                : 'rgba(236, 253, 245, 0.9)',
+                ? 'rgba(8, 28, 48, 0.9)'
+                : 'rgba(2, 132, 199, 0.05)',
               borderColor: isDarkMode
-                ? 'rgba(16, 185, 129, 0.3)'
-                : 'rgba(110, 231, 183, 0.55)',
+                ? 'rgba(2, 132, 199, 0.3)'
+                : 'rgba(2, 132, 199, 0.2)',
             }}
             className="rounded-lg md:rounded-xl border p-3 sm:p-4.5 shadow-2xs space-y-3 transition-colors"
           >
@@ -423,24 +403,6 @@ export const SetlistsView: React.FC<SetlistsViewProps> = ({
               </div>
 
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Play / Perform Setlist From Start Button */}
-                {resolvedSetlistEntries.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onOpenSetlistPerformance) {
-                        onOpenSetlistPerformance(activeSetlist, 0);
-                      } else if (onSelectSong && resolvedSetlistEntries[0]) {
-                        onSelectSong(resolvedSetlistEntries[0].song, activeSetlist, 0);
-                      }
-                    }}
-                    className="px-2.5 py-1.5 rounded-md bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-black text-xs border border-blue-600 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap flex items-center gap-1"
-                    title="Start Setlist from #1"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current stroke-[2]" />
-                    <span className="hidden sm:inline text-[11px] uppercase tracking-wider">Play</span>
-                  </button>
-                )}
 
                 {/* Add Chart Button */}
                 <button

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { FileText, Download, PlusCircle, CheckCircle2, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { Download, PlusCircle, CheckCircle2, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { Song } from '../types';
 import { saveSong } from '../lib/db';
@@ -24,12 +24,13 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
   onSongAdded,
   onNavigateTab,
 }) => {
+  const [content, setContent] = useState(DEFAULT_CHART_TEMPLATE);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [title, setTitle] = useState('');
   
   const sheetCategories = getStoredCategories('sheet_music');
   const [category, setCategory] = useState<string>(sheetCategories[0] || 'Standard');
 
-  const [content, setContent] = useState(DEFAULT_CHART_TEMPLATE);
   const [isGenerating, setIsGenerating] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -98,7 +99,7 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
         cursorY += 6;
         doc.setFont('Helvetica', 'bold');
         doc.setFontSize(12);
-        doc.setTextColor(29, 78, 216); // Subcategory Blue
+        doc.setTextColor(29, 78, 216);
         doc.text(line.trim(), margin, cursorY);
         doc.setFont('Courier', 'normal');
         doc.setFontSize(11);
@@ -142,6 +143,7 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       setSuccessMsg('PDF downloaded successfully!');
+      setShowSaveModal(false);
     } catch (err: any) {
       console.error('PDF generation error:', err);
       setErrorMsg(err.message || 'Failed to generate PDF.');
@@ -176,9 +178,10 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
       await saveSong(newSong);
       await onSongAdded();
       setSuccessMsg('Chart added successfully to your library!');
+      setShowSaveModal(false);
       setTimeout(() => {
         onNavigateTab('sheet_music');
-      }, 800);
+      }, 500);
     } catch (err: any) {
       console.error('Error adding chart to app:', err);
       setErrorMsg(err.message || 'Failed to save chart to library.');
@@ -188,62 +191,32 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen px-4 sm:px-8 py-6 pb-32 flex flex-col space-y-5">
-      {/* Top Header & Actions Bar with Back Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-[rgba(255,255,255,0.1)] pb-4">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onNavigateTab('sheet_music')}
-            className="p-2 rounded-xl bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] text-slate-700 dark:text-[#F3F4F6] transition-all cursor-pointer shadow-xs flex items-center gap-1.5 text-xs font-bold"
-            title="Back to Charts"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span className="hidden sm:inline">Back</span>
-          </button>
+    <div className="w-full min-h-screen px-4 sm:px-8 py-4 pb-32 flex flex-col space-y-3">
+      {/* Minimal Top Bar with Back & Save */}
+      <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => onNavigateTab('sheet_music')}
+          className="p-2 rounded-xl bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-slate-700 dark:text-[#F3F4F6] transition-all cursor-pointer shadow-xs flex items-center gap-1.5 text-xs font-bold"
+          title="Back"
+        >
+          <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+          <span>Back</span>
+        </button>
 
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-[#2563EB] dark:bg-[#3B82F6] text-white rounded-xl shadow-xs">
-              <FileText className="w-4 h-4 stroke-[2.2]" />
-            </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900 dark:text-[#F3F4F6]">
-                Chord Chart Editor
-              </h1>
-              <p className="text-[11px] text-slate-600 dark:text-[#A0A0A0] font-medium">
-                Create new lead sheet PDF
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            disabled={isGenerating || !title.trim()}
-            className="px-4 py-2 bg-white dark:bg-[#222226] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] text-slate-800 dark:text-[#F3F4F6] text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-[#2563EB] dark:text-[#3B82F6]" />}
-            <span>Download PDF</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleAddDirectToApp}
-            disabled={isGenerating || !title.trim()}
-            className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 dark:bg-[#3B82F6] dark:hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50"
-          >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
-            <span>Add to Library</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowSaveModal(true)}
+          className="px-4 py-2 bg-[#0284c7] hover:bg-sky-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Save Chart</span>
+        </button>
       </div>
 
       {successMsg && (
         <div className="p-3 bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs">
-          <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
@@ -255,48 +228,86 @@ export const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({
         </div>
       )}
 
-      {/* Ultra-minimal Fullpage Inputs & Editor Layout */}
+      {/* Chord Input Textarea taking max vertical height */}
       <div className="flex-1 flex flex-col space-y-3 pb-24">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-[#A0A0A0] mb-0.5">
-              Song Name *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Amazing Grace"
-              className="w-full px-3 py-2 bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-xl text-xs font-semibold text-slate-900 dark:text-[#F3F4F6] outline-none focus:border-[#2563EB] dark:focus:border-[#3B82F6] shadow-xs"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-[#A0A0A0] mb-0.5">
-              Category
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-[#222226] border border-slate-300 dark:border-[rgba(255,255,255,0.1)] rounded-xl text-xs font-semibold text-slate-900 dark:text-[#F3F4F6] outline-none focus:border-[#2563EB] dark:focus:border-[#3B82F6] cursor-pointer shadow-xs"
-            >
-              {sheetCategories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Full-Page Textarea Editor taking maximum vertical height */}
         <textarea
           ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full flex-1 min-h-[55vh] sm:min-h-[65vh] p-4 bg-white dark:bg-[#222226] text-[#1D4ED8] dark:text-[#60A5FA] font-mono text-xs sm:text-sm rounded-2xl border border-slate-300 dark:border-[rgba(255,255,255,0.1)] outline-none focus:border-[#2563EB] dark:focus:border-[#3B82F6] leading-relaxed shadow-sm resize-y pb-24"
+          className="w-full flex-1 min-h-[60vh] sm:min-h-[70vh] p-4 bg-white dark:bg-[#222226] text-[#1D4ED8] dark:text-[#60A5FA] font-mono text-xs sm:text-sm rounded-2xl border border-slate-300 dark:border-[rgba(255,255,255,0.1)] outline-none focus:border-[#0284c7] leading-relaxed shadow-sm resize-y pb-24"
           placeholder="Type chord progression here..."
         />
       </div>
+
+      {/* Save Modal (Appears after clicking Save Chart) */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95">
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
+              Save Chord Chart
+            </h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  Song Name *
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Amazing Grace"
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#0284c7]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  Category
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#0284c7] cursor-pointer"
+                >
+                  {sheetCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowSaveModal(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isGenerating || !title.trim()}
+                className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-[#0284c7]" />}
+                <span>Download PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleAddDirectToApp}
+                disabled={isGenerating || !title.trim()}
+                className="px-4 py-2 bg-[#0284c7] hover:bg-sky-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50"
+              >
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
+                <span>Add to Library</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Compact Custom Quick-Insert Keyboard Toolbar Pinned Right Above Bottom Navigation */}
       <div className="fixed bottom-[56px] inset-x-0 z-30 bg-white/95 dark:bg-[#222226]/95 backdrop-blur-md border-t border-slate-300 dark:border-[rgba(255,255,255,0.1)] px-3 py-2 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap shadow-2xl scrollbar-none">

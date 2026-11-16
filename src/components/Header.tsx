@@ -78,14 +78,14 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2.5 shrink-0 cursor-pointer group"
           title="Return to Homescreen"
         >
-          <div className="p-1.5 text-white rounded-xl shadow-xs transition-colors group-hover:scale-105 bg-[#2563EB] dark:bg-[#3B82F6]">
+          <div className="p-1.5 text-white rounded-xl shadow-xs transition-colors group-hover:scale-105 bg-[#0284c7]">
             <Music className="w-4 h-4 stroke-[2.5]" />
           </div>
           <div>
-            <h1 className="text-base sm:text-lg font-black uppercase tracking-wider leading-none text-slate-900 dark:text-[#F3F4F6]">
+            <h1 className="text-base sm:text-lg font-black uppercase tracking-wider leading-none text-slate-900 dark:text-white">
               GigSheet
             </h1>
-            <p className="text-[9px] uppercase tracking-widest mt-0.5 font-extrabold text-[#2563EB] dark:text-[#3B82F6]">
+            <p className="text-[9px] uppercase tracking-widest mt-0.5 font-extrabold text-[#0284c7]">
               {subtitle}
             </p>
           </div>
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => setIsAddMenuOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-[#2563EB] hover:bg-blue-700 dark:bg-[#3B82F6] dark:hover:bg-blue-600 transition-all cursor-pointer active:scale-95 shadow-md"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-[#0284c7] hover:bg-sky-700 transition-all cursor-pointer active:scale-95 shadow-md"
               title="Add Chart or Chord Sheet"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   className="w-full px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer"
                 >
-                  <Upload className="w-4 h-4 stroke-[2.2] text-[#2563EB] dark:text-[#3B82F6]" />
+                  <Upload className="w-4 h-4 stroke-[2.2] text-[#0284c7]" />
                   <span>Upload PDF / Charts</span>
                 </button>
 
@@ -129,8 +129,32 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   className="w-full px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-200 dark:border-[rgba(255,255,255,0.06)]"
                 >
-                  <FileText className="w-4 h-4 stroke-[2.2] text-blue-500" />
+                  <FileText className="w-4 h-4 stroke-[2.2] text-[#0284c7]" />
                   <span>Create Chord Chart</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddMenuOpen(false);
+                    if (onSelectTab) onSelectTab('sheet_music_setlists');
+                  }}
+                  className="w-full px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-200 dark:border-[rgba(255,255,255,0.06)]"
+                >
+                  <Music className="w-4 h-4 stroke-[2.2] text-[#0284c7]" />
+                  <span>New Setlist</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddMenuOpen(false);
+                    if (onOpenCategoryManager) onOpenCategoryManager();
+                  }}
+                  className="w-full px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-[#F3F4F6] hover:bg-slate-200/70 dark:hover:bg-[rgba(255,255,255,0.04)] flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-200 dark:border-[rgba(255,255,255,0.06)]"
+                >
+                  <FolderEdit className="w-4 h-4 stroke-[2.2] text-[#0284c7]" />
+                  <span>New Category</span>
                 </button>
               </div>
             )}
